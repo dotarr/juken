@@ -8,8 +8,8 @@
 enum mode { TrackMode, ProgramMode, BestMode, MusicTypeMode, UserfileMode };
 enum random { RandomOff, RandomSingle, RandomAll };
 
-enum state { Unknown, Stopped, Stopping, Changing, Playing, 
-             Paused, SkipForward, SkipBackward };
+enum state { Unknown, Stopped, Standby, Stopping, Changing, 
+             Playing, Paused, SkipForward, SkipBackward };
  
 enum genre
 {

@@ -22,9 +22,12 @@ class Juken : public KenwoodListener
         bool DiscChanged(short slot);
         bool DoorChanged(bool door_closed);
         
-        bool DiscDataReply(DiscData* info);
-        bool CDTextDataReply(CDTextData* info);
-        bool DiscTrackListReply(DiscTrackList* info);
+        bool DiscDataReply(short slot, byte track, byte userfiles, 
+                           byte request_type, byte genre, 
+                           byte formatting, char* title);
+        bool CDTextDataReply(short slot, byte track, byte request_type,
+                             byte formatting, char* title);
+        bool DiscTrackListReply(int num_tracks, DiscTrack* info);
 
     protected:
         typedef void (*cmd_func)(Juken* _this, int argc, char* argv[]);

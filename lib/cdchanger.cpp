@@ -1,4 +1,5 @@
 #include "cdchanger.h"
+#include "cdpayload.h"
 #include "discid.h"
 #include "util.h"
 
@@ -158,17 +159,17 @@ CDChanger::DoDoorEvent(const payload& event)
 }
 
 void
-CDChanger::DoListDiscs(byte x)
+CDChanger::DoListDiscs()
 {
-    DataAccess query = { 0, 1, 0, 0, x, 0 };
-    DoDiscQuery(query);
+    DataAccess query = { 0, 1, 0, 0, 0, 0 };
+    DoDiscQuery((byte*) &query);
 }
 
 void
-CDChanger::DoListContents(const short slot, byte x)
+CDChanger::DoListContents(const short slot)
 {
-    DataAccess query = { 0, 1, slot, 0, x, 0 };
-    DoDiscQuery(query);
+    DataAccess query = { 0, 1, slot, 0, 1, 0 };
+    DoDiscQuery((byte*) &query);
 }
 
 uint
@@ -202,7 +203,7 @@ void
 CDChanger::DoListBest()
 {
     DataAccess query = { 0, 32, 0, 0, 0, 0 };
-    DoDiscQuery(query);
+    DoDiscQuery((byte*) &query);
 }
 
 void
@@ -248,13 +249,13 @@ CDChanger::DoStop()
 }
 
 void
-CDChanger::DoDiscQuery(const DataAccess& query)
+CDChanger::DoDiscQuery(const byte* query)
 {
     // build the payload
     payload req;
     req.cmd = DATA_ACCESS;
     req.len = sizeof(DataAccess);
-    ::memcpy(req.data, &query, req.len);
+    ::memcpy(req.data, query, req.len);
 
     // issue the request
     m_device.SendMessage(req, HAS_REPLIES); 
@@ -269,7 +270,14 @@ CDChanger::DoDiscQuery(const DataAccess& query)
             case DISC_DATA:
                 for (int i=0; i<m_listeners.size(); i++)
                 {
-                    if ( m_listeners[i]->DiscDataReply((DiscData*)reply.data) )
+                    DiscData* info = (DiscData*) reply.data;
+                    if ( m_listeners[i]->DiscDataReply(info->slot,
+                                                       info->track,
+                                                       info->userfiles,
+                                                       info->request_type,
+                                                       info->genre,
+                                                       info->formatting,
+                                                       info->title) )
                         break;
                 }
                 break;
@@ -277,7 +285,12 @@ CDChanger::DoDiscQuery(const DataAccess& query)
             case CD_TEXT_DATA:
                 for (int i=0; i<m_listeners.size(); i++)
                 {
-                    if ( m_listeners[i]->CDTextDataReply((CDTextData*)reply.data) )
+                    CDTextData* info = (CDTextData*) reply.data;
+                    if ( m_listeners[i]->CDTextDataReply(info->slot,
+                                                         info->track,
+                                                         info->request_type,
+                                                         info->formatting,
+                                                         info->title) )
                         break;
                 }
                 break;
@@ -285,7 +298,9 @@ CDChanger::DoDiscQuery(const DataAccess& query)
             case DISC_TRACK_LIST:
                 for (int i=0; i<m_listeners.size(); i++)
                 {
-                    if ( m_listeners[i]->DiscTrackListReply((DiscTrackList*)reply.data) )
+                    DiscTrackList* info = (DiscTrackList*) reply.data;
+                    if ( m_listeners[i]->DiscTrackListReply(info->num_tracks, 
+                                                            info->tracks) )
                         break;
                 }
                 break;

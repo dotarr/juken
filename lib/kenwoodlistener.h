@@ -2,7 +2,7 @@
 #define JUKEN_KENWOODLISTENER_H
 
 #include "types.h"
-#include "cdpayload.h"
+#include "payload.h"
 
 class KenwoodListener 
 {
@@ -16,9 +16,15 @@ class KenwoodListener
         virtual bool DiscChanged(short slot) { return false; };
         virtual bool DoorChanged(bool door_closed) { return false; };
         
-        virtual bool DiscDataReply(DiscData* info) { return false; };
-        virtual bool CDTextDataReply(CDTextData* info) { return false; };
-        virtual bool DiscTrackListReply(DiscTrackList* info) { return false; };
+        virtual bool DiscDataReply(short slot, byte track, byte userfiles, 
+                                   byte request_type, byte genre, 
+                                   byte formatting, char* title) 
+            { return false; };
+        virtual bool CDTextDataReply(short slot, byte track, byte request_type,
+                                     byte formatting, char* title) 
+            { return false; };
+        virtual bool DiscTrackListReply(int num_tracks, DiscTrack* info) 
+            { return false; };
 
     protected:
         KenwoodListener() { };

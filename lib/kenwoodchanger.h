@@ -6,7 +6,7 @@
 #include "kenwooddevice.h"
 #include "kenwoodlistener.h"
 #include "types.h"
-#include "cdpayload.h"
+#include "payload.h"
 
 // A class for communications to a Kenwood changer via a serial port.
 
@@ -22,8 +22,8 @@ class KenwoodChanger
         void DoEvent();
         virtual void ProcessEvent() = 0;
 
-        virtual void DoListDiscs(byte x=0) = 0;
-        virtual void DoListContents(const short slot, byte x=1) = 0;
+        virtual void DoListDiscs() = 0;
+        virtual void DoListContents(const short slot) = 0;
         virtual void DoListBest() = 0;
         virtual void DoChangeDisc(const short slot, enum state cur_state) = 0;
         virtual void DoPlayPause() = 0;

@@ -17,47 +17,50 @@ ExportListener::~ExportListener()
 }
 
 bool
-ExportListener::DiscDataReply(DiscData* info)
+ExportListener::DiscDataReply(short slot, byte track, byte userfiles, 
+                              byte request_type, byte genre, 
+                              byte formatting, char* title)
 {
-    if ( info->title[0] == 0x01 )
-        info->title[0] = '\0';
+    if ( title[0] == 0x01 )
+        title[0] = '\0';
 
     // output the reply
-    if ( info->track == 0 )
+    if ( track == 0 )
     {
-        ::fprintf(m_file, "DTITLE=%s\n", info->title);
+        ::fprintf(m_file, "DTITLE=%s\n", title);
         ::fprintf(m_file, "DYEAR=\n");
-        const char* genre = "";
-        if ( info->genre > 1 )
-            genre = GENRE_NAMES[info->genre];
-        ::fprintf(m_file, "DGENRE=%s\n", genre);
+        const char* genre_name = "";
+        if ( genre > 1 )
+            genre_name = GENRE_NAMES[genre];
+        ::fprintf(m_file, "DGENRE=%s\n", genre_name);
     }
     else
     {
-        ::fprintf(m_file, "TITLE%d=%s\n", info->track-1, info->title);
-        m_num_tracks = info->track;
+        ::fprintf(m_file, "TITLE%d=%s\n", track-1, title);
+        m_num_tracks = track;
     }
 
     return true;
 }
 
 bool
-ExportListener::CDTextDataReply(CDTextData* info)
+ExportListener::CDTextDataReply(short slot, byte track, byte request_type,
+                                byte formatting, char* title)
 {
-    if ( info->title[0] == 0x01 )
-        info->title[0] = '\0';
+    if ( title[0] == 0x01 )
+        title[0] = '\0';
 
     // output the reply
-    if ( info->track == 0 )
+    if ( track == 0 )
     {
-        ::fprintf(m_file, "DTITLE=%s\n", info->title);
+        ::fprintf(m_file, "DTITLE=%s\n", title);
         ::fprintf(m_file, "DYEAR=\n");
         ::fprintf(m_file, "DGENRE=\n");
     }
     else
     {
-        ::fprintf(m_file, "TITLE%d=%s\n", info->track-1, info->title);
-        m_num_tracks = info->track;
+        ::fprintf(m_file, "TITLE%d=%s\n", track-1, title);
+        m_num_tracks = track;
     }
 
     return true;

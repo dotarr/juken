@@ -16,4 +16,23 @@ typedef struct
     char identifier[1];
 } Handshake;
 
+typedef struct 
+{
+    byte minute;
+    byte second;
+    byte subsecond;
+} TimeInfo;
+
+typedef struct 
+{
+    short slot;
+    byte track;
+} DiscTrack;
+
+typedef struct 
+{
+    short slot;
+    byte track;
+} DiscTrackChapter;
+
 #endif /* JUKEN_PAYLOAD_H */

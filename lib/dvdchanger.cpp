@@ -1,4 +1,5 @@
 #include "dvdchanger.h"
+#include "dvdpayload.h"
 #include "discid.h"
 #include "util.h"
 
@@ -34,15 +35,61 @@ DVDChanger::ProcessEvent()
 void
 DVDChanger::DoInfoEvent(const payload& event)
 {
-    printf("InfoEvent:\n");
-    printdata(event.data, event.len);
+    byte changer = event.data[0];
+    InfoEvent* info = (InfoEvent*) &event.data[1];
+
+    printf("InfoEvent(%d): ", changer);
+    printf("D%03d T%02d C%02d\n", info->slot, info->title, info->chapter);
+printf("hex\t%02X ", info->unknown_1);
+printf("%02X ", info->unknown_2);
+printf("%02X ", info->unknown_3);
+printf("%02X ", info->unknown_4);
+printf("%02X\n", info->unknown_5);
+printf("decimal\t%02d ", info->unknown_1);
+printf("%02d ", info->unknown_2);
+printf("%02d ", info->unknown_3);
+printf("%02d ", info->unknown_4);
+printf("%02d\n", info->unknown_5);
 }
 
 void
 DVDChanger::DoStateEvent(const payload& event)
 {
-    printf("StateEvent:\n");
-    printdata(event.data, event.len);
+    Foo bar(event.data);
+
+    byte changer = event.data[0];
+    StateEvent* info = (StateEvent*) &event.data[1];
+
+    printf("StateEvent(%d): ", changer);
+    enum state state;
+    switch ( info->state )
+    {
+        case STOPPED_STATE:  state = Stopped;      break;
+        case STANDBY_STATE:  state = Standby;      break;
+        case STOPPING_STATE: state = Stopping;     break;
+        case CHANGING_STATE: state = Changing;     break;
+        case PLAYING_STATE:  state = Playing;      break;
+        case PAUSED_STATE:   state = Paused;       break;
+        case SKIPFORW_STATE: state = SkipForward;  break;
+        case SKIPBACK_STATE: state = SkipBackward; break;
+        default:             state = Unknown;      break;
+    }
+if ( state == Unknown )
+    printf("%s(%02X)\n", "unknown", info->state);
+else
+    printf("%s\n", STATE_NAMES[state]);
+printf("hex\t%02X ", info->unknown_1);
+printf("%02X ", info->unknown_2);
+printf("%02X ", info->unknown_3);
+printf("%02X ", info->unknown_4);
+printf("%02X ", info->unknown_5);
+printf("%02X\n", info->unknown_6);
+printf("decimal\t%02d ", info->unknown_1);
+printf("%02d ", info->unknown_2);
+printf("%02d ", info->unknown_3);
+printf("%02d ", info->unknown_4);
+printf("%02d ", info->unknown_5);
+printf("%02d\n", info->unknown_6);
 }
  
 void
@@ -60,12 +107,12 @@ DVDChanger::DoDoorEvent(const payload& event)
 }
 
 void
-DVDChanger::DoListDiscs(byte x)
+DVDChanger::DoListDiscs()
 {
 }
 
 void
-DVDChanger::DoListContents(const short slot, byte x)
+DVDChanger::DoListContents(const short slot)
 {
 }
 
@@ -112,7 +159,7 @@ DVDChanger::DoStop()
 }
 
 void
-DVDChanger::DoDiscQuery(const DataAccess& query)
+DVDChanger::DoDiscQuery(const byte* query)
 {
 }
 

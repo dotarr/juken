@@ -9,8 +9,11 @@ class ExportListener : public KenwoodListener
         ExportListener(uint disc_id, const char* path);
         ~ExportListener();
 
-        bool DiscDataReply(DiscData* info);
-        bool CDTextDataReply(CDTextData* info);
+        bool DiscDataReply(short slot, byte track, byte userfiles, 
+                           byte request_type, byte genre, 
+                           byte formatting, char* title);
+        bool CDTextDataReply(short slot, byte track, byte request_type,
+                             byte formatting, char* title);
 
     protected:
         void OpenFile(uint disc_id, const char* path);

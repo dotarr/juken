@@ -63,6 +63,7 @@ const short REPEAT_CMD          = 0xCC00;
 
 // player state values
 const byte STOPPED_STATE        = 0x40;
+const byte STANDBY_STATE        = 0x41;
 const byte STOPPING_STATE       = 0x50;
 const byte CHANGING_STATE       = 0x60;
 const byte PLAYING_STATE        = 0x70;
@@ -78,8 +79,8 @@ const char* const RANDOM_NAMES[] =
 
 // strings for player state
 const char* const STATE_NAMES[] = 
-    { "UNKNOWN", "stopped", "stopping", "changing", "playing", 
-      "paused", "skip forward", "skip backward" };
+    { "UNKNOWN", "stopped", "standby", "stopping", "changing", 
+      "playing", "paused", "skip forward", "skip backward" };
 
 // strings for disc genre
 const char* const GENRE_NAMES[] = 

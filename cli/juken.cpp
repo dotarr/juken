@@ -39,7 +39,6 @@ struct Juken::cmd Juken::m_short_commands[] =
     { "q",      &Juken::DoQuit,       "quit the application" },
     { "h",      &Juken::DoHelp,       "this help output" },
     { "ls",     &Juken::DoList,       "list the changer contents" },
-    { "lsx",    &Juken::DoExperiment, "experimental" },
     { "cd",     &Juken::DoChangeDisc, "change the current disc" },
     { "p",      &Juken::DoPlay,       "play/pause the current disc" },
     { "s",      &Juken::DoStop,       "stop the current disc" },
@@ -133,13 +132,13 @@ Juken::InitState()
     m_changer->pushListener(this);
 
     // process InfoChanged
-    m_changer->DoEvent();
+//    m_changer->DoEvent();
     // process DoorChanged
-    m_changer->DoEvent();
+//    m_changer->DoEvent();
     // process StateChanged
-    m_changer->DoEvent();
+//    m_changer->DoEvent();
     // process DiscChanged
-    m_changer->DoEvent();
+//    m_changer->DoEvent();
 
     if ( m_door_closed )
     {
@@ -313,38 +312,40 @@ usleep(10); // an ugly hack, but I can't figure out how/why/when the player isn'
 }
 
 bool
-Juken::DiscDataReply(DiscData* info)
+Juken::DiscDataReply(short slot, byte track, byte userfiles, 
+                     byte request_type, byte genre, 
+                     byte formatting, char* title)
 {
-    if ( info->title[0] == 0x01 )
-        info->title[0] = '\0';
+    if ( title[0] == 0x01 )
+        title[0] = '\0';
 
     // output the reply
-    if ( info->track == 0 )
+    if ( track == 0 )
     {
         if ( m_loading_titles )
         {
-            m_titles[info->slot] = strdup(info->title);
+            m_titles[slot] = strdup(title);
             ::fprintf(m_file, "#");
             ::fflush(m_file);
         }
         else
         {
-            ::fprintf(m_file, "[%3d] %-25s ", info->slot, info->title);
-            if ( info->genre != UNKNOWN )
-                ::fprintf(m_file, "genre: %-22s(%2d) ", GENRE_NAMES[info->genre], info->genre);
-            if ( info->userfiles != 0x00 )
-                ::fprintf(m_file, " userfiles: 0x%02X ", info->userfiles);
-            if ( info->formatting != 0x00 )
-                ::fprintf(m_file, "formatting: %s ", (info->formatting==0x13)?"cd-text":"unknown");
+            ::fprintf(m_file, "[%3d] %-25s ", slot, title);
+            if ( genre != UNKNOWN )
+                ::fprintf(m_file, "genre: %-22s(%2d) ", GENRE_NAMES[genre], genre);
+            if ( userfiles != 0x00 )
+                ::fprintf(m_file, " userfiles: 0x%02X ", userfiles);
+            if ( formatting != 0x00 )
+                ::fprintf(m_file, "formatting: %s ", (formatting==0x13)?"cd-text":"unknown");
             ::fprintf(m_file, "\n");
         }
     }
     else
     {
-        ::fprintf(m_file, "[%2d] ", info->track);
-        ::fprintf(m_file, "%-25s ", info->title);
-        if ( info->request_type != 0x01 )
-            ::fprintf(m_file, "   request_type: 0x%02X ", info->request_type);
+        ::fprintf(m_file, "[%2d] ", track);
+        ::fprintf(m_file, "%-25s ", title);
+        if ( request_type != 0x01 )
+            ::fprintf(m_file, "   request_type: 0x%02X ", request_type);
         ::fprintf(m_file, "\n");
     }
 
@@ -352,46 +353,46 @@ Juken::DiscDataReply(DiscData* info)
 }
 
 bool
-Juken::CDTextDataReply(CDTextData* info)
+Juken::CDTextDataReply(short slot, byte track, byte request_type,
+                       byte formatting, char* title)
 {
-    if ( info->title[0] == 0x01 )
-        info->title[0] = '\0';
+    if ( title[0] == 0x01 )
+        title[0] = '\0';
 
     // output the reply
-    if ( info->track == 0 )
+    if ( track == 0 )
     {
         if ( m_loading_titles )
         {
-            m_titles[info->slot] = strdup(info->title);
+            m_titles[slot] = strdup(title);
             ::fprintf(m_file, "#");
             ::fflush(m_file);
         }
         else
         {
-            ::fprintf(m_file, "%-25s ", info->title);
+            ::fprintf(m_file, "%-25s ", title);
         }
     }
     else
     {
-        ::fprintf(m_file, "[%3d] ", info->track);
-        ::fprintf(m_file, "%-25s ", info->title);
+        ::fprintf(m_file, "[%3d] ", track);
+        ::fprintf(m_file, "%-25s ", title);
     }
 
+/*
     ::fprintf(m_file, "unknown : ");
-    ::fprintf(m_file, "0x%02X ", info->unknown_1);
-    ::fprintf(m_file, "0x%02X ", info->unknown_2);
-    ::fprintf(m_file, "0x%02X ", info->unknown_3);
+    ::fprintf(m_file, "0x%02X ", unknown_1);
+    ::fprintf(m_file, "0x%02X ", unknown_2);
+    ::fprintf(m_file, "0x%02X ", unknown_3);
     ::fprintf(m_file, "\n");
+*/
 
     return false;
 }
 
 bool
-Juken::DiscTrackListReply(DiscTrackList* info)
+Juken::DiscTrackListReply(int num_tracks, DiscTrack* info)
 {
-    //::fprintf(m_file, "%s cmd=%d len=%d\n", "best data", reply_cmd, reply_len);
-    //printdata(m_file, reply_data, reply_len);
-
     return false;
 }
 
@@ -502,19 +503,6 @@ Juken::DoList(Juken* _this, int argc, char* argv[])
     {
         changer->DoListDiscs();
     }
-}
-
-void
-Juken::DoExperiment(Juken* _this, int argc, char* argv[])
-{
-    CDChanger* changer = ((CDChanger*) _this->m_changer);
-    int slot = 0;
-    byte x = 1;
-    if ( argc > 1 )
-        slot = atoi(argv[1]);
-    if ( argc > 2 )
-        x = atoi(argv[2]);
-    changer->DoListContents(slot, x);
 }
 
 void

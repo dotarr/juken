@@ -15,8 +15,8 @@ class CDChanger : public KenwoodChanger
         void DoDiscEvent(const payload& event);
         void DoDoorEvent(const payload& event);
 
-        void DoListDiscs(byte x=0);
-        void DoListContents(const short slot, byte x=1);
+        void DoListDiscs();
+        void DoListContents(const short slot);
         uint GetDiscId(const short slot);
         void DoListBest();
         void DoChangeDisc(const short slot, enum state cur_state);
@@ -26,7 +26,7 @@ class CDChanger : public KenwoodChanger
         void DoStop();
 
     protected:
-        void DoDiscQuery(const DataAccess& query);
+        void DoDiscQuery(const byte* query);
         void DoChangeState(const short state);
 
     private:

@@ -24,12 +24,6 @@ typedef struct
 } DiscInfo;
 
 //command = 0x06
-typedef struct 
-{
-    byte minute;
-    byte second;
-    byte subsecond;
-} TimeInfo;
 typedef struct
 {
     short slot;
@@ -86,11 +80,6 @@ typedef struct
 } SelectPlayMode;
 
 //command = 0x0D
-typedef struct 
-{
-    short slot;
-    byte track;
-} DiscTrack;
 typedef struct
 {
     byte num_tracks;
