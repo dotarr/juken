@@ -1,12 +1,12 @@
 #include "dvdchanger.h"
 #include "dvdpayload.h"
 #include "discid.h"
-#include "util.h"
 #include "dvdconstants.h"
 
 DVDChanger::DVDChanger(char* id, KenwoodDevice& dev, KenwoodListener* listener) 
 : KenwoodChanger(id, 403, dev, listener)
 {
+    InfoMsg("DVDChanger::DVDChanger(%s, device, listener)\n", id);
     m_chain_id = 1;
 
     // process InfoChanged
@@ -21,11 +21,13 @@ DVDChanger::DVDChanger(char* id, KenwoodDevice& dev, KenwoodListener* listener)
 
 DVDChanger::~DVDChanger()
 {
+    InfoMsg("DVDChanger::~DVDChanger()\n");
 }
 
 void
 DVDChanger::DoInfoEvent(const payload& event)
 {
+    InfoMsg("DVDChanger::DoInfoEvent()\n");
     InfoEvent info(event);
 
     if ( info_changed(info) )
@@ -48,6 +50,7 @@ DVDChanger::DoInfoEvent(const payload& event)
 void
 DVDChanger::DoStateEvent(const payload& event)
 {
+    InfoMsg("DVDChanger::DoStateEvent()\n");
     StateEvent info(event);
 
     if ( mode_changed(info) || repeat_changed(info) || param_changed(info) )
@@ -73,12 +76,12 @@ DVDChanger::DoStateEvent(const payload& event)
 void
 DVDChanger::DoQuery(byte a, byte b, byte c, short slot, byte title, short chapter)
 {
+    InfoMsg("DVDChanger::DoQuery()\n");
     // build the payload
     DataAccess query((enum access)a, (enum data_type)b, c, 
                      m_chain_id, slot, title, chapter);
 
-printf("query cmd=0x%02X len=%d\n", query.cmd, query.len);
-printdata(query.data, query.len);
+    print_payload(stderr, "query", query.cmd, query.len, query.data);
 
     // issue the request
     IssueRequest(query, HAS_REPLIES); 
@@ -87,14 +90,14 @@ printdata(query.data, query.len);
     payload reply;
     while ( GetReply(reply) )
     {
-printf("reply cmd=0x%02X len=%d\n", reply.cmd, reply.len);
-printdata(reply.data, reply.len);
+        print_payload(stderr, "reply", reply.cmd, reply.len, reply.data);
     }
 }
 
 NameList
 DVDChanger::DoListUserfiles()
 {
+    InfoMsg("DVDChanger::DoListUserfiles()\n");
     NameList names;
 
     DataAccess query(RetrieveDataAccess, TextDataType, UserfileNames, m_chain_id, 0, 0, 0);
@@ -118,6 +121,7 @@ DVDChanger::DoListUserfiles()
 void
 DVDChanger::DoListUserfiles(void* context, NameCallback* callback)
 {
+    InfoMsg("DVDChanger::DoListUserfiles(callback)\n");
     DataAccess query(RetrieveDataAccess, TextDataType, UserfileNames, m_chain_id, 0, 0, 0);
 
     // issue the request
@@ -137,6 +141,7 @@ DVDChanger::DoListUserfiles(void* context, NameCallback* callback)
 void
 DVDChanger::DoListDiscs(void* context, DiscCallback* callback)
 {
+    InfoMsg("DVDChanger::DoListDiscs(callback)\n");
     // build the payload
     DataAccess query(RetrieveDataAccess, TextDataType, DiscNames, m_chain_id, 0, 0, 0);
 
@@ -166,6 +171,7 @@ DVDChanger::DoListDiscs(void* context, DiscCallback* callback)
 Disc
 DVDChanger::DoListContents(const short slot)
 {
+    InfoMsg("DVDChanger::DoListContents(%d)\n", slot);
     // build the payload
     DataAccess query(RetrieveDataAccess, TextDataType, DiscArtistTrackNames, m_chain_id, slot, 0, 0);
 
@@ -217,6 +223,7 @@ DVDChanger::DoListContents(const short slot)
 void
 DVDChanger::DoListContents(const short slot, void* context, DiscCallback* callback)
 {
+    InfoMsg("DVDChanger::DoListContents(%d, callback)\n", slot);
     Disc data = DoListContents(slot);
     (*callback)(context, data);
 }
@@ -224,6 +231,7 @@ DVDChanger::DoListContents(const short slot, void* context, DiscCallback* callba
 Info
 DVDChanger::GetDiscInfo(const short slot)
 {
+    InfoMsg("DVDChanger::GetDiscInfo(%d)\n", slot);
     // make sure slot is current
     if ( slot != m_cur_slot ) DoChangeDisc(slot);
 
@@ -260,6 +268,7 @@ DVDChanger::GetDiscInfo(const short slot)
 char*
 DVDChanger::GetDiscId(const short slot)
 {
+    InfoMsg("DVDChanger::GetDiscId(%d)\n", slot);
     // make sure slot is current
     if ( slot != m_cur_slot ) DoChangeDisc(slot);
 
@@ -298,6 +307,7 @@ DVDChanger::GetDiscId(const short slot)
 byte
 DVDChanger::GetDiscUserfiles(const short slot)
 {
+    InfoMsg("DVDChanger::GetDiscUserfiles(%d)\n", slot);
     // make sure slot is current
     if ( slot != m_cur_slot ) DoChangeDisc(slot);
 
@@ -318,6 +328,7 @@ DVDChanger::GetDiscUserfiles(const short slot)
 enum genre
 DVDChanger::GetDiscGenre(const short slot)
 {
+    InfoMsg("DVDChanger::GetDiscGenre(%d)\n", slot);
     // make sure slot is current
     if ( slot != m_cur_slot ) DoChangeDisc(slot);
 
@@ -338,6 +349,7 @@ DVDChanger::GetDiscGenre(const short slot)
 void
 DVDChanger::DoChangeDisc(const short slot)
 {
+    InfoMsg("DVDChanger::DoChangeDisc(%d)\n", slot);
     // build the payload
     ChangeDisc req(m_chain_id, slot, 0, 0, TrackMode, 0, 2);
 
@@ -355,6 +367,7 @@ DVDChanger::DoChangeDisc(const short slot)
 void
 DVDChanger::DoPlayPause()
 {
+    InfoMsg("DVDChanger::DoPlayPause()\n");
     // build the payload
     DoAction req(m_chain_id, PLAY_CMD | STATE_PARAM);
 
@@ -365,6 +378,7 @@ DVDChanger::DoPlayPause()
 void
 DVDChanger::DoPrev()
 {
+    InfoMsg("DVDChanger::DoPrev()\n");
     // build the payload
     DoAction req1(m_chain_id, PREV_CMD | STATE_PARAM);
 
@@ -381,6 +395,7 @@ DVDChanger::DoPrev()
 void
 DVDChanger::DoNext()
 {
+    InfoMsg("DVDChanger::DoNext()\n");
     // build the payload
     DoAction req1(m_chain_id, NEXT_CMD | STATE_PARAM);
 
@@ -397,6 +412,7 @@ DVDChanger::DoNext()
 void
 DVDChanger::DoStop()
 {
+    InfoMsg("DVDChanger::DoStop()\n");
     // build the payload
     DoAction req(m_chain_id, STOP_CMD | STATE_PARAM);
 
@@ -407,6 +423,9 @@ DVDChanger::DoStop()
 void
 DVDChanger::WriteUserfileNames(const char* names[])
 {
+    InfoMsg("DVDChanger::WriteUserfileNames(%s, %s, %s, %s, %s, %s, %s, %s)\n",
+            names[0], names[1], names[2], names[3],
+            names[4], names[5], names[6], names[7]);
     DataAccess query(WriteUserfilesAccess, ReadyDataType, AllUserfileNames, m_chain_id, 0, 0, 0);
 
     // issue the request
@@ -426,6 +445,10 @@ DVDChanger::WriteUserfileNames(const char* names[])
 void
 DVDChanger::WriteDisc(short slot, Disc& disc)
 {
+    InfoMsg("DVDChanger::WriteDisc(%s)\n", (const char*)disc);
+    // make sure slot is current
+    //if ( slot != m_cur_slot ) DoChangeDisc(slot);
+
     const char none[] = { 0x01 };
     DataAccess query(WriteTextAccess, ReadyDataType, DiscArtistNames, m_chain_id, slot, 0, 0);
 
