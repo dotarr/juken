@@ -172,10 +172,8 @@ class TextData : public payload
                  const char* text)
         {
             int text_len = ::strlen(text);
-            if ( text_len <= 20 )
-            {
-                text_len = 20;
-            }
+            if ( text_len > 25 )
+                text_len = 25;
             cmd = TEXT_DATA;
             len = 7 + text_len;
             *((short*) (&data[0])) = index;

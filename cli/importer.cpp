@@ -68,7 +68,10 @@ Importer::Run()
             disc.tracks.push_back(Name(i++, TRACK_NAME, *track));
         disc.userfiles = (*iter)->getUserfiles();
 
-printf("writing disc: %d title: %s artist: %s\n", slot, title, artist);
+        if ( artist == NULL )
+            printf("writing disc: %d title: %s\n", slot, title);
+        else
+            printf("writing disc: %d title: %s artist: %s\n", slot, title, artist);
         m_changer->WriteDisc(slot, disc);
 
         iter++;

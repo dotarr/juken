@@ -2,7 +2,7 @@
 
 INCLUDES        = -I$(top_builddir)/lib -I$(top_builddir)/common
 
-bin_PROGRAMS        = juken exporter importer
+bin_PROGRAMS        = juken exporter importer xml2csv
 juken_SOURCES   = cli.cpp juken.cpp consolelistener.cpp
 juken_LDADD     = $(top_builddir)/lib/libjuken.a $(top_builddir)/common/libcommon.a
 
@@ -11,3 +11,5 @@ exporter_LDADD     = -lexpat $(top_builddir)/lib/libjuken.a $(top_builddir)/comm
 
 importer_SOURCES   = import.cpp importer.cpp xmlparser.cpp changerdata.cpp consolelistener.cpp
 importer_LDADD     = -lexpat $(top_builddir)/lib/libjuken.a $(top_builddir)/common/libcommon.a
+xml2csv_SOURCES   = xml2csv.cpp xmlparser.cpp changerdata.cpp
+xml2csv_LDADD     = -lexpat $(top_builddir)/common/libcommon.a
