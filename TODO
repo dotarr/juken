@@ -1,17 +1,12 @@
-juken
-* write a man page for juken-cli
+* write a man page for juken/importer/exporter
 * write some info pages for the project, cli, and protocol
 * build a home page for the sourceforge site
 
-cli
-* add an export/import mechanism to 'backup' changer data
-* add (and use) help string in struct cmd
-* get readline usage in
-* expand functionality for editing data (perhaps a newt based console app)
+* determine legal charset for changer(s)
+* see if we can lower delay time
+* cleanup some debugging/tracing info
+* pretty up import/export stderr output
+* make xml parsing more robust
+* check xml strings for "bad" characters
 
-lib
-* flesh out more of the cd changer functionality
-* buy a dv-5900 and decode it :)
-
-common
-* try (and fix) autoconf on a bsd based OS.
+* get readline history working
