@@ -73,17 +73,22 @@ Importer::Run()
         for (list<char*>::iterator track=tracks.begin(); track!=tracks.end(); track++)
             disc.tracks.push_back(Name(i++, TRACK_NAME, *track));
         disc.userfiles = (*iter)->getUserfiles();
+        disc.genre = (*iter)->getGenre();
 
-        if ( artist == NULL )
-        {
-            ::fprintf(stderr, "writing disc: %d title: %s\n", slot, title);
-            LogMsg("writing disc: %d title: %s\n", slot, title);
-        }
-        else
-        {
-            ::fprintf(stderr, "writing disc: %d title: %s artist: %s\n", slot, title, artist);
-            LogMsg("writing disc: %d title: %s artist: %s\n", slot, title, artist);
-        }
+        ::fprintf(stderr, "writing disc: %d\n", slot);
+        ::fprintf(stderr, "       title: %s\n", title);
+        if ( artist != NULL )
+            ::fprintf(stderr, "      artist: %s\n", artist);
+        ::fprintf(stderr, "   userfiles: %02X\n", disc.userfiles);
+        ::fprintf(stderr, "       genre: %s\n", GENRE_NAMES[disc.genre]);
+
+        LogMsg("writing disc: %d\n", slot);
+        LogMsg("       title: %s\n", title);
+        if ( artist != NULL )
+            LogMsg("      artist: %s\n", artist);
+        LogMsg("   userfiles: %02X\n", disc.userfiles);
+        LogMsg("       genre: %s\n", GENRE_NAMES[disc.genre]);
+
         m_changer->WriteDisc(slot, disc);
 
         iter++;

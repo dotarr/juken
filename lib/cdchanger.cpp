@@ -415,12 +415,12 @@ CDChanger::WriteDisc(short slot, Disc& disc)
         const Name& track = (*iter);
         if ( track.text == NULL )
         {
-            TextData data(slot, track.index, 0, TrackNames, disc.genre, 0, none);
+            TextData data(slot, track.index, disc.userfiles, TrackNames, disc.genre, 0, none);
             IssueRequest(data, NO_REPLIES); 
         }
         else
         {
-            TextData data(slot, track.index, 0, TrackNames, disc.genre, 0, track.text);
+            TextData data(slot, track.index, disc.userfiles, TrackNames, disc.genre, 0, track.text);
             IssueRequest(data, NO_REPLIES); 
         }
     }

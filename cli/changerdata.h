@@ -69,6 +69,7 @@ class DiscElement : public ElementHandler
         const char* getArtist() { return m_artist; };
         list<char*>& getTracks() { return m_tracks; };
         const byte getUserfiles() { return m_userfiles; }
+        const byte getGenre() { return m_genre; }
 
         void print(FILE* file)
         {
@@ -88,6 +89,7 @@ class DiscElement : public ElementHandler
         char* m_description;
         char* m_artist;
         byte m_userfiles;
+        byte m_genre;
         list<char*> m_tracks;
 };
 
@@ -150,6 +152,19 @@ class UserfilesElement: public ElementHandler
         char* m_names[8];
         byte* m_userfiles;
 };
+
+class GenreElement: public StringHandler
+{
+    public:
+        GenreElement(byte* genre)
+            : StringHandler(&m_name), m_name(NULL), m_genre(genre) { }
+        void EndHandler(const XML_Char* element);
+
+    private:
+        char* m_name;
+        byte* m_genre;
+};
+
 
 class TracksElement: public ElementHandler
 {

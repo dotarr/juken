@@ -1,4 +1,6 @@
 #include <common.h>
+#include <types.h>
+#include <constants.h>
 
 #include "changerdata.h"
 
@@ -82,7 +84,8 @@ UserfileNameElement::StartHandler(const XML_Char* element, const XML_Char** attr
 
 DiscElement::DiscElement(ChangerData* changer)
     : m_changer(changer), m_id(NULL), m_title(NULL), 
-      m_short_title(NULL), m_description(NULL), m_artist(NULL)
+      m_short_title(NULL), m_description(NULL), m_artist(NULL),
+      m_userfiles(0), m_genre(0), m_tracks()
 {
 }
 
@@ -111,6 +114,8 @@ DiscElement::StartHandler(const XML_Char* element, const XML_Char** attrbutes)
         return new StringHandler(&m_description);
     else if ( ::strcmp(element, "Artist") == 0 )
         return new StringHandler(&m_artist);
+    else if ( ::strcmp(element, "Genre") == 0 )
+        return new GenreElement(&m_genre);
     else if ( ::strcmp(element, "Userfiles") == 0 )
         return new UserfilesElement(m_changer, &m_userfiles);
     else
@@ -157,6 +162,21 @@ UserfilesElement::EndHandler(const XML_Char* element)
     {
         (*m_userfiles) |= m_changer->getUserfileByName(m_names[i]);
         delete m_names[i];
+    }
+}
+
+void 
+GenreElement::EndHandler(const XML_Char* element)
+{
+    if ( m_name == NULL ) return;
+
+    for (byte genre=ADULT_CONTEMPORARY; genre<=WORLD_MUSIC ;genre++)
+    {
+        if ( ::strcmp(m_name, GENRE_NAMES[genre]) == 0 )
+        {
+            *m_genre = genre;
+            return;
+        }
     }
 }
 

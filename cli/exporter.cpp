@@ -116,6 +116,9 @@ Exporter::Run()
 
             if ( disc.userfiles != 0 )
             {
+                LogMsg("exporting userfiles\n");
+                ::fprintf(stderr, "    exporting userfiles\n");
+
                 ::fprintf(stdout, "    <Userfiles>\n");
                 byte uf = disc.userfiles;
                 for (int i=0; i<8; i++)
@@ -130,10 +133,11 @@ Exporter::Run()
                 ::fprintf(stdout, "    </Userfiles>\n");
             }
 
-            LogMsg("exporting tracks\n");
-            ::fprintf(stderr, "    exporting tracks\n");
             if ( disc.tracks.size() > 0 )
             {
+                LogMsg("exporting tracks\n");
+                ::fprintf(stderr, "    exporting tracks\n");
+
                 ::fprintf(stdout, "    <Tracks>\n");
                 NameList& tracks = disc.tracks;
                 for (NameList::iterator iter=tracks.begin(); iter!=tracks.end(); iter++)
