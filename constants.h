@@ -64,7 +64,9 @@ const byte SKIPBACK_STATE = 0xA0;
 
 // strings for player mode
 const char* const MODE_NAMES[] = 
-    { "track", "best selection", "userfile", "one random", "all random", "repeat" };
+    { "track", "program", "best selection", "genre", "userfile" };
+const char* const RANDOM_NAMES[] = 
+    { "random off" , "one random", "all random" };
 
 // strings for player state
 const char* const STATE_NAMES[] = 

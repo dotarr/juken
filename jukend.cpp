@@ -202,18 +202,25 @@ time_print(byte reply_cmd, ushort reply_len, byte* reply_data)
     }
 }
 
+extern void printdata(const byte data[], int count);
+void
+best_print(byte reply_cmd, ushort reply_len, byte* reply_data)
+{
+    ::fprintf(stdout, "%s cmd=%d len=%d\n", "best data", reply_cmd, reply_len);
+    printdata(reply_data, reply_len);
+}
+
 void
 DoList(KenwoodChanger& changer, int argc, char* argv[])
 {
-    int slot = 0;
     if ( argc > 1 )
     {
-        slot = atoi(argv[1]);
+        int slot = atoi(argv[1]);
         changer.DoListTracks(slot, track_print);
     }
     else
     {
-        changer.DoListDiscs(slot, disc_print);
+        changer.DoListDiscs(disc_print);
     }
 }
 
@@ -221,6 +228,12 @@ void
 GetTimes(KenwoodChanger& changer, int argc, char* argv[])
 {
     changer.DoListTrackTimes(time_print);
+}
+
+void
+GetBests(KenwoodChanger& changer, int argc, char* argv[])
+{
+    changer.DoListBest(best_print);
 }
 
 void
@@ -260,6 +273,7 @@ struct cmd commands[] =
     { "list",   DoList },
     { "ls",     DoList },
     { "times",  GetTimes },
+    { "bests",  GetBests},
     { "change", DoChangeDisc },
     { "cd",     DoChangeDisc },
     { "play",   DoPlay },

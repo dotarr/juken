@@ -6,8 +6,9 @@
 class KenwoodListener 
 {
     public:
-        virtual void InfoChanged(short slot, byte track, byte num_tracks, 
-                    byte mode, byte userfiles, byte userfile_mode) = 0;
+        virtual void InfoChanged(short slot, byte track, enum mode mode, 
+                                 enum random random, bool repeat, 
+                                 byte userfile) = 0;
         virtual void StateChanged(enum state state) = 0;
         virtual void DiscChanged(short slot) = 0;
         virtual void DoorChanged(bool door_closed) = 0;

@@ -12,7 +12,8 @@ typedef unsigned long  ulong;
 
 typedef void (*reply_handler) (byte reply_cmd, ushort reply_len, byte* reply_data);
 
-enum mode { TrackMode, BestMode, UserfileMode, OneRandomMode, AllRandomMode, RepeatMode };
+enum mode { TrackMode, ProgramMode, BestMode, MusicTypeMode, UserfileMode };
+enum random { RandomOff, RandomSingle, RandomAll };
 
 enum state { Unknown, Stopped, Stopping, Changing, Playing, 
              Paused, SkipForward, SkipBackward };

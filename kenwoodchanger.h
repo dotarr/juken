@@ -21,9 +21,10 @@ class KenwoodChanger
         void DoDoorEvent(const payload& event);
 
         void DoHandshake(const char* id);
-        void DoListDiscs(const short slot, reply_handler func);
+        void DoListDiscs(reply_handler func);
         void DoListTracks(const short slot, reply_handler func);
         void DoListTrackTimes(reply_handler func);
+        void DoListBest(reply_handler func);
         void DoChangeDisc(const short slot);
         void DoPlayPause();
         void DoStop();
@@ -55,6 +56,9 @@ class KenwoodChanger
         byte m_cur_track;
         enum state m_cur_state;
         enum mode m_cur_mode;
+        enum random m_random_state;
+        bool m_repeat;
+        byte m_cur_userfile;
         bool m_door_closed;
 
     private:

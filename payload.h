@@ -98,12 +98,12 @@ typedef struct
 {
     short slot;
     byte track;
-    byte best_mode;
+    byte unknown;
     byte num_tracks;
     byte userfiles;
-    byte userfile_mode;
-    byte random_mode;
-    byte repeat_mode;
+    byte userfile;
+    byte mode;
+    byte repeat;
 } data_0x12;
 
 typedef struct

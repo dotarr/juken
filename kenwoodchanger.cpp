@@ -40,6 +40,9 @@ KenwoodChanger::KenwoodChanger(KenwoodDevice& dev, KenwoodListener& listener)
     m_cur_track = 0;
     m_cur_state = Unknown;
     m_cur_mode = TrackMode;
+    m_random_state = RandomOff;
+    m_repeat = false;
+    m_cur_userfile = 0;
     m_door_closed = true;
 }
 
@@ -93,20 +96,51 @@ KenwoodChanger::DoInfoEvent(const payload& event)
     m_cur_track = info->track;
 
     // determine the current mode
-    if ( info->best_mode )
-        m_cur_mode = BestMode;
-    else if ( info->userfile_mode != 0 )
-        m_cur_mode = UserfileMode;
-    else if ( info->repeat_mode )
-        m_cur_mode = RepeatMode;
-    else if ( info->random_mode )
-        m_cur_mode = (info->random_mode==1) ? OneRandomMode : AllRandomMode;
-    else
-        m_cur_mode = TrackMode;
+    switch ( info->mode )
+    {
+        case 0:
+        case 1:
+        case 2:
+            m_cur_mode = TrackMode;
+            m_random_state = (enum random) (info->mode-0);
+            break;
+        case 3:
+            m_cur_mode = ProgramMode;
+            m_random_state = RandomOff; // not applicable
+            break;
+        case 4:
+            m_cur_mode = BestMode;
+            m_random_state = RandomOff; // not applicable
+            break;
+        case 5:
+        case 6:
+            m_cur_mode = MusicTypeMode;
+            m_random_state = (info->mode-5 !=0) ? RandomAll : RandomOff;
+            break;
+        case 7:
+        case 8:
+        case 9:
+            m_cur_mode = UserfileMode;
+            m_random_state = (enum random) (info->mode-7);
+            break;
+    }
+
+    m_repeat = (info->repeat!=0);
+    m_cur_userfile = info->userfile;
 
     // notify listener
-    m_listener.InfoChanged(m_cur_slot, m_cur_track, info->num_tracks,
-                           m_cur_mode, info->userfiles, info->userfile_mode);
+    m_listener.InfoChanged(m_cur_slot, m_cur_track, m_cur_mode, 
+                           m_random_state, m_repeat, 
+                           m_cur_userfile);
+if ( info->unknown==0 && info->mode!=0 )
+{
+    fprintf(stderr, "wierd unknown detected\n");
+    printdata(event.data, event.len);
+}if ( info->unknown!=0 && info->mode==0 )
+{
+    fprintf(stderr, "wierd unknown detected\n");
+    printdata(event.data, event.len);
+}
 }
 
 void
@@ -185,9 +219,9 @@ KenwoodChanger::DoHandshake(const char* id)
 }
 
 void
-KenwoodChanger::DoListDiscs(const short slot, reply_handler func)
+KenwoodChanger::DoListDiscs(reply_handler func)
 {
-    data_0x03 query = { 0, 1, slot, 0, 0, 0 };
+    data_0x03 query = { 0, 1, 0, 0, 0, 0 };
     DoDiscQuery(query, func);
 }
 
@@ -210,6 +244,13 @@ void
 KenwoodChanger::DoListTrackTimes(reply_handler func)
 {
     data_0x03 query = { 0, 4, m_cur_slot, 0, 1, 0 };
+    DoDiscQuery(query, func);
+}
+
+void
+KenwoodChanger::DoListBest(reply_handler func)
+{
+    data_0x03 query = { 0, 32, 0, 0, 0, 0 };
     DoDiscQuery(query, func);
 }
 

@@ -2,15 +2,37 @@
 #include "consolelistener.h"
 
 void
-ConsoleListener::InfoChanged(short slot, byte track, byte num_tracks, 
-                    byte mode, byte userfiles, byte userfile_mode)
+ConsoleListener::InfoChanged(short slot, byte track, enum mode mode, 
+                             enum random random, bool repeat, 
+                             byte userfile)
 {
     //display the info event
-    ::fprintf(stderr, "disc#: %d track: %d (of%d)\n",
-             slot, track, num_tracks);
-    ::fprintf(stderr, "\tmode: %s\n", MODE_NAMES[mode]);
-    ::fprintf(stderr, "\tuserfiles: %02X\n", userfiles);
-    ::fprintf(stderr, "\tuserfile_mode: %02X\n", userfile_mode);
+    ::fprintf(stderr, "disc#: %d track: %d", slot, track);
+    ::fprintf(stderr, " mode: %s", MODE_NAMES[mode]);
+    switch ( mode )
+    {
+        case UserfileMode:
+            ::fprintf(stderr, "(0x%02X)", userfile);
+            break;
+        //case MusicTypeMode:
+        //    ::fprintf(stderr, "(%s)", GENRE_NAMES[genre]);
+        //    break;
+    }
+
+    if ( random!=RandomOff || repeat )
+    {
+        ::fprintf(stderr, " (");
+        if ( random != RandomOff ) 
+        {
+            ::fprintf(stderr, "%s", RANDOM_NAMES[random]);
+            if ( repeat )
+                ::fprintf(stderr, ",");
+        }
+        if ( repeat )
+            ::fprintf(stderr, "repeat");
+        ::fprintf(stderr, ")");
+    }
+    ::fprintf(stderr, "\n");
 }
 
 void
