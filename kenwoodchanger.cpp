@@ -55,10 +55,10 @@ KenwoodChanger::DoEvent()
     {
         switch ( cntl )
         {
-            case STX: TraceFlow("->Unexpected STX\n"); break;
-            case EOT: TraceFlow("->Unexpected EOT\n"); break;
-            case ACK: TraceFlow("->Unexpected ACK\n"); break;
-            case NAK: TraceFlow("->Unexpected NAK\n"); break;
+            case STX: ::fprintf(stderr, "->Unexpected STX\n"); break;
+            case EOT: ::fprintf(stderr, "->Unexpected EOT\n"); break;
+            case ACK: ::fprintf(stderr, "->Unexpected ACK\n"); break;
+            case NAK: ::fprintf(stderr, "->Unexpected NAK\n"); break;
         }
     }
     
@@ -125,7 +125,7 @@ KenwoodChanger::DoStateEvent(const payload& event)
         case SKIPFORW_STATE: m_cur_state = SkipForward;  break;
         case SKIPBACK_STATE: m_cur_state = SkipBackward; break;
         default:
-            printf("state=%d\n", info->state);
+            ::fprintf(stderr, "state=%d\n", info->state);
             m_cur_state = Unknown;
             break;
     }
@@ -205,6 +205,29 @@ KenwoodChanger::DoListTracks(const short slot, reply_handler func)
 }
 
 void
+KenwoodChanger::DoListTrackTimes(reply_handler func)
+{
+    data_0x03 query = { 0, 4, m_cur_slot, 0, 1, 0 };
+    DoDiscQuery(query, func);
+}
+
+void
+KenwoodChanger::DoChangeDisc(const short slot)
+{
+    // build the payload
+    payload req;
+    req.cmd = SELECT_DISC_REQ;
+    req.len = sizeof(data_0x0B);
+    data_0x0B* select_disc = (data_0x0B*) &req.data;
+    select_disc->slot = slot;
+    select_disc->track = 1;
+    select_disc->begin = (m_cur_state==Playing)?1:0;
+
+    // issue the request
+    SendMessage(req, NO_REPLIES); 
+}
+
+void
 KenwoodChanger::DoPlayPause()
 {
     DoChangeState(PLAY_PAUSE_CMD | STATE_PARAM);
@@ -232,7 +255,7 @@ KenwoodChanger::DoDiscQuery(const data_0x03& query, reply_handler func)
     payload reply;
     while ( GetReply(reply) )
         // process the data
-        func(reply.len, reply.data);
+        func(reply.cmd, reply.len, reply.data);
 }
 
 void
@@ -288,14 +311,14 @@ KenwoodChanger::SendMessage(const payload& msg, const bool has_replies)
     {
         switch ( cntl )
         {
-            case STX: TraceFlow("->Unexpected STX\n"); break;
-            case EOT: TraceFlow("->Unexpected EOT\n"); break;
+            case STX: ::fprintf(stderr, "->Unexpected STX\n"); break;
+            case EOT: ::fprintf(stderr, "->Unexpected EOT\n"); break;
             case ENQ:
                 // we may need to handle an event from the changer
                 // before proceeding ...
-                TraceFlow("->Unexpected ENQ\n");
+                ::fprintf(stderr, "->Unexpected ENQ\n");
                 break;
-            case NAK: TraceFlow("->Unexpected NAK\n"); break;
+            case NAK: ::fprintf(stderr, "->Unexpected NAK\n"); break;
         }
     }
     bool sent = false;
@@ -307,9 +330,9 @@ KenwoodChanger::SendMessage(const payload& msg, const bool has_replies)
         cntl = m_device.ReadCntl();
         switch ( cntl )
         {
-            case STX: TraceFlow("->Unexpected STX\n"); break;
-            case EOT: TraceFlow("->Unexpected EOT\n"); break;
-            case ENQ: TraceFlow("->Unexpected ENQ\n"); break;
+            case STX: ::fprintf(stderr, "->Unexpected STX\n"); break;
+            case EOT: ::fprintf(stderr, "->Unexpected EOT\n"); break;
+            case ENQ: ::fprintf(stderr, "->Unexpected ENQ\n"); break;
             case ACK: sent = true; break;
             case NAK: break;
         }
@@ -323,10 +346,10 @@ KenwoodChanger::SendMessage(const payload& msg, const bool has_replies)
         {
             switch ( cntl )
             {
-                case STX: TraceFlow("->Unexpected STX\n"); break;
-                case EOT: TraceFlow("->Unexpected EOT\n"); break;
-                case ENQ: TraceFlow("->Unexpected ENQ\n"); break;
-                case NAK: TraceFlow("->Unexpected NAK\n"); break;
+                case STX: ::fprintf(stderr, "->Unexpected STX\n"); break;
+                case EOT: ::fprintf(stderr, "->Unexpected EOT\n"); break;
+                case ENQ: ::fprintf(stderr, "->Unexpected ENQ\n"); break;
+                case NAK: ::fprintf(stderr, "->Unexpected NAK\n"); break;
             }
         }
     }
@@ -347,9 +370,9 @@ KenwoodChanger::RecvMessage(payload& msg)
     {
         switch ( cntl )
         {
-            case ENQ: TraceFlow("->Unexpected ENQ\n"); break;
-            case ACK: TraceFlow("->Unexpected ACK\n"); break;
-            case NAK: TraceFlow("->Unexpected NAK\n"); break;
+            case ENQ: ::fprintf(stderr, "->Unexpected ENQ\n"); break;
+            case ACK: ::fprintf(stderr, "->Unexpected ACK\n"); break;
+            case NAK: ::fprintf(stderr, "->Unexpected NAK\n"); break;
         }
     }
 
@@ -361,7 +384,7 @@ KenwoodChanger::RecvMessage(payload& msg)
     else
     {
         // signal transmission error (should cause retransmit ...)
-        TraceFlow("Bad checksum in recieved data\n");
+        ::fprintf(stderr, "Bad checksum in recieved data\n");
         m_device.WriteCntl(NAK);
     }
 

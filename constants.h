@@ -2,7 +2,7 @@
 #define __CONSTANTS_H__
 
 // some maximums that exist in the protocol
-const ushort MAX_PAYLOAD_LEN = 64;
+const ushort MAX_PAYLOAD_LEN = 1024; // if this aint big enough we have to redo alot
 
 const short MAX_TITLE_LENGTH = 25;
 
@@ -27,6 +27,7 @@ const bool NO_REPLIES = false;
 const byte HANDSHAKE_REQ = 0x00;
 const byte QUERY_REQ = 0x03;
 const byte STATE_REQ = 0x0A;
+const byte SELECT_DISC_REQ = 0x0B;
 
 const byte INFO_EVT = 0x12;
 const byte STATE_EVT = 0x13;

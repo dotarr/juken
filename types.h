@@ -10,7 +10,7 @@ typedef unsigned long  ulong;
 
 #include "constants.h"
 
-typedef void (*reply_handler) (ushort reply_len, byte* reply_data);
+typedef void (*reply_handler) (byte reply_cmd, ushort reply_len, byte* reply_data);
 
 enum mode { TrackMode, BestMode, UserfileMode, OneRandomMode, AllRandomMode, RepeatMode };
 

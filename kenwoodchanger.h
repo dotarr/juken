@@ -23,6 +23,8 @@ class KenwoodChanger
         void DoHandshake(const char* id);
         void DoListDiscs(const short slot, reply_handler func);
         void DoListTracks(const short slot, reply_handler func);
+        void DoListTrackTimes(reply_handler func);
+        void DoChangeDisc(const short slot);
         void DoPlayPause();
         void DoStop();
 
@@ -36,6 +38,11 @@ class KenwoodChanger
 
         void SendMessage(const payload& msg, const bool has_replies);
         bool RecvMessage(payload& msg);
+
+        short getCurrentSlot() const { return m_cur_slot; };
+        byte getCurrentTrack() const { return m_cur_track; };
+        enum state getCurrentState() const { return m_cur_state; };
+        enum mode getCurrentMode() const { return m_cur_mode; };
 
     protected:
         char* m_id;

@@ -16,7 +16,7 @@ DebugMsg(const char* fmt, ...)
 #ifdef DUMP_MSGS
     va_list ap;
     va_start(ap, fmt);
-    vfprintf(stdout, fmt, ap);
+    ::vfprintf(stdout, fmt, ap);
     va_end(ap);
 #endif
 }
@@ -27,7 +27,7 @@ DebugConn(const char* fmt, ...)
 #ifdef DUMP_CONN
     va_list ap;
     va_start(ap, fmt);
-    vfprintf(stdout, fmt, ap);
+    ::vfprintf(stdout, fmt, ap);
     va_end(ap);
 #endif
 }
@@ -59,51 +59,51 @@ printdata(const byte data[], int count)
             default:
             case 8:
                 val = data[i+j];
-                sprintf(hex[j], "%02X ", val);
+                ::sprintf(hex[j], "%02X ", val);
                 c[j] = aschar(val);
                 j++;
             case 7:
                 val = data[i+j];
-                sprintf(hex[j], "%02X ", val);
+                ::sprintf(hex[j], "%02X ", val);
                 c[j] = aschar(val);
                 j++;
             case 6:
                 val = data[i+j];
-                sprintf(hex[j], "%02X ", val);
+                ::sprintf(hex[j], "%02X ", val);
                 c[j] = aschar(val);
                 j++;
             case 5:
                 val = data[i+j];
-                sprintf(hex[j], "%02X ", val);
+                ::sprintf(hex[j], "%02X ", val);
                 c[j] = aschar(val);
                 j++;
             case 4:
                 val = data[i+j];
-                sprintf(hex[j], "%02X ", val);
+                ::sprintf(hex[j], "%02X ", val);
                 c[j] = aschar(val);
                 j++;
             case 3:
                 val = data[i+j];
-                sprintf(hex[j], "%02X ", val);
+                ::sprintf(hex[j], "%02X ", val);
                 c[j] = aschar(val);
                 j++;
             case 2:
                 val = data[i+j];
-                sprintf(hex[j], "%02X ", val);
+                ::sprintf(hex[j], "%02X ", val);
                 c[j] = aschar(val);
                 j++;
             case 1:
                 val = data[i+j];
-                sprintf(hex[j], "%02X ", val);
+                ::sprintf(hex[j], "%02X ", val);
                 c[j] = aschar(val);
                 j++;
                 break;
         }
-        printf("\t");
-        for (int k=0; k<8; k++) printf("%s", hex[k]);
-        printf("\t");
-        for (int k=0; k<8; k++) printf("%c", c[k]);
-        printf("\n");
+        ::printf("\t");
+        for (int k=0; k<8; k++) ::printf("%s", hex[k]);
+        ::printf("\t");
+        for (int k=0; k<8; k++) ::printf("%c", c[k]);
+        ::printf("\n");
 
         i += j; 
         count -= j;
@@ -114,9 +114,9 @@ void
 DebugPayload(const char* label, const payload& msg, const byte cksum)
 {
 #ifdef DUMP_PAYLOAD
-    fprintf(stdout, "%s cmd=%d len=%d\n", label, msg.cmd, msg.len);
+    ::fprintf(stdout, "%s cmd=%d len=%d\n", label, msg.cmd, msg.len);
     printdata(msg.data, msg.len);
-    fprintf(stdout, "cksum=0x%02X\n", cksum);
+    ::fprintf(stdout, "cksum=0x%02X\n", cksum);
 #endif
 }
 
@@ -126,7 +126,7 @@ TraceFlow(const char* fmt, ...)
 #ifdef TRACE_FLOW
     va_list ap;
     va_start(ap, fmt);
-    vfprintf(stdout, fmt, ap);
+    ::vfprintf(stdout, fmt, ap);
     va_end(ap);
 #endif
 }
@@ -140,10 +140,10 @@ static char tmp_str[tmp_str_len];
 void
 vthrow_errno(int err, const char* fmt, va_list ap)
 {
-    snprintf(tmp_str, tmp_str_len, "%d %s", err, strerror(err));
+    ::snprintf(tmp_str, tmp_str_len, "%d %s", err, strerror(err));
 
-    vsnprintf(err_str, err_str_len, fmt, ap);
-    strcat(err_str, tmp_str);
+    ::vsnprintf(err_str, err_str_len, fmt, ap);
+    ::strcat(err_str, tmp_str);
 
     va_end(ap);
 
@@ -202,7 +202,7 @@ Throw(const char* fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
-    vsnprintf(err_str, err_str_len, fmt, ap);
+    ::vsnprintf(err_str, err_str_len, fmt, ap);
     va_end(ap);
 
     throw err_str;

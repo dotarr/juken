@@ -83,20 +83,25 @@ DoQuit(KenwoodChanger& changer, int argc, char* argv[])
 void
 DoHelp(KenwoodChanger& changer, int argc, char* argv[])
 {
-    ::fprintf(stdout, "\tquit\tquit the application\n");
-    ::fprintf(stdout, "\thelp\tthis help output\n");
-    ::fprintf(stdout, "\tlist\tlist the changer contents\n");
+    ::fprintf(stdout, "\tq|quit\tquit the application\n");
+    ::fprintf(stdout, "\th|help\tthis help output\n");
+    ::fprintf(stdout, "\tls|list\tlist the changer contents\n");
+    ::fprintf(stdout, "\ttimes\tlist the current discs track start times\n");
+    ::fprintf(stdout, "\tcd|change\tchange the current disc\n");
+    ::fprintf(stdout, "\tp|play\tplay the current disc\n");
+    ::fprintf(stdout, "\tP|pause\tpause the current disc\n");
+    ::fprintf(stdout, "\ts|stop\tstop the current disc\n");
 }
 
 void
-disc_print(ushort reply_len, byte* reply_data)
+disc_print(byte reply_cmd, ushort reply_len, byte* reply_data)
 {
     // cast the reply
     data_0xFE_a* info = (data_0xFE_a*) reply_data;
 
     // add null terminator to title
     char title[MAX_TITLE_LENGTH+1];
-    byte data_len = 7; //sizeof(data_0xFE_a)-MAX_TITLE_LENGTH-1;
+    byte data_len = 7;
     byte title_len = 0;
     if ( info->title[0] != 0x01 )
     {
@@ -124,46 +129,111 @@ disc_print(ushort reply_len, byte* reply_data)
 }
 
 void
-track_print(ushort reply_len, byte* reply_data)
+track_print(byte reply_cmd, ushort reply_len, byte* reply_data)
+{
+    if ( reply_cmd == 0xFE )
+    {
+        // cast the reply
+        data_0xFE_a* info = (data_0xFE_a*) reply_data;
+
+        // add null terminator to title
+        char title[MAX_TITLE_LENGTH+1];
+        byte data_len = 7;
+        byte title_len = 0;
+        if ( info->title[0] != 0x01 )
+        {
+            title_len = reply_len-data_len;
+            ::strncpy(title, info->title, title_len);
+            title[title_len] = '\0';
+        }
+        else
+        {
+            title[0] = '\0';
+        }
+
+        // output the reply
+        if ( info->track == 0 )
+        {
+            printf("%-25s ", title);
+            if ( info->genre != UNKNOWN )
+                printf("genre: %-22s ", GENRE_NAMES[info->genre]);
+            if ( info->userfiles != 0x00 )
+                printf(" userfiles: 0x%02X ", info->userfiles);
+            if ( info->formatting != 0x00 )
+                printf("formatting: %s ", (info->formatting==0x13)?"cd-text":"unknown");
+            if ( info->request_type != 0x01 )
+                printf("   request_type: 0x%02X ", info->request_type);
+            printf("\n");
+        }
+        else
+        {
+            printf("[%3d] ", info->track);
+            printf("%-25s ", title);
+            if ( info->request_type != 0x01 )
+                printf("   request_type: 0x%02X ", info->request_type);
+            printf("\n");
+        }
+    }
+    else if ( reply_cmd == 0xFD )
+    {
+        // cast the reply
+        data_0xFD* info = (data_0xFD*) reply_data;
+
+        // add null terminator to title
+        char title[MAX_PAYLOAD_LEN+1];
+        byte data_len = 8;
+        byte title_len = 0;
+        if ( info->title[0] != 0x01 )
+        {
+            title_len = reply_len-data_len;
+            ::strncpy(title, info->title, title_len);
+            title[title_len] = '\0';
+        }
+        else
+        {
+            title[0] = '\0';
+        }
+
+        // output the reply
+        if ( info->track == 0 )
+        {
+            printf("%-25s ", title);
+            printf("\n");
+        }
+        else
+        {
+            printf("[%3d] ", info->track);
+            printf("%-25s ", title);
+            printf("\n");
+        }
+/*
+        printf("unknown data: ");
+        printf("0x%02X ", info->unknown_1);
+        printf("0x%02X ", info->unknown_2);
+        printf("0x%02X ", info->unknown_3);
+        printf("0x%02X ", info->unknown_4);
+        printf("0x%02X ", info->unknown_5);
+        printf("\n");
+*/
+    }
+}
+
+void
+time_print(byte reply_cmd, ushort reply_len, byte* reply_data)
 {
     // cast the reply
-    data_0xFE_a* info = (data_0xFE_a*) reply_data;
+    data_0x06* info = (data_0x06*) reply_data;
+    struct start_times* times = (struct start_times*) &(info->start);
 
-    // add null terminator to title
-    char title[MAX_TITLE_LENGTH+1];
-    byte data_len = 7; //sizeof(data_0xFE_a)-MAX_TITLE_LENGTH-1;
-    byte title_len = 0;
-    if ( info->title[0] != 0x01 )
-    {
-        title_len = reply_len-data_len;
-        ::strncpy(title, info->title, title_len);
-        title[title_len] = '\0';
-    }
-    else
-    {
-        title[0] = '\0';
-    }
-
+    printf("disc: %3d ", info->slot);
+    if ( info->formatting != 0x00 )
+        printf("formatting: %s ", (info->formatting==0x13)?"cd-text":"unknown");
+    printf("\n");
     // output the reply
-    if ( info->track == 0 )
+    for (int i=0; i<info->num_tracks+1; i++)
     {
-        printf("%-25s ", title);
-        if ( info->genre != UNKNOWN )
-            printf("genre: %-22s ", GENRE_NAMES[info->genre]);
-        if ( info->userfiles != 0x00 )
-            printf(" userfiles: 0x%02X ", info->userfiles);
-        if ( info->formatting != 0x00 )
-            printf("formatting: %s ", (info->formatting==0x13)?"cd-text":"unknown");
-        if ( info->request_type != 0x01 )
-            printf("   request_type: 0x%02X ", info->request_type);
-        printf("\n");
-    }
-    else
-    {
-        printf("[%3d] ", info->track);
-        printf("%-25s ", title);
-        if ( info->request_type != 0x01 )
-            printf("   request_type: 0x%02X ", info->request_type);
+        printf("[%3d] ", i);
+        printf("%02X:%02X:%02X ", times[i].min, times[i].sec, times[i].subsec);
         printf("\n");
     }
 }
@@ -180,6 +250,23 @@ DoList(KenwoodChanger& changer, int argc, char* argv[])
     else
     {
         changer.DoListDiscs(slot, disc_print);
+    }
+}
+
+void
+GetTimes(KenwoodChanger& changer, int argc, char* argv[])
+{
+    changer.DoListTrackTimes(time_print);
+}
+
+void
+DoChangeDisc(KenwoodChanger& changer, int argc, char* argv[])
+{
+    int slot = 0;
+    if ( argc > 1 )
+    {
+        slot = atoi(argv[1]);
+        changer.DoChangeDisc(slot);
     }
 }
 
@@ -208,9 +295,14 @@ struct cmd commands[] =
     { "h",      DoHelp },
     { "list",   DoList },
     { "ls",     DoList },
+    { "times",  GetTimes },
+    { "change", DoChangeDisc },
+    { "cd",     DoChangeDisc },
     { "play",   DoPlay },
     { "pause",  DoPlay },
+    { "p",      DoPlay },
     { "stop",   DoStop },
+    { "s",      DoStop },
     { "", NULL }
 };
 
@@ -251,6 +343,14 @@ DoCommand(KenwoodChanger& changer)
 
 }
 
+void
+printPrompt(const KenwoodChanger& changer)
+{
+    //printf("disc %d # ", changer.getCurrentSlot()); 
+    printf("# ", changer.getCurrentSlot()); 
+    fflush(stdout);
+}
+
 int
 main(int argc, char* argv[])
 {
@@ -271,6 +371,8 @@ main(int argc, char* argv[])
         fd_set fds;
         while ( !done )
         {
+            printPrompt(changer);
+
             // setup fd set
             FD_ZERO(&fds);
             FD_SET(juke_fd, &fds);
@@ -285,9 +387,14 @@ main(int argc, char* argv[])
             if ( num_fds > 0 )
             {
                 if ( FD_ISSET(juke_fd, &fds) )
+                {
+                    printf("\n");
                     changer.DoEvent();
+                }
                 if ( FD_ISSET(STDIN_FILENO, &fds) )
+                {
                     DoCommand(changer);
+                }
             }
         }
     }

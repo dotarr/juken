@@ -33,20 +33,20 @@ typedef struct
     byte formatting;
 } data_0x04;
 
+typedef struct 
+{
+    byte min;
+    byte sec;
+    byte subsec;
+} start_times;
 typedef struct
 {
     short slot;
     byte unknown_1;
+    byte formatting;
     byte unknown_2;
-    byte unknown_3;
-    byte unknown_4;
     byte num_tracks;
-    struct 
-    {
-        byte min;
-        byte sec;
-        byte subsec;
-    } start[1];
+    struct start_times start[1];
 } data_0x06;
 
 typedef struct
