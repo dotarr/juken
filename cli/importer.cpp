@@ -9,9 +9,10 @@
 Importer::Importer(const char* filename)
 : m_device(NULL), m_listener(NULL), m_changer(NULL)
 {
-    ::fprintf(stderr, "xml filename %s\n", filename);
+    ::fprintf(stderr, "parsing xml file %s\n", filename);
+    LogMsg("parsing xml file %s\n", filename);
     m_data.ParseFile(filename);
-    print_data();
+    //print_data();
 
     m_device = new KenwoodDevice(m_data.getDevice());
 }
@@ -34,9 +35,10 @@ Importer::InitState()
     // handshake with device
     char* id = m_device->DoHandshake("I'm PC");
     ::fprintf(stderr, "connection established to %s\n", id+4);
+    LogMsg("connection established to %s\n", id+4);
 
     // make a listener
-    m_listener = new ConsoleListener(stdout);
+    m_listener = new LoggingListener();
 
     // create appropriate changer 
     if ( ::strcmp(id, "I'm CD-425M") == 0 )
@@ -51,6 +53,7 @@ Importer::Run()
     const char* names[8];
     for (int i=0; i<8; i++) names[i] = m_data.getUserfileName(i);
 
+    LogMsg("writing userfile names\n");
     m_changer->WriteUserfileNames(names);
 
     list<DiscElement*> discs = m_data.getDiscs();
@@ -60,7 +63,9 @@ Importer::Run()
         short slot = (*iter)->getSlot();
         byte type = (byte) (*iter)->getType();
         const char* title = (*iter)->getShortTitle();
-        const char* artist = (*iter)->getDescription();
+        const char* artist = (*iter)->getArtist();
+        if ( artist == NULL )
+            artist = (*iter)->getDescription();
         Disc disc(slot, type, title, artist);
         list<char*> tracks = (*iter)->getTracks();
         int i = 1;
@@ -69,37 +74,44 @@ Importer::Run()
         disc.userfiles = (*iter)->getUserfiles();
 
         if ( artist == NULL )
-            printf("writing disc: %d title: %s\n", slot, title);
+        {
+            ::fprintf(stderr, "writing disc: %d title: %s\n", slot, title);
+            LogMsg("writing disc: %d title: %s\n", slot, title);
+        }
         else
-            printf("writing disc: %d title: %s artist: %s\n", slot, title, artist);
+        {
+            ::fprintf(stderr, "writing disc: %d title: %s artist: %s\n", slot, title, artist);
+            LogMsg("writing disc: %d title: %s artist: %s\n", slot, title, artist);
+        }
         m_changer->WriteDisc(slot, disc);
+usleep(500);
 
         iter++;
     }
 
-printf("-------------------------------------------\n");
+    ::fprintf(stderr, "import complete!\n");
+    LogMsg("import complete!\n");
 }
 
 void
 Importer::print_data()
 {
-    printf("changer %s [%s]\n", m_data.getModel(), m_data.getDevice());
+    ::fprintf(stdout, "changer %s [%s]\n", m_data.getModel(), m_data.getDevice());
     typedef char* foo;
     const char* names[8];
     for (int i=0; i<8; i++) names[i] = m_data.getUserfileName(i);
 
     for (int i=0; i<8; i++)
     {
-        printf("  userfile[%d] %s\n", i, names[i]);
+        ::fprintf(stdout, "  userfile[%d] %s\n", i, names[i]);
     }
 
     list<DiscElement*> discs = m_data.getDiscs();
     list<DiscElement*>::iterator iter = discs.begin();
     while ( iter != discs.end() )
     {
-        (*iter)->print();
+        (*iter)->print(stdout);
         iter++;
     }
-
 }
 

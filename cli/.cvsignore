@@ -3,6 +3,7 @@ Makefile.in
 Makefile
 juken-cli
 *.xml
+*.log
 juken
 importer
 exporter

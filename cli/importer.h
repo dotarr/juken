@@ -3,7 +3,7 @@
 
 #include <kenwooddevice.h>
 #include <kenwoodchanger.h>
-#include <consolelistener.h>
+#include <logginglistener.h>
 
 #include "changerdata.h"
 
@@ -19,7 +19,7 @@ class Importer
         
     private:
         KenwoodDevice* m_device;
-        ConsoleListener* m_listener;
+        LoggingListener* m_listener;
         KenwoodChanger* m_changer;
 
         ChangerData m_data;

@@ -3,19 +3,23 @@
 #include "changerdata.h"
 #include "importer.h"
 
+int g_log_level = 1;
+
 void 
 usage(char* prog_name)
 {
+    ::fprintf(stdout, "usage: %s [option] file\n", prog_name);
+    ::fprintf(stdout, "options:\n");
 #ifdef HAVE_GETOPT_LONG
-    ::fprintf(stdout, "usage: %s {-v|--version|-h|--help} file\n", prog_name);
     ::fprintf(stdout, "\t-v, --version\tdisplay version information\n");
     ::fprintf(stdout, "\t-h, --help\tdisplay this message\n");
+    ::fprintf(stdout, "\t-l, --loglevel\tlogging level\n");
 #else
-    ::fprintf(stdout, "usage: %s {-v|-h} file\n", prog_name);
     ::fprintf(stdout, "\t-v\t\tdisplay version information\n");
     ::fprintf(stdout, "\t-h\t\tdisplay this message\n");
+    ::fprintf(stdout, "\t-l\t\tlogging level (defaults to 1)\n");
 #endif
-    ::fprintf(stdout, "\t<file>\t\tthe xml data to import\n");
+    ::fprintf(stdout, "file:\tthe xml data to import\n");
 }
 
 void 
@@ -27,12 +31,13 @@ version()
 void
 parse_args(int argc, char* argv[])
 {
-    char* short_opts = "d:vh";
+    char* short_opts = "vhl:";
 
 #ifdef HAVE_GETOPT_LONG
     struct option long_opts[] = {
         { "version", no_argument, NULL, 'v' },
         { "help", no_argument, NULL, 'h' },
+        { "loglevel", required_argument, NULL, 'l' },
         { NULL, no_argument, NULL, 0 }
     };
 #endif
@@ -52,6 +57,9 @@ parse_args(int argc, char* argv[])
             case 'h':
                 usage(argv[0]);
                 exit(EXIT_SUCCESS);
+            case 'l':
+                g_log_level = ::atoi(optarg);
+                break;
             case ':': ::fprintf(stderr, "missing parameter\n"); break;
             case '?': ::fprintf(stderr, "unknown option\n");    break;
         }
@@ -61,6 +69,8 @@ parse_args(int argc, char* argv[])
 int
 main(int argc, char* argv[])
 {
+    int result = EXIT_FAILURE;
+
     // parse parameters
     parse_args(argc, argv);
     if ( optind != argc-1 )
@@ -68,6 +78,13 @@ main(int argc, char* argv[])
         usage(argv[0]);
         exit(EXIT_FAILURE);
     }
+    
+    // open the logfile
+    char log_filename[255];
+    ::strcpy(log_filename, argv[0]);
+    ::strcat(log_filename, ".log");
+    OpenLog(log_filename, g_log_level);
+
     char* filename = argv[optind++];
 
     try
@@ -82,10 +99,13 @@ main(int argc, char* argv[])
         ::fprintf(stderr, "exception caught: %s\n", e);
 
         // exit with failure
-        return EXIT_FAILURE;
+        result = EXIT_FAILURE;
     }
 
+    // close the logfile
+    CloseLog();
+
     // return with success
-    return EXIT_SUCCESS;
+    return result;
 }
 

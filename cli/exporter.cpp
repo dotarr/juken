@@ -37,7 +37,7 @@ Exporter::InitState()
     ::fprintf(stderr, "connection established to %s\n", id+4);
 
     // make a listener
-    m_listener = new ConsoleListener(stderr);
+    m_listener = new LoggingListener();
     
     // create appropriate changer 
     if ( ::strcmp(id, "I'm CD-425M") == 0 )
@@ -49,12 +49,14 @@ Exporter::InitState()
 void
 Exporter::Run()
 {
+    LogMsg("writing xml for %s on device %s\n", m_model_name, m_device_name);
     ::fprintf(stdout, "<Changer>\n");
     ::fprintf(stdout, "  <Model>%s</Model>\n", m_model_name);
     ::fprintf(stdout, "  <Device>%s</Device>\n", m_device_name);
     ::fprintf(stdout, "\n");
     ::fflush(stdout);
 
+    LogMsg("writing userfiles\n");
     ::fprintf(stdout, "  <Userfiles>\n");
     for (int i=0; i<8; i++)
     {
@@ -76,6 +78,7 @@ Exporter::Run()
     {
         if ( m_changer->isSlotOccupied(slot) )
         {
+            LogMsg("processing slot %d\n", slot);
             char* disc_id = m_changer->GetDiscId(slot);
             Disc disc = m_changer->DoListContents(slot);
 
@@ -89,6 +92,7 @@ Exporter::Run()
                 case DISC_DVD_V:  element = "DVD";  break;
             }
 
+            LogMsg("writing %s: %s id: %s\n", element, (const char*)disc, disc_id);
             ::fprintf(stdout, "  <%s>\n", element);
 
             ::fprintf(stdout, "    <ID>%s</ID>\n", disc_id);
@@ -119,6 +123,7 @@ Exporter::Run()
                 ::fprintf(stdout, "    </Userfiles>\n");
             }
 
+            LogMsg("writing tracks\n");
             if ( disc.tracks.size() > 0 )
             {
                 ::fprintf(stdout, "    <Tracks>\n");
@@ -139,5 +144,6 @@ Exporter::Run()
 
     ::fprintf(stdout, "</Changer>\n");
     ::fflush(stdout);
+    LogMsg("export complete!\n");
 }
 
