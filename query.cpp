@@ -18,6 +18,13 @@ byte e;
 byte f;
 
 void
+parse_env()
+{
+    char* sock = getenv("JUKEN_SOCK");
+    if ( sock != NULL ) messaging_socket = sock;
+}
+
+void
 parse_args(int argc, char* argv[])
 {
     // these are generic values (while the protocol is being decoded)
@@ -33,6 +40,7 @@ int
 main (int argc, char* argv[])
 {
     // parse parameters
+    parse_env();
     parse_args(argc, argv);
 
     try

@@ -26,7 +26,7 @@ INThandler(int sig)
 
     done = true;
 
-    fprintf(stderr, "ctrl-c hit\n");
+    ::fprintf(stderr, "ctrl-c hit\n");
 }
 
 void
@@ -115,11 +115,19 @@ ProcessTraffic(Jukebox& protocol, int juke_fd, int sock_fd)
 }
 
 void
+parse_env()
+{
+    char* dev = getenv("JUKEN_DEV");
+    if ( dev != NULL )  serial_device = dev;
+
+    char* sock = getenv("JUKEN_SOCK");
+    if ( sock != NULL ) messaging_socket = sock;
+}
+
+void
 parse_args(int argc, char* argv[])
 {
-    // parse serial_device and messaging_socket
-    if ( argc > 1 ) serial_device = argv[1];
-    if ( argc > 2 ) messaging_socket = argv[2];
+    // no arguments yet ...
 }
 
 int
@@ -129,7 +137,11 @@ main (int argc, char* argv[])
     signal(SIGINT, INThandler);
 
     // parse parameters
+    parse_env();
     parse_args(argc, argv);
+
+    ::fprintf(stderr, "serial_device=%s\n", serial_device);
+    ::fprintf(stderr, "messaging_socket=%s\n", messaging_socket);
 
     try
     {
