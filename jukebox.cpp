@@ -167,7 +167,7 @@ Jukebox::ProcessEvent(const byte cmd, const struct payload& msg)
         case INFO_EVT:  HandleInfoEvent(msg);  break;
         case STATE_EVT: HandleStateEvent(msg); break;
         case DISC_EVT:  HandleDiscEvent(msg);  break;
-        case READY_EVT: HandleReadyEvent(msg); break;
+        case DOOR_EVT:  HandleDoorEvent(msg); break;
 
         default:
             {
@@ -255,12 +255,12 @@ Jukebox::HandleDiscEvent(const struct payload& msg)
 }
  
 void
-Jukebox::HandleReadyEvent(const struct payload& msg)
+Jukebox::HandleDoorEvent(const struct payload& msg)
 {
     // determine the ready state
-    byte val = msg.data[0];
+    bool door_closed = (msg.data[0]==0);
     // display the ready state
-    DebugMsg("ready: 0x%02X\n", val);
+    DebugMsg("door: %s\n", door_closed?"closed":"open");
 }
 
 void

@@ -32,7 +32,7 @@ class Jukebox
         void HandleInfoEvent(const struct payload& msg);
         void HandleStateEvent(const struct payload& msg);
         void HandleDiscEvent(const struct payload& msg);
-        void HandleReadyEvent(const struct payload& msg);
+        void HandleDoorEvent(const struct payload& msg);
 
     private:
         Jukebox(const Jukebox&);

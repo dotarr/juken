@@ -3,14 +3,11 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/types.h>
-#include <stdlib.h>
 
 #include "unixdomainsock.h"
 #include "jukebox.h"
 
 char* messaging_socket = "/tmp/juken";
-
-byte disc = 0;
 
 void
 parse_env()
@@ -22,8 +19,7 @@ parse_env()
 void
 parse_args(int argc, char* argv[])
 {
-    if ( argc > 1 )
-        disc = (byte) atol(argv[1]);
+    // no arguments yet ...
 }
 
 int
@@ -40,15 +36,9 @@ main (int argc, char* argv[])
         UnixDomainSock sock;
         int fd = sock.OpenSock(messaging_socket);
 
-        // issue the query request
-        protocol.IssueQueryDevice(fd, 0x00, 0x02, disc, 0x00, 0x00, 0x00);
-
-        // process the reply(s)
-        struct payload reply;
-        while ( protocol.GetReply(fd, reply) )
-        {
-            printdata(reply.data, reply.len);
-        }
+        // issue the play/pause request
+        protocol.IssueChangeState(fd, NEXT_PARAM);
+        protocol.IssueChangeState(fd, NULL_PARAM);
     }
     catch (char* e)
     {
@@ -62,4 +52,5 @@ main (int argc, char* argv[])
     // return with success
     return EXIT_SUCCESS;
 }
+
 

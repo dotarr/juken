@@ -39,31 +39,18 @@ struct userfile_data
     byte   unknown4;
     byte   unknown5;
     byte   unknown6;
-    char   title[MAX_USER_TITLE_LENGTH+1]; // +1 to hold null terminator
+    char   title[MAX_TITLE_LENGTH+1]; // +1 to hold null terminator
 };
 
 struct disc_data
 {
     ushort slot;
-    byte   unknown1;
+    byte   index;
     byte   userfiles;
-    byte   unknown3;
+    byte   unknown1;
     byte   genre;
-    byte   unknown4;
-    char   title[MAX_DISC_TITLE_LENGTH+1]; // +1 to hold null terminator
+    byte   format;
+    char   title[MAX_TITLE_LENGTH+1]; // +1 to hold null terminator
 };
-
-struct track_data
-{
-    byte unknown1;
-    byte unknown2;
-    byte index;
-    byte unknown3;
-    byte unknown4;
-    byte unknown5;
-    byte unknown6;
-    char title[MAX_TRACK_TITLE_LENGTH+1]; // +1 to hold null terminator
-};
-
 
 #endif /* __PAYLOAD_H__ */

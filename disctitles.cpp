@@ -9,6 +9,8 @@
 
 char* messaging_socket = "/tmp/juken";
 
+byte disc = 0;
+
 void
 parse_env()
 {
@@ -19,7 +21,8 @@ parse_env()
 void
 parse_args(int argc, char* argv[])
 {
-    // no arguments yet ...
+    if ( argc > 1 )
+        disc = (byte) atol(argv[1]);
 }
 
 int
@@ -37,25 +40,25 @@ main (int argc, char* argv[])
         int fd = sock.OpenSock(messaging_socket);
 
         // issue the query request
-        protocol.IssueQueryDevice(fd, 0x00, 1, 0, 0x00, 0x07, 0x00);
+        protocol.IssueQueryDevice(fd, 0x00, 1, disc, 0x00, 0x00, 0x00);
 
         // process the reply
         struct payload reply;
         while ( protocol.GetReply(fd, reply) )
         {
-            // cast the reply into a userfile_data
-            struct userfile_data* info = (struct userfile_data*) reply.data;
-            byte mask = info->mask;
+            // cast the reply into a disc_data
+            struct disc_data* info = (struct disc_data*) reply.data;
 
             // add null terminator to title
-            byte data_len = sizeof(struct userfile_data)-MAX_USER_TITLE_LENGTH-1;
-            byte title_len = reply.len-data_len;
+            byte data_len = sizeof(struct disc_data)-MAX_TITLE_LENGTH-1;
+            byte title_len = 0;
+            if ( info->title[0] != 0x01 )
+                title_len = reply.len-data_len;
             info->title[title_len] = '\0';
 
             // output the reply
-            DebugMsg("mask:%02X unknown:%02X %02X %02X %02X %02X %02X title:%s\n",
-                     mask, info->unknown1, info->unknown2, info->unknown3, 
-                     info->unknown4, info->unknown5, info->unknown6, info->title);
+            DebugMsg("slot:%3d unknown:0x%02x title:%s genre:%s userfiles:0x%02X formatting:%s\n",
+                    info->slot, info->unknown1, info->title, GENRE_NAMES[info->genre], info->userfiles, (info->format==0x13)?"cd-text":"none");
         }
     }
     catch (char* e)

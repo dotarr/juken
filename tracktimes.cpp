@@ -3,7 +3,6 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/types.h>
-#include <stdlib.h>
 
 #include "unixdomainsock.h"
 #include "jukebox.h"
@@ -40,14 +39,31 @@ main (int argc, char* argv[])
         UnixDomainSock sock;
         int fd = sock.OpenSock(messaging_socket);
 
-        // issue the query request
-        protocol.IssueQueryDevice(fd, 0x00, 0x02, disc, 0x00, 0x00, 0x00);
+         // issue the query request
+        protocol.IssueQueryDevice(fd, 0x00, 0x04, disc, 0x00, 0x00, 0x00);
 
-        // process the reply(s)
+        // process the reply
         struct payload reply;
         while ( protocol.GetReply(fd, reply) )
         {
-            printdata(reply.data, reply.len);
+            short slot = *((short*) reply.data);
+            byte unknown1 = reply.data[1];
+            byte unknown2 = reply.data[2];
+            byte unknown3 = reply.data[3];
+            byte unknown4 = reply.data[4];
+            byte num_tracks = reply.data[5];
+            DebugMsg("slot:%3d unknown:0x%02X,0x%02X,0x%02X,0x%02X num_tracks:%3d\n",
+                    slot, unknown1, unknown2, unknown3, unknown4, num_tracks);
+            DebugMsg("track\tstart\tunknown\n");
+            DebugMsg("-----------------------------\n");
+            byte* p = &reply.data[6];
+            for (int i=0; i<num_tracks+1; i++)
+            {
+                byte start_min = *(p++);
+                byte start_sec = *(p++);
+                byte unknown = *(p++);
+                DebugMsg("%5d\t%02x:%02x\t0x%02X\n", i+1, start_min, start_sec, unknown);
+            }
         }
     }
     catch (char* e)
@@ -62,4 +78,5 @@ main (int argc, char* argv[])
     // return with success
     return EXIT_SUCCESS;
 }
+
 

@@ -9,6 +9,8 @@
 
 char* messaging_socket = "/tmp/juken";
 
+byte disc = 0;
+
 void
 parse_env()
 {
@@ -19,7 +21,6 @@ parse_env()
 void
 parse_args(int argc, char* argv[])
 {
-    // no arguments yet ...
 }
 
 int
@@ -36,28 +37,23 @@ main (int argc, char* argv[])
         UnixDomainSock sock;
         int fd = sock.OpenSock(messaging_socket);
 
-        // issue the query request
-        protocol.IssueQueryDevice(fd, 0x00, 1, 0, 0x00, 0x00, 0x00);
+         // issue the query request
+        protocol.IssueQueryDevice(fd, 0x00, 0x20, 0, 0x00, 0x01, 0x00);
 
         // process the reply
         struct payload reply;
         while ( protocol.GetReply(fd, reply) )
         {
-            // cast the reply into a disc_data
-            struct disc_data* info = (struct disc_data*) reply.data;
-            byte slot = info->slot;
-            byte userfiles = info->userfiles;
-            enum genre genre = (enum genre) info->genre;
-
-            // add null terminator to title
-            byte data_len = sizeof(struct disc_data)-MAX_DISC_TITLE_LENGTH-1;
-            byte title_len = reply.len-data_len;
-            info->title[title_len+1] = '\0';
-
-            // output the reply
-            DebugMsg("slot: %3d unknown:%02x userfiles: %02X unknown: %02x genre:%s unknown:%02x title:%s\n",
-                    slot, info->unknown1, userfiles, info->unknown3, 
-                    GENRE_NAMES[genre], info->unknown4, info->title);
+            byte num_tracks = reply.data[0];
+            byte* p = &reply.data[1];
+            for (int i=0; i<num_tracks; i++)
+            {
+                short disc = *((short*) p);
+                p += sizeof(short);
+                byte track = *p;
+                p++;
+                DebugMsg("slot:%3d track:%3d\n", disc, track);
+            }
         }
     }
     catch (char* e)

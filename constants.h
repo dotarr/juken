@@ -4,9 +4,7 @@
 // some maximums that exist in the protocol
 const ushort MAX_PAYLOAD_LEN = 64;
 
-const short MAX_USER_TITLE_LENGTH = 25;
-const short MAX_DISC_TITLE_LENGTH = 25;
-const short MAX_TRACK_TITLE_LENGTH = 25;
+const short MAX_TITLE_LENGTH = 25;
 
 const short MAX_TRACK_COUNT = 20;
 
@@ -33,7 +31,7 @@ const byte STATE_REQ = 0x0A;
 const byte INFO_EVT = 0x12;
 const byte STATE_EVT = 0x13;
 const byte DISC_EVT = 0x14;
-const byte READY_EVT = 0x15;
+const byte DOOR_EVT = 0x15;
 
 // protocol parameter values
 const byte NULL_PARAM = 0xFF;

@@ -37,26 +37,24 @@ main (int argc, char* argv[])
         int fd = sock.OpenSock(messaging_socket);
 
         // issue the query request
-        protocol.IssueQueryDevice(fd, 0x00, 1, 33, 0x00, 0x01, 0x00);
+        protocol.IssueQueryDevice(fd, 0x00, 1, 0, 0x00, 0x07, 0x00);
 
         // process the reply
         struct payload reply;
         while ( protocol.GetReply(fd, reply) )
         {
-            // cast the reply into a track_data
-            struct track_data* info = (struct track_data*) reply.data;
-            int index = info->index;
+            // cast the reply into a userfile_data
+            struct userfile_data* info = (struct userfile_data*) reply.data;
+            byte mask = info->mask;
 
             // add null terminator to title
-            byte data_len = sizeof(struct track_data)-MAX_TRACK_TITLE_LENGTH-1;
-            byte title_len = 0;
-            if ( info->title[0] != 0x01 )
-                title_len = reply.len-data_len;
+            byte data_len = sizeof(struct userfile_data)-MAX_TITLE_LENGTH-1;
+            byte title_len = reply.len-data_len;
             info->title[title_len] = '\0';
 
             // output the reply
-            DebugMsg("unknown: %02x %02x index:%d unknown: %02x %02x %02x %02x title:%s\n",
-                     info->unknown1, info->unknown2, index, info->unknown3, 
+            DebugMsg("mask:%02X unknown:%02X %02X %02X %02X %02X %02X title:%s\n",
+                     mask, info->unknown1, info->unknown2, info->unknown3, 
                      info->unknown4, info->unknown5, info->unknown6, info->title);
         }
     }

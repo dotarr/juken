@@ -14,5 +14,6 @@ void ThrowIfNeg(int val, const char* fmt, ...);
 void ThrowIfNull(const void* p, const char* fmt, ...);
 void Throw(const char* fmt, ...);
 
+void printdata(const byte data[], int count);
 
 #endif /* __UTIL_H__ */

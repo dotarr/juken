@@ -3,7 +3,6 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/types.h>
-#include <stdlib.h>
 
 #include "unixdomainsock.h"
 #include "jukebox.h"
@@ -40,14 +39,26 @@ main (int argc, char* argv[])
         UnixDomainSock sock;
         int fd = sock.OpenSock(messaging_socket);
 
-        // issue the query request
-        protocol.IssueQueryDevice(fd, 0x00, 0x02, disc, 0x00, 0x00, 0x00);
+         // issue the query request
+        protocol.IssueQueryDevice(fd, 0x00, 0x01, disc, 0x00, 0x01, 0x00);
 
-        // process the reply(s)
+        // process the reply
         struct payload reply;
         while ( protocol.GetReply(fd, reply) )
         {
-            printdata(reply.data, reply.len);
+            // cast the reply into a track_data
+            struct disc_data* info = (struct disc_data*) reply.data;
+
+            // add null terminator to title
+            byte data_len = sizeof(struct disc_data)-MAX_TITLE_LENGTH-1;
+            byte title_len = 0;
+            if ( info->title[0] != 0x01 )
+                title_len = reply.len-data_len;
+            info->title[title_len] = '\0';
+
+            // output the reply
+            DebugMsg("slot:%3d index:%3d unknown:0x%02x title:%s genre:%s userfiles:0x%02X formatting:%s\n",
+                    info->slot, info->index, info->unknown1, info->title, GENRE_NAMES[info->genre], info->userfiles, (info->format==0x13)?"cd-text":"none");
         }
     }
     catch (char* e)
@@ -62,4 +73,5 @@ main (int argc, char* argv[])
     // return with success
     return EXIT_SUCCESS;
 }
+
 
