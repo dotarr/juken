@@ -45,12 +45,14 @@ extern int errno;
 
 typedef unsigned char  byte;
 
+#include "log.h"
+
 void ThrowIf(bool cond, const char* fmt, ...);
 void ThrowIfMinus1(int val, const char* fmt, ...);
 void ThrowIfNeg(int val, const char* fmt, ...);
 void ThrowIfNull(const void* p, const char* fmt, ...);
 void Throw(const char* fmt, ...);
 
-void printdata(const byte data[], int count);
+void printdata(FILE* file, const byte data[], int count);
 
 #endif /* COMMON_COMMON_H */

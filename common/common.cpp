@@ -13,7 +13,7 @@ aschar(unsigned char val)
 }
 
 void
-printdata(const byte data[], int count)
+printdata(FILE* file, const byte data[], int count)
 {
     int i = 0;
     while ( count > 0 )
@@ -70,11 +70,11 @@ printdata(const byte data[], int count)
                 j++;
                 break;
         }
-        ::printf("\t");
-        for (int k=0; k<8; k++) ::printf("%s", hex[k]);
-        ::printf("\t");
-        for (int k=0; k<8; k++) ::printf("%c", c[k]);
-        ::printf("\n");
+        ::fprintf(file, "\t");
+        for (int k=0; k<8; k++) ::fprintf(file, "%s", hex[k]);
+        ::fprintf(file, "\t");
+        for (int k=0; k<8; k++) ::fprintf(file, "%c", c[k]);
+        ::fprintf(file, "\n");
 
         i += j; 
         count -= j;
