@@ -5,7 +5,7 @@
 #include "exportlistener.h"
 
 ExportListener::ExportListener(FILE* f)
-    : m_event_listener(NULL), m_file(f), m_discid(0), m_track_count(0)
+    : m_file(f), m_discid(0), m_track_count(0)
 {
 }
 
@@ -17,7 +17,7 @@ ExportListener::~ExportListener()
     ::fprintf(m_file, "PLAYORDER=\n");
 }
 
-void
+bool
 ExportListener::DiscDataReply(DiscData* info)
 {
     if ( info->title[0] == 0x01 )
@@ -38,9 +38,11 @@ ExportListener::DiscDataReply(DiscData* info)
         ::fprintf(m_file, "TITLE%d=%s\n", info->track-1, info->title);
         m_track_count++;
     }
+
+    return true;
 }
 
-void
+bool
 ExportListener::CDTextDataReply(CDTextData* info)
 {
     if ( info->title[0] == 0x01 )
@@ -58,19 +60,24 @@ ExportListener::CDTextDataReply(CDTextData* info)
         ::fprintf(m_file, "TITLE%d=%s\n", info->track-1, info->title);
         m_track_count++;
     }
+
+    return true;
 }
 
-void
+bool
 ExportListener::TrackTimesReply(TrackTimes* info)
 {
     TimeInfo* times = (TimeInfo*) &(info->times);
     m_discid = discid(info->num_tracks, times);
     ::fprintf(m_file, "DISCID=[%08x]\n", m_discid);
+
+    return true;
 }
 
-void
+bool
 ExportListener::DiscTrackListReply(DiscTrackList* info)
 {
+    return true;
 }
 
 

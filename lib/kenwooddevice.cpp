@@ -1,6 +1,17 @@
 #include "kenwooddevice.h"
 #include "util.h"
 
+// ----------------------------------------------------------------------------
+
+const char* CLIENT_ID = "I'm PC";
+
+const char* CD425M_ID = "I'm CD-425M";
+const char* CD4700M_ID = "I'm CD-4700M";
+const char* CD4260M_ID = "I'm CD-4260M";
+const char* DV5900M_ID = "I'm DV-5900M";
+const char* DV5050M_ID = "I'm DV-5050M";
+
+
 KenwoodDevice::KenwoodDevice(const char* dev) 
 : SerialDevice()
 {
@@ -9,6 +20,125 @@ KenwoodDevice::KenwoodDevice(const char* dev)
 
 KenwoodDevice::~KenwoodDevice()
 {
+}
+
+char*
+KenwoodDevice::DoHandshake(const char* id)
+{
+    // build the payload
+    payload req;
+    req.cmd = HANDSHAKE;
+    req.len = ::strlen(id);
+    ::memcpy(req.data, id, req.len);
+
+    // issue the request
+    SendMessage(req, HAS_REPLIES); 
+
+    // get the reply
+    payload reply;
+    if ( RecvMessage(reply) )
+    {
+        payload eor;
+        RecvMessage(eor);
+    }
+
+    return ::strdup((char*) reply.data);
+}
+
+void
+KenwoodDevice::SendMessage(const payload& msg, const bool has_replies)
+{
+    byte cntl;
+
+    // signal player we wish to transmit
+    bool acked = false;
+    while ( !acked )
+    {
+        WriteCntl(ENQ);
+
+        cntl = ReadCntl();
+        switch ( cntl )
+        {
+            case STX: ::fprintf(stderr, "->Unexpected STX\n"); break;
+            case EOT: ::fprintf(stderr, "->Unexpected EOT\n"); break;
+            case ENQ: ::fprintf(stderr, "->Unexpected ENQ\n"); break;
+            case ACK: acked = true; break;
+            case NAK: ::fprintf(stderr, "->Unexpected NAK\n"); break;
+        }
+    }
+
+    bool sent = false;
+    while ( !sent )
+    {
+        WriteCntl(STX);
+        WritePayload(msg);
+
+        cntl = ReadCntl();
+        switch ( cntl )
+        {
+            case STX: ::fprintf(stderr, "->Unexpected STX\n"); break;
+            case EOT: ::fprintf(stderr, "->Unexpected EOT\n"); break;
+            case ENQ: ::fprintf(stderr, "->Unexpected ENQ\n"); break;
+            case ACK: sent = true; break;
+            case NAK: ::fprintf(stderr, "->Unexpected NAK\n"); break;
+        }
+    }
+
+
+    if ( !has_replies )
+    {
+        acked = false;
+        while ( !acked )
+        {
+            WriteCntl(EOT);
+
+            cntl = ReadCntl();
+            switch ( cntl )
+            {
+                case STX: ::fprintf(stderr, "->Unexpected STX\n"); break;
+                case EOT: ::fprintf(stderr, "->Unexpected EOT\n"); break;
+                case ENQ: ::fprintf(stderr, "->Unexpected ENQ\n"); break;
+                case ACK: acked = true; break;
+                case NAK: ::fprintf(stderr, "->Unexpected NAK\n"); break;
+            }
+        }
+    }
+}
+
+bool
+KenwoodDevice::RecvMessage(payload& msg)
+{
+    byte cntl = ReadCntl();
+
+    if ( cntl == EOT )
+    {
+        WriteCntl(ACK);
+        msg.cmd = 0xFF;
+        return false;
+    }
+    else if ( cntl != STX )
+    {
+        switch ( cntl )
+        {
+            case ENQ: ::fprintf(stderr, "->Unexpected ENQ\n"); break;
+            case ACK: ::fprintf(stderr, "->Unexpected ACK\n"); break;
+            case NAK: ::fprintf(stderr, "->Unexpected NAK\n"); break;
+        }
+    }
+
+    byte cksum = ReadPayload(msg);
+    if ( cksum == ComputeChecksum(msg) )
+    {
+        WriteCntl(ACK);
+    }
+    else
+    {
+        // signal transmission err (should cause retransmit ...)
+        ::fprintf(stderr, "Bad checksum in recieved data\n");
+        WriteCntl(NAK);
+    }
+
+    return true;
 }
 
 void

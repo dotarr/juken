@@ -3,33 +3,42 @@
 #include "commands.h"
 #include "exportlistener.h"
 
-extern bool done; // exit flag from juken-cli.cpp
+#include <readline/readline.h>
 
-typedef void (*cmd_func)(KenwoodChanger& changer, int argc, char* argv[]);
-typedef struct cmd { char* name; cmd_func func; char* help; };
+BEGIN_C_DECLS
+extern char** buildargv(char *);
+extern void freeargv(char **);
+END_C_DECLS
+
+extern bool g_done; // exit flag from juken-cli.cpp
+
+struct cmd short_commands[] = 
+{
+    { "q",      DoQuit, "quit the application" },
+    { "h",      DoHelp, "this help output" },
+    { "ls",     DoList, "list the changer contents" },
+    { "lsx",    DoExperiment, "experimental" },
+    { "cd",     DoChangeDisc, "change the current disc" },
+    { "p",      DoPlay, "play/pause the current disc" },
+    { "s",      DoStop, "stop the current disc" },
+    { NULL, NULL }
+};
 
 struct cmd commands[] = 
 {
     { "quit",   DoQuit, "quit the application" },
     { "exit",   DoQuit, "quit the application" },
-    { "q",      DoQuit, "quit the application" },
     { "help",   DoHelp, "this help output" },
-    { "h",      DoHelp, "this help output" },
     { "export", DoExport, "export the changer contents" },
     { "list",   DoList, "list the changer contents" },
-    { "ls",     DoList, "list the changer contents" },
-    { "lsx",    DoExperiment, "experimental" },
     { "times",  GetTimes, "list the current discs track start times" },
     { "bests",  GetBests, "list the best tracks" },
     { "change", DoChangeDisc, "change the current disc" },
-    { "cd",     DoChangeDisc, "change the current disc" },
     { "play",   DoPlay, "play the current disc" },
     { "pause",  DoPlay, "pause the current disc" },
     { "prev",   DoPrev, "play the previous track on the current disc" },
     { "next",   DoNext, "play the next track on the current disc" },
-    { "p",      DoPlay, "play/pause the current disc" },
     { "stop",   DoStop, "stop the current disc" },
-    { "s",      DoStop, "stop the current disc" },
     { NULL, NULL }
 };
 
@@ -47,16 +56,18 @@ DoHelp(KenwoodChanger& changer, int argc, char* argv[])
 void
 DoExport(KenwoodChanger& changer, int argc, char* argv[])
 {
+    int slot = 0;
+    if ( argc > 1 )
+        slot = atoi(argv[1]);
+
     ExportListener export_listener(stdout);
-    KenwoodListener* previous_listener = changer.setListener(&export_listener);
-    export_listener.setEventListener(previous_listener);
+    changer.pushListener(&export_listener);
 
-    changer.DoListTrackTimes();
+    changer.DoListTrackTimes(slot);
 usleep(1); // an ugly hack, but I can't figure out how/why/when the player isn't "ready"
-    changer.DoListTracks(changer.getCurrentSlot());
+    changer.DoListTracks(slot);
 
-    export_listener.setEventListener(NULL);
-    changer.setListener(previous_listener);
+    changer.popListener();
 }
 
 void
@@ -88,7 +99,10 @@ DoExperiment(KenwoodChanger& changer, int argc, char* argv[])
 void
 GetTimes(KenwoodChanger& changer, int argc, char* argv[])
 {
-    changer.DoListTrackTimes();
+    int slot = 0;
+    if ( argc > 1 )
+        slot = atoi(argv[1]);
+     changer.DoListTrackTimes(slot);
 }
 
 void
@@ -104,7 +118,7 @@ DoChangeDisc(KenwoodChanger& changer, int argc, char* argv[])
     if ( argc > 1 )
     {
         slot = atoi(argv[1]);
-        changer.DoChangeDisc(slot);
+        changer.DoChangeDisc(slot, Playing);
     }
 }
 
@@ -135,30 +149,16 @@ DoStop(KenwoodChanger& changer, int argc, char* argv[])
 void
 DoQuit(KenwoodChanger& changer, int argc, char* argv[])
 {
-    done = true;
+    g_done = true;
 }
 
 void
-DoCommand(KenwoodChanger& changer)
+DoCommand(KenwoodChanger& changer, char* line)
 {
-    // readthe line from stdin
-    char line[256];
-    ::fgets(line, 255, stdin);
-
-    // if it is empty then just return
-    if ( line[0] == '\n' ) return;
-
-    // terminate the string and strip any carriage return
-    line[255] = 0;
-    int l = ::strlen(line);
-    if ( line[l-1] == '\n' ) line[l-1] = 0;
-
     // build up the argc, argv
     int argc = 0;
-    char** argv = new char*[16];
-    argv[argc] = strtok(line, " ");
-    while ( argv[argc] != NULL )
-        argv[++argc] = strtok(NULL, " ");
+    char** argv = ::buildargv(line);
+    while ( argv[argc] != NULL ) argc++;
 
     // find the command function corresponding to argv[0]
     int i = 0;
@@ -173,6 +173,19 @@ DoCommand(KenwoodChanger& changer)
         i++;
     }
 
+    i = 0;
+    while ( short_commands[i].name != NULL )
+    {
+        if ( strcmp(argv[0], short_commands[i].name) == 0 )
+        {
+            // execute the command function
+            short_commands[i].func(changer, argc, argv);
+            break;
+        }
+        i++;
+    }
+
+    ::freeargv(argv);
 }
 
 

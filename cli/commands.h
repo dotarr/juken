@@ -3,6 +3,10 @@
 
 #include <kenwoodchanger.h>
 
+typedef void (*cmd_func)(KenwoodChanger& changer, int argc, char* argv[]);
+typedef struct cmd { char* name; cmd_func func; char* help; };
+extern struct cmd commands[];
+
 void DoQuit(KenwoodChanger& changer, int argc, char* argv[]);
 void DoHelp(KenwoodChanger& changer, int argc, char* argv[]);
 void DoExport(KenwoodChanger& changer, int argc, char* argv[]);
@@ -16,6 +20,6 @@ void DoPrev(KenwoodChanger& changer, int argc, char* argv[]);
 void DoNext(KenwoodChanger& changer, int argc, char* argv[]);
 void DoStop(KenwoodChanger& changer, int argc, char* argv[]);
  
-void DoCommand(KenwoodChanger& changer);
+void DoCommand(KenwoodChanger& changer, char* line);
 
 #endif /* JUKEN_COMMANDS_H */

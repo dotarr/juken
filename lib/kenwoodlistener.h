@@ -9,18 +9,17 @@ class KenwoodListener
     public:
         ~KenwoodListener() { };
 
-        virtual void Handshake(const char* id) = 0;
-        virtual void InfoChanged(short slot, byte track, enum mode mode, 
+        virtual bool InfoChanged(short slot, byte track, enum mode mode, 
                                  enum random random, bool repeat, 
-                                 byte userfile) = 0;
-        virtual void StateChanged(enum state state) = 0;
-        virtual void DiscChanged(short slot) = 0;
-        virtual void DoorChanged(bool door_closed) = 0;
+                                 byte userfile) { return false; };
+        virtual bool StateChanged(enum state state) { return false; };
+        virtual bool DiscChanged(short slot) { return false; };
+        virtual bool DoorChanged(bool door_closed) { return false; };
         
-        virtual void DiscDataReply(DiscData* info) = 0;
-        virtual void CDTextDataReply(CDTextData* info) = 0;
-        virtual void TrackTimesReply(TrackTimes* info) = 0;
-        virtual void DiscTrackListReply(DiscTrackList* info) = 0;
+        virtual bool DiscDataReply(DiscData* info) { return false; };
+        virtual bool CDTextDataReply(CDTextData* info) { return false; };
+        virtual bool TrackTimesReply(TrackTimes* info) { return false; };
+        virtual bool DiscTrackListReply(DiscTrackList* info) { return false; };
 
     protected:
         KenwoodListener() { };

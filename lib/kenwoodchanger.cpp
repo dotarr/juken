@@ -1,56 +1,25 @@
 #include "kenwoodchanger.h"
 #include "util.h"
 
-// ----------------------------------------------------------------------------
-
-const char* CLIENT_ID = "I'm PC";
-
-const char* CD425M_ID = "I'm CD-425M";
-const char* CD4700M_ID = "I'm CD-4700M";
-const char* CD4260M_ID = "I'm CD-4260M";
-const char* DV5900M_ID = "I'm DV-5900M";
-const char* DV5050M_ID = "I'm DV-5050M";
-
-const short CD425M_CAPACITY = 200;
-const short CD4700M_CAPACITY = 200;
-const short CD4260M_CAPACITY = 200;
-const short DV5900M_CAPACITY = 400;
-const short DV5050M_CAPACITY = 400;
-
-// ----------------------------------------------------------------------------
-
-KenwoodChanger::KenwoodChanger(KenwoodDevice& dev, KenwoodListener* listener) 
-: m_device(dev), m_listener(listener)
+KenwoodChanger::KenwoodChanger(KenwoodDevice& dev) 
+: m_device(dev)
 {
-    m_is_ready = false;
-    DoHandshake(CLIENT_ID);
-
-    if      ( ::strcmp(m_id, CD425M_ID)  == 0 ) m_capacity = CD425M_CAPACITY;
-    else if ( ::strcmp(m_id, CD4260M_ID) == 0 ) m_capacity = CD4260M_CAPACITY;
-    else if ( ::strcmp(m_id, CD4700M_ID) == 0 ) m_capacity = CD4700M_CAPACITY;
-    else if ( ::strcmp(m_id, DV5900M_ID) == 0 ) m_capacity = DV5900M_CAPACITY;
-    else if ( ::strcmp(m_id, DV5050M_ID) == 0 ) m_capacity = DV5050M_CAPACITY;
-
-    m_cur_slot = 0;
-    m_cur_track = 0;
-    m_cur_state = Unknown;
-    m_cur_mode = TrackMode;
-    m_random_state = RandomOff;
-    m_repeat = false;
-    m_cur_userfile = 0;
-    m_door_closed = true;
 }
 
 KenwoodChanger::~KenwoodChanger()
 {
 }
 
-KenwoodListener*
-KenwoodChanger::setListener(KenwoodListener* listener)
+void
+KenwoodChanger::pushListener(KenwoodListener* listener)
 {
-    KenwoodListener* previous = m_listener;
-    m_listener = listener;
-    return previous;
+    m_listeners.push_front(listener);
+}
+
+void
+KenwoodChanger::popListener()
+{
+    m_listeners.pop_front();
 }
 
 void
@@ -100,9 +69,13 @@ KenwoodChanger::DoInfoEvent(const payload& event)
     // cast the payload
     InfoEvent* info = (InfoEvent*) event.data;
 
-    // save current slot/track
-    m_cur_slot = info->slot;
-    m_cur_track = info->track;
+    short cur_slot = info->slot;
+    byte cur_track = info->track;
+    enum mode cur_mode;
+    enum random random_state;
+    bool repeat;
+    byte cur_userfile;
+
 
     // determine the current mode
     switch ( info->mode )
@@ -110,38 +83,41 @@ KenwoodChanger::DoInfoEvent(const payload& event)
         case 0:
         case 1:
         case 2:
-            m_cur_mode = TrackMode;
-            m_random_state = (enum random) (info->mode-0);
+            cur_mode = TrackMode;
+            random_state = (enum random) (info->mode-0);
             break;
         case 3:
-            m_cur_mode = ProgramMode;
-            m_random_state = RandomOff; // not applicable
+            cur_mode = ProgramMode;
+            random_state = RandomOff; // not applicable
             break;
         case 4:
-            m_cur_mode = BestMode;
-            m_random_state = RandomOff; // not applicable
+            cur_mode = BestMode;
+            random_state = RandomOff; // not applicable
             break;
         case 5:
         case 6:
-            m_cur_mode = MusicTypeMode;
-            m_random_state = (info->mode-5 !=0) ? RandomAll : RandomOff;
+            cur_mode = MusicTypeMode;
+            random_state = (info->mode-5 !=0) ? RandomAll : RandomOff;
             break;
         case 7:
         case 8:
         case 9:
-            m_cur_mode = UserfileMode;
-            m_random_state = (enum random) (info->mode-7);
+            cur_mode = UserfileMode;
+            random_state = (enum random) (info->mode-7);
             break;
     }
 
-    m_repeat = (info->repeat!=0);
-    m_cur_userfile = info->userfile;
+    repeat = (info->repeat!=0);
+    cur_userfile = info->userfile;
 
     // notify listener
-    if ( m_listener != NULL )
-        m_listener->InfoChanged(m_cur_slot, m_cur_track, m_cur_mode, 
-                                m_random_state, m_repeat, 
-                                m_cur_userfile);
+    for (int i=0; i<m_listeners.size(); i++)
+    {
+        if ( m_listeners[i]->InfoChanged(cur_slot, cur_track, cur_mode, 
+                                        random_state, repeat, 
+                                        cur_userfile) )
+            break;
+    }
 if ( info->unknown==0 && info->mode!=0 )
 {
     fprintf(stderr, "wierd unknown detected\n");
@@ -159,27 +135,30 @@ KenwoodChanger::DoStateEvent(const payload& event)
     // cast the payload
     StateEvent* info = (StateEvent*) event.data;
 
+    enum state cur_state = Unknown;
+
     // determine the current state
     switch ( info->state )
     {
-        case STOPPED_STATE:  m_cur_state = Stopped;      break;
-        case STOPPING_STATE: m_cur_state = Stopping;     break;
-        case CHANGING_STATE: m_cur_state = Changing;     break;
-        case PLAYING_STATE:  m_cur_state = Playing;      break;
-        case PAUSED_STATE:   m_cur_state = Paused;       break;
-        case SKIPFORW_STATE: m_cur_state = SkipForward;  break;
-        case SKIPBACK_STATE: m_cur_state = SkipBackward; break;
+        case STOPPED_STATE:  cur_state = Stopped;      break;
+        case STOPPING_STATE: cur_state = Stopping;     break;
+        case CHANGING_STATE: cur_state = Changing;     break;
+        case PLAYING_STATE:  cur_state = Playing;      break;
+        case PAUSED_STATE:   cur_state = Paused;       break;
+        case SKIPFORW_STATE: cur_state = SkipForward;  break;
+        case SKIPBACK_STATE: cur_state = SkipBackward; break;
         default:
             ::fprintf(stderr, "state=%d\n", info->state);
-            m_cur_state = Unknown;
+            cur_state = Unknown;
             break;
     }
 
     // notify listener
-    if ( m_listener != NULL )
-        m_listener->StateChanged(m_cur_state);
-
-    m_is_ready = true;
+    for (int i=0; i<m_listeners.size(); i++)
+    {
+        if ( m_listeners[i]->StateChanged(cur_state) )
+            break;
+    }
 }
  
 void
@@ -188,12 +167,12 @@ KenwoodChanger::DoDiscEvent(const payload& event)
     // cast the payload
     DiscEvent* info = (DiscEvent*) event.data;
 
-    // save current slot
-    m_cur_slot = info->slot;
-
     // notify listener
-    if ( m_listener != NULL )
-        m_listener->DiscChanged(m_cur_slot);
+    for (int i=0; i<m_listeners.size(); i++)
+    {
+        if ( m_listeners[i]->DiscChanged(info->slot) )
+            break;
+    }
 }
  
 void
@@ -202,35 +181,12 @@ KenwoodChanger::DoDoorEvent(const payload& event)
     // cast the payload
     DoorEvent* info = (DoorEvent*) event.data;
 
-    // determine the door state
-    m_door_closed = (info->door_pos==0);
-
     // notify listener
-    if ( m_listener != NULL )
-        m_listener->DoorChanged(m_door_closed);
-}
-
-void
-KenwoodChanger::DoHandshake(const char* id)
-{
-    // build the payload
-    payload req;
-    req.cmd = HANDSHAKE;
-    req.len = ::strlen(id);
-    ::memcpy(req.data, id, req.len);
-
-    // issue the request
-    SendMessage(req, HAS_REPLIES); 
-
-    // get the reply
-    payload reply;
-    GetOneReply(reply);
-
-    m_id = ::strdup((char*) reply.data);
-
-    // notify listener
-    if ( m_listener != NULL )
-        m_listener->Handshake(m_id);
+    for (int i=0; i<m_listeners.size(); i++)
+    {
+        if ( m_listeners[i]->DoorChanged((info->door_pos==0)) )
+            break;
+    }
 }
 
 void
@@ -243,22 +199,14 @@ KenwoodChanger::DoListDiscs(byte x)
 void
 KenwoodChanger::DoListTracks(const short slot, byte x)
 {
-    if ( slot == 0 )
-    {
-        DataAccess query = { 0, 1, m_cur_slot, 0, x, 0 };
-        DoDiscQuery(query);
-    }
-    else
-    {
-        DataAccess query = { 0, 1, slot, 0, x, 0 };
-        DoDiscQuery(query);
-    }
+    DataAccess query = { 0, 1, slot, 0, x, 0 };
+    DoDiscQuery(query);
 }
 
 void
-KenwoodChanger::DoListTrackTimes()
+KenwoodChanger::DoListTrackTimes(const short slot)
 {
-    DataAccess query = { 0, 4, m_cur_slot, 0, 1, 0 };
+    DataAccess query = { 0, 4, slot, 0, 1, 0 };
     DoDiscQuery(query);
 }
 
@@ -270,7 +218,7 @@ KenwoodChanger::DoListBest()
 }
 
 void
-KenwoodChanger::DoChangeDisc(const short slot)
+KenwoodChanger::DoChangeDisc(const short slot, enum state cur_state)
 {
     // build the payload
     payload req;
@@ -279,12 +227,10 @@ KenwoodChanger::DoChangeDisc(const short slot)
     SelectDiscTrack* select_disc = (SelectDiscTrack*) &req.data;
     select_disc->slot = slot;
     select_disc->track = 1;
-    select_disc->begin = (m_cur_state==Playing)?1:0;
+    select_disc->begin = (cur_state==Playing)?1:0;
 
     // issue the request
-    SendMessage(req, NO_REPLIES); 
-
-    m_is_ready = false;
+    m_device.SendMessage(req, NO_REPLIES); 
 }
 
 void
@@ -323,7 +269,7 @@ KenwoodChanger::DoDiscQuery(const DataAccess& query)
     ::memcpy(req.data, &query, req.len);
 
     // issue the request
-    SendMessage(req, HAS_REPLIES); 
+    m_device.SendMessage(req, HAS_REPLIES); 
 
     // get the replies
     payload reply;
@@ -333,23 +279,35 @@ KenwoodChanger::DoDiscQuery(const DataAccess& query)
         switch ( reply.cmd )
         {
             case DISC_DATA:
-                if ( m_listener != NULL )
-                    m_listener->DiscDataReply((DiscData*)reply.data);
+                for (int i=0; i<m_listeners.size(); i++)
+                {
+                    if ( m_listeners[i]->DiscDataReply((DiscData*)reply.data) )
+                        break;
+                }
                 break;
 
             case CD_TEXT_DATA:
-                if ( m_listener != NULL )
-                    m_listener->CDTextDataReply((CDTextData*)reply.data);
+                for (int i=0; i<m_listeners.size(); i++)
+                {
+                    if ( m_listeners[i]->CDTextDataReply((CDTextData*)reply.data) )
+                        break;
+                }
                 break;
 
             case TRACK_TIMES:
-                if ( m_listener != NULL )
-                    m_listener->TrackTimesReply((TrackTimes*)reply.data);
+                for (int i=0; i<m_listeners.size(); i++)
+                {
+                    if ( m_listeners[i]->TrackTimesReply((TrackTimes*)reply.data) )
+                        break;
+                }
                 break;
 
             case DISC_TRACK_LIST:
-                if ( m_listener != NULL )
-                    m_listener->DiscTrackListReply((DiscTrackList*)reply.data);
+                for (int i=0; i<m_listeners.size(); i++)
+                {
+                    if ( m_listeners[i]->DiscTrackListReply((DiscTrackList*)reply.data) )
+                        break;
+                }
                 break;
         }
     }
@@ -365,133 +323,34 @@ KenwoodChanger::DoChangeState(const short state)
     ::memcpy(req.data, &state, req.len);
 
     // issue the request
-    SendMessage(req, NO_REPLIES); 
+    m_device.SendMessage(req, NO_REPLIES); 
 }
 
 void
 KenwoodChanger::IssueRequest(const payload& msg, const bool has_replies)
 {
-    SendMessage(msg, has_replies);
+    m_device.SendMessage(msg, has_replies);
 }
 
 void
 KenwoodChanger::GetOneReply(payload& reply)
 {
-    if ( RecvMessage(reply) )
+    if ( m_device.RecvMessage(reply) )
     {
         payload eor;
-        RecvMessage(eor);
+        m_device.RecvMessage(eor);
     }
 }
 
 bool
 KenwoodChanger::GetReply(payload& reply)
 {
-    return RecvMessage(reply);
+    return m_device.RecvMessage(reply);
 }
 
 bool
 KenwoodChanger::GetEvent(payload& event)
 {
-    return RecvMessage(event);
-}
-
-void
-KenwoodChanger::SendMessage(const payload& msg, const bool has_replies)
-{
-    byte cntl;
-
-    // signal player we wish to transmit
-    bool acked = false;
-    while ( !acked )
-    {
-        m_device.WriteCntl(ENQ);
-
-        cntl = m_device.ReadCntl();
-        switch ( cntl )
-        {
-            case STX: ::fprintf(stderr, "->Unexpected STX\n"); break;
-            case EOT: ::fprintf(stderr, "->Unexpected EOT\n"); break;
-            case ENQ: // we need to handle an event from the changer before proceeding ...
-                m_device.WriteCntl(ACK);
-                ProcessEvent();
-                break;
-            case ACK: acked = true; break;
-            case NAK: ::fprintf(stderr, "->Unexpected NAK\n"); break;
-        }
-    }
-
-    bool sent = false;
-    while ( !sent )
-    {
-        m_device.WriteCntl(STX);
-        m_device.WritePayload(msg);
-
-        cntl = m_device.ReadCntl();
-        switch ( cntl )
-        {
-            case STX: ::fprintf(stderr, "->Unexpected STX\n"); break;
-            case EOT: ::fprintf(stderr, "->Unexpected EOT\n"); break;
-            case ENQ: ::fprintf(stderr, "->Unexpected ENQ\n"); break;
-            case ACK: sent = true; break;
-            case NAK: ::fprintf(stderr, "->Unexpected NAK\n"); break;
-        }
-    }
-
-
-    if ( !has_replies )
-    {
-        acked = false;
-        while ( !acked )
-        {
-            m_device.WriteCntl(EOT);
-
-            cntl = m_device.ReadCntl();
-            switch ( cntl )
-            {
-                case STX: ::fprintf(stderr, "->Unexpected STX\n"); break;
-                case EOT: ::fprintf(stderr, "->Unexpected EOT\n"); break;
-                case ENQ: ::fprintf(stderr, "->Unexpected ENQ\n"); break;
-                case ACK: acked = true; break;
-                case NAK: ::fprintf(stderr, "->Unexpected NAK\n"); break;
-            }
-        }
-    }
-}
-
-bool
-KenwoodChanger::RecvMessage(payload& msg)
-{
-    byte cntl = m_device.ReadCntl();
-
-    if ( cntl == EOT )
-    {
-        m_device.WriteCntl(ACK);
-        msg.cmd = 0xFF;
-        return false;
-    }
-    else if ( cntl != STX )
-    {
-        switch ( cntl )
-        {
-            case ENQ: ::fprintf(stderr, "->Unexpected ENQ\n"); break;
-            case ACK: ::fprintf(stderr, "->Unexpected ACK\n"); break;
-            case NAK: ::fprintf(stderr, "->Unexpected NAK\n"); break;
-        }
-    }
-
-    byte cksum = m_device.ReadPayload(msg);
-    if ( cksum == m_device.ComputeChecksum(msg) )
-    {
-        m_device.WriteCntl(ACK);
-    }
-    else
-    {
-        // signal transmission err (should cause retransmit ...)
-        ::fprintf(stderr, "Bad checksum in recieved data\n");
-        m_device.WriteCntl(NAK);
-    }
-
-    return true;
+    return m_device.RecvMessage(event);
 }
 

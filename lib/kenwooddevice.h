@@ -13,6 +13,11 @@ class KenwoodDevice : public SerialDevice
         KenwoodDevice(const char* dev);
         virtual ~KenwoodDevice();
 
+        char* DoHandshake(const char* id);
+
+        void SendMessage(const payload& msg, const bool has_replies);
+        bool RecvMessage(payload& msg);
+
         void WritePayload(const payload& msg);
         byte ReadPayload(payload& msg);
 
