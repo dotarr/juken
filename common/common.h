@@ -30,6 +30,10 @@
 extern int errno;
 #endif
 
+#ifdef __CYGWIN__
+#define WIN32
+#endif
+
 #ifdef __cplusplus
 #  define BEGIN_C_DECLS		extern "C" {
 #  define END_C_DECLS		}
