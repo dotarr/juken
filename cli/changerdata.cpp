@@ -32,7 +32,7 @@ ChangerData::getUserfileByName(const char* name)
         if ( ::strcmp(name, m_userfiles[i]) == 0 )
             return 1<<i;
     }
-    printf("userfile %s not found\n", name);
+    LogMsg("userfile %s not found\n", name);
     return 0;
 }
 
@@ -113,7 +113,7 @@ DiscElement::StartHandler(const XML_Char* element, const XML_Char** attrbutes)
         return new UserfilesElement(m_changer, &m_userfiles);
     else
     {
-        printf("unrecognized tag: %s\n", element);
+        LogMsg("unrecognized tag: %s\n", element);
         return NULL;
     }
 }
@@ -126,6 +126,15 @@ DiscElement::EndHandler(const XML_Char* element)
 
 ElementHandler* 
 CDElement::StartHandler(const XML_Char* element, const XML_Char** attrbutes)
+{
+    if ( ::strcmp(element, "Tracks") == 0 )
+        return new TracksElement(&m_tracks);
+    else
+        return DiscElement::StartHandler(element, attrbutes);
+}
+
+ElementHandler* 
+DVDAElement::StartHandler(const XML_Char* element, const XML_Char** attrbutes)
 {
     if ( ::strcmp(element, "Tracks") == 0 )
         return new TracksElement(&m_tracks);

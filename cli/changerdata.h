@@ -70,12 +70,12 @@ class DiscElement : public ElementHandler
         list<char*>& getTracks() { return m_tracks; };
         const byte getUserfiles() { return m_userfiles; }
 
-        void print()
+        void print(FILE* file)
         {
-            printf("[%3d]  ", m_slot);
-            printf("%-25s", m_short_title);
+            ::fprintf(file, "[%3d]  ", m_slot);
+            ::fprintf(file, "%-25s\n", m_short_title);
             for (list<char*>::iterator iter=m_tracks.begin(); iter!=m_tracks.end(); iter++)
-                printf("  %-25s\n", *iter);
+                ::fprintf(file, "  %-25s\n", *iter);
         }
 
     protected:
@@ -129,6 +129,7 @@ class DVDAElement : public DiscElement
     public:
         DVDAElement(ChangerData* changer) : DiscElement(changer) { }
         virtual ~DVDAElement() { }
+        ElementHandler* StartHandler(const XML_Char* element, const XML_Char** attrbutes);
         enum disc_type getType() { return dvda; };
 };
 
