@@ -26,6 +26,19 @@
 extern int errno;
 #endif
 
+#ifdef __cplusplus
+#  define BEGIN_C_DECLS		extern "C" {
+#  define END_C_DECLS		}
+#else
+#  define BEGIN_C_DECLS
+#  define END_C_DECLS
+#endif
+
+#ifndef EXIT_SUCCESS
+#  define EXIT_SUCCESS  0
+#  define EXIT_FAILURE  1
+#endif
+
 typedef unsigned char  byte;
 
 void ThrowIf(bool cond, const char* fmt, ...);
