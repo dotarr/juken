@@ -8,7 +8,7 @@ typedef unsigned long  ulong;
 
 #include "constants.h"
 
-enum mode { TrackMode, BestMode, OneRandomMode, AllRandomMode, RepeatMode };
+enum mode { TrackMode, BestMode, UserfileMode, OneRandomMode, AllRandomMode, RepeatMode };
 
 enum state { Unknown, Stopped, Stopping, Changing, Playing, 
              Paused, SkipForward, SkipBackward };

@@ -11,7 +11,7 @@ CFLAGS= -g -O2
 .o:
 	cc $(CFLAGS) $< -o $* libjuken.a
 
-all: depend jukend handshake query userfiles disctitles disctracks besttracks tracktimes playpause stop nexttrack
+all: depend jukend main query test links
 
 depend:
 	makedepend -f - -- $(CFLAGS) -- *.h *.cpp >.depend
@@ -24,24 +24,34 @@ libjuken.a: jukebox.o unixdomainsock.o util.o
 jukend: jukend.o serialdevice.o libjuken.a
 	cc -g jukend.cpp -o jukend serialdevice.o libjuken.a
 
-# tools
-handshake: handshake.o libjuken.a
+# toolbox
+main: main.o libjuken.a
+
+# testapp
 query: query.o libjuken.a
-userfiles: userfiles.o libjuken.a
-disctitles: disctitles.o libjuken.a
-disctracks: disctracks.o libjuken.a
-besttracks: besttracks.o libjuken.a
-tracktimes: tracktimes.o libjuken.a
-playpause: playpause.o libjuken.a
-stop: stop.o libjuken.a
-nexttrack: nexttrack.o libjuken.a
+test: test.o libjuken.a
+
+# links
+links: main
+	ln -sf main handshake
+	ln -sf main play
+	ln -sf main pause
+	ln -sf main stop
+	ln -sf main nexttrack
+	ln -sf main prevtrack
+	ln -sf main besttracks
+	ln -sf main disctitles
+	ln -sf main disctracks
+	ln -sf main tracktimes
+	ln -sf main userfiles
 
 # housekeeping
 clean:
 	rm -f core tmp junk *.o *.swp *.bak .depend
 
 realclean: clean
-	rm -f libjuken.a jukend handshake query userfiles disctitles disctracks besttracks tracktimes playpause stop nexttrack
+	rm -f libjuken.a jukend main query test
+	rm -f handshake play pause stop nexttrack prevtrack besttracks disctitles disctracks tracktimes userfiles
 
 ifeq (.depend,$(wildcard .depend))
 include .depend

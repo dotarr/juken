@@ -41,7 +41,7 @@ main (int argc, char* argv[])
         int fd = sock.OpenSock(messaging_socket);
 
         // issue the query request
-        protocol.IssueQueryDevice(fd, 0x00, 0x02, disc, 0x00, 0x00, 0x00);
+        protocol.IssueQueryDevice(fd, 0x20, 0x00, 0x00, 0x00, 0x00, 0x07);
 
         // process the reply(s)
         struct payload reply;

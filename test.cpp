@@ -3,11 +3,16 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/types.h>
+#include <stdlib.h>
 
 #include "unixdomainsock.h"
 #include "jukebox.h"
 
 char* messaging_socket = "/tmp/juken";
+
+short disc = 0;
+byte track= 0;
+byte play = 0;
 
 void
 parse_env()
@@ -19,7 +24,13 @@ parse_env()
 void
 parse_args(int argc, char* argv[])
 {
-    // no arguments yet ...
+    if ( argc > 1 )
+        disc = (short) atol(argv[1]);
+    if ( argc > 2 )
+        track = (byte) atol(argv[2]);
+    if ( argc > 3 )
+        play = (byte) atol(argv[3]);
+::fprintf(stderr, "disc=%d track=%d play=%d\n", disc, track, play);
 }
 
 int
@@ -31,13 +42,20 @@ main (int argc, char* argv[])
 
     try
     {
-        // create the protocol object and messaging socket
+                // create the protocol object and messaging socket
         Jukebox protocol;
         UnixDomainSock sock;
         int fd = sock.OpenSock(messaging_socket);
 
-        // issue the play/pause request
-        protocol.IssueChangeState(fd, STOP_PARAM);
+        // prepare the handshake request
+        struct payload msg;
+        msg.len = 4;
+        *((short*) msg.data) = disc;
+        msg.data[2] = track;
+        msg.data[3] = play;
+
+                // issue the request
+        protocol.IssueRequest(fd, 11, msg, NO_REPLIES); 
     }
     catch (char* e)
     {
@@ -51,5 +69,4 @@ main (int argc, char* argv[])
     // return with success
     return EXIT_SUCCESS;
 }
-
 

@@ -23,11 +23,11 @@ Jukebox::~Jukebox() { }
 void
 Jukebox::ProcessIncomingMessage(int fd)
 {
-    bool done = false;
     byte cmd;
-    byte cksum;
     struct payload msg;
+    byte cksum;
 
+    bool done = false;
     // while the message hasn't completed ...
     while ( !done )
     {
@@ -41,9 +41,7 @@ Jukebox::ProcessIncomingMessage(int fd)
                 // validate the checksum
                 if ( cksum == checksum(cmd, msg) )
                 {
-                    // process the event and acknowledge
-                    DebugConn("   processing event\n");
-                    ProcessEvent(cmd, msg);
+                    // acknowledge the event
                     writecntl(fd, ACK);
                 }
                 else
@@ -72,18 +70,18 @@ Jukebox::ProcessIncomingMessage(int fd)
                 break;
         }
     }
+
+    DebugConn("   processing event\n");
+    ProcessEvent(cmd, msg);
 }
 
 // This function processes messages being sent by the tools to the player.
 void
 Jukebox::ProcessOutgoingMessage(int fd, int msg_fd)
 {
-    bool done = false;
-    bool msg_sent = false;
-    bool eot_sent = false;
     byte cmd;
-    byte cksum;
     struct payload msg;
+    byte cksum;
 
     // read the payload from the tool
     read_payload(cmd, msg, msg_fd);
@@ -93,6 +91,9 @@ Jukebox::ProcessOutgoingMessage(int fd, int msg_fd)
     // signal player we wish to transmit
     writecntl(fd, ENQ);
 
+    bool msg_sent = false;
+    bool eot_sent = false;
+    bool done = false;
     while ( !done )
     {
         // read a control byte
@@ -193,8 +194,8 @@ Jukebox::HandleInfoEvent(const struct payload& msg)
         byte   track_num;
         byte   best_mode;
         byte   track_count;
-        byte   user_files;
-        byte   unknown;
+        byte   userfiles;
+        byte   userfile_mode;
         byte   random_mode;
         byte   repeat_mode;
     };
@@ -206,6 +207,8 @@ Jukebox::HandleInfoEvent(const struct payload& msg)
     int mode = TrackMode;
     if ( info->best_mode )
         mode = BestMode;
+    else if ( info->userfile_mode != 0 )
+        mode = UserfileMode;
     else if ( info->repeat_mode )
         mode = RepeatMode;
     else if ( info->random_mode )
@@ -217,8 +220,8 @@ Jukebox::HandleInfoEvent(const struct payload& msg)
     DebugMsg("disc#: %d track: %d (of%d)\n",
              info->disc_num, info->track_num, info->track_count);
     DebugMsg("\tmode: %s\n", MODE_NAMES[mode]);
-    DebugMsg("\tuserfiles: %02X\n", info->user_files);
-    DebugMsg("\tunknown: %02X\n", info->unknown);
+    DebugMsg("\tuserfiles: %02X\n", info->userfiles);
+    DebugMsg("\tuserfile_mode: %02X\n", info->userfile_mode);
 }
 
 void
