@@ -18,9 +18,6 @@ class SerialDevice
 
         int GetFileDescriptor() const { return fd; }
 
-        void SetDTR();
-        void ClearDTR();
-
         void WriteFully(const void* buf, const size_t count);
         void ReadFully(void* buf, const size_t count);
 
