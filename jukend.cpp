@@ -131,7 +131,6 @@ main (int argc, char* argv[])
     // parse parameters
     parse_args(argc, argv);
 
-    pid_t pid = -1;
     try
     {
         // create communication devices
@@ -151,7 +150,7 @@ main (int argc, char* argv[])
     catch (char* e)
     {
         // output the error
-        ::fprintf(stderr, "exception caught for pid=%d!!!\n%s\n", pid, e);
+        ::fprintf(stderr, "exception caught!!!\n%s\n", e);
         
         // exit with failure
         return EXIT_FAILURE;
