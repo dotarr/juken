@@ -60,6 +60,7 @@ struct Juken::cmd Juken::m_commands[] =
     { "prev",   &Juken::DoPrev,       "play the previous track on the current disc" },
     { "next",   &Juken::DoNext,       "play the next track on the current disc" },
     { "stop",   &Juken::DoStop,       "stop the current disc" },
+    { "query",  &Juken::DoQuery,      "freeform query" },
     { NULL, NULL }
 };
 
@@ -322,7 +323,7 @@ Juken::TextDataReply(short slot, byte track, byte userfiles,
     {
         if ( m_loading_titles )
         {
-            m_titles[slot] = strdup(title);
+            m_titles[slot] = ::strdup(title);
             ::fprintf(m_file, "#");
             ::fflush(m_file);
         }
@@ -513,6 +514,19 @@ Juken::DoId(Juken* _this, int argc, char* argv[])
     int slot = atoi(argv[1]);
     char* disc_id = changer->GetDiscId(slot);
     ::fprintf(_this->m_file, "id=%s\n", disc_id);
+}
+
+void
+Juken::DoQuery(Juken* _this, int argc, char* argv[])
+{
+    DVDChanger* changer = (DVDChanger*) _this->m_changer;
+    int a = atoi(argv[1]);
+    int b = atoi(argv[2]);
+    int c = atoi(argv[3]);
+    int slot = atoi(argv[4]);
+    int title = atoi(argv[5]);
+    int chapter = atoi(argv[6]);
+    changer->DoQuery(a, b, c, slot, title, chapter);
 }
 
 void

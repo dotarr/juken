@@ -16,6 +16,8 @@ class DVDChanger : public KenwoodChanger
         void DoInfoEvent(const payload& event);
         void DoStateEvent(const payload& event);
 
+        void DoQuery(byte a, byte b, byte c,
+                     short slot, byte title, short chapter);
         void DoListDiscs();
         void DoListContents(const short slot);
         char* GetDiscId(const short slot);
@@ -27,6 +29,8 @@ class DVDChanger : public KenwoodChanger
         void DoStop();
 
     private:
+        bool m_setup;
+
         short m_cur_slot;
         byte m_cur_title;
         short m_cur_chapter;

@@ -44,6 +44,7 @@ class Juken : public KenwoodListener
         static void DoNext(Juken* _this, int argc, char* argv[]);
         static void DoStop(Juken* _this, int argc, char* argv[]);
         static void DoId(Juken* _this, int argc, char* argv[]);
+        static void DoQuery(Juken* _this, int argc, char* argv[]);
         static void DoQuit(Juken* _this, int argc, char* argv[]);
 
 

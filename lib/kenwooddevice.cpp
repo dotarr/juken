@@ -114,16 +114,20 @@ KenwoodDevice::RecvMessage(payload& msg)
         msg.cmd = 0xFF;
         return false;
     }
-    else while ( cntl != STX )
+    else if ( cntl == ACK )
+    {
+        WriteCntl(ACK);
+        cntl = ReadCntl();
+    }
+
+    if ( cntl != STX )
     {
         switch ( cntl )
         {
             case ENQ: ::fprintf(stderr, "->Unexpected ENQ\n"); break;
-            case ACK: break;
+            case ACK: ::fprintf(stderr, "->Unexpected ACK\n"); break;
             case NAK: ::fprintf(stderr, "->Unexpected NAK\n"); break;
         }
-        WriteCntl(ACK);
-        cntl = ReadCntl();
     }
 
     byte cksum = ReadPayload(msg);

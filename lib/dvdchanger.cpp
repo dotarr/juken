@@ -2,10 +2,13 @@
 #include "dvdpayload.h"
 #include "discid.h"
 #include "util.h"
+#include "dvdconstants.h"
 
 DVDChanger::DVDChanger(char* id, KenwoodDevice& dev) 
 : KenwoodChanger(id, dev)
 {
+    m_setup = false;
+
     m_cur_slot = -1;
     m_cur_title = (byte) -1;
     m_cur_chapter = -1;
@@ -45,7 +48,7 @@ DVDChanger::DoInfoEvent(const payload& event)
     // cast the payload
     InfoEvent info(event);
 
-    if ( info_changed(info) )
+    if ( m_setup || info_changed(info) )
     {
         m_cur_slot = info.slot();
         m_cur_title = info.title();
@@ -57,7 +60,7 @@ DVDChanger::DoInfoEvent(const payload& event)
                 break;
         }
     }
-    if ( program_changed(info) )
+    if ( m_setup || program_changed(info) )
     {
         m_cur_program = info.program();
         // notify listener
@@ -77,7 +80,7 @@ DVDChanger::DoStateEvent(const payload& event)
     // cast the payload
     StateEvent info(event);
 
-    if ( state_changed(info) )
+    if ( m_setup || state_changed(info) )
     {
         m_cur_state = info.state();
         // notify listener
@@ -87,8 +90,9 @@ DVDChanger::DoStateEvent(const payload& event)
                 break;
         }
     }
-    if ( mode_changed(info) || repeat_changed(info) || param_changed(info) )
+    if ( m_setup || mode_changed(info) || repeat_changed(info) || param_changed(info) )
     {
+        m_setup = true;
         m_cur_mode = info.mode();
         m_cur_repeat = info.repeat();
         m_cur_param = info.param();
@@ -105,6 +109,29 @@ DVDChanger::DoStateEvent(const payload& event)
     }
 }
  
+void
+DVDChanger::DoQuery(byte a, byte b, byte c,
+                    short slot, byte title, short chapter)
+{
+    // build the payload
+    DataAccess query((enum access)a, (enum data_type)b, (dvd_info_type)c, 
+                     1, slot, title, chapter);
+
+printf("query cmd=0x%02X len=%d\n", query.cmd, query.len);
+printdata(query.data, query.len);
+
+    // issue the request
+    m_device.SendMessage(query, HAS_REPLIES); 
+
+    // get the replies
+    payload reply;
+    while ( GetReply(reply) )
+    {
+printf("reply cmd=0x%02X len=%d\n", reply.cmd, reply.len);
+printdata(reply.data, reply.len);
+    }
+}
+
 void
 DVDChanger::DoListDiscs()
 {
@@ -124,10 +151,10 @@ DVDChanger::DoListDiscs()
         {
             if ( m_listeners[i]->TextDataReply(info.index(),
                                                0,
-                                               info.userfile(),
+                                               0,
                                                CDDiscNames,
-                                               info.genre(),
-                                               info.formatting(),
+                                               0,
+                                               0,
                                                info.text()) )
                 break;
         }
@@ -137,17 +164,38 @@ DVDChanger::DoListDiscs()
 void
 DVDChanger::DoListContents(const short slot)
 {
+    // build the payload
+    DataAccess query(RetrieveData, Text, DVDChapterNames, 1, slot, 0, 0);
+
+    // issue the request
+    m_device.SendMessage(query, HAS_REPLIES); 
+
+    // get the replies
+    payload reply;
+    while ( GetReply(reply) )
+    {
+        // process the data
+        TextData info(reply);
+        for (int i=0; i<m_listeners.size(); i++)
+        {
+            if ( m_listeners[i]->TextDataReply(info.index(),
+                                               0,
+                                               0,
+                                               CDDiscNames,
+                                               0,
+                                               0,
+                                               info.text()) )
+                break;
+        }
+    }
 }
 
 char*
 DVDChanger::GetDiscId(const short slot)
 {
-printf("GetDiscId:\n");
     // build the payload
+    //DataAccess query(RetrieveData, TOC, DVDCDTOC, 1, slot, 0, 0);
     DataAccess query(RetrieveData, TOC, DVDCDTOC, 1, slot, 0, 0);
-
-printf("query\n");
-printdata(query.data, query.len);
 
     // issue the request
     m_device.SendMessage(query, HAS_REPLIES); 
@@ -158,9 +206,6 @@ printdata(query.data, query.len);
     payload reply;
     while ( GetReply(reply) )
     {
-printf("reply\n");
-printdata(reply.data, reply.len);
-
         // process the data
         DiscTOC info(reply);
         if ( info.formatting() == 0x20 )
@@ -187,7 +232,7 @@ void
 DVDChanger::DoChangeDisc(const short slot, enum state cur_state)
 {
     // build the payload
-    ChangeDisc req(1, slot, 1, 1, TrackMode, 0x00, cur_state==Playing);
+    ChangeDisc req(1, slot, 0, 0, TrackMode, 0x00, 2);
 
     // issue the request
     m_device.SendMessage(req, NO_REPLIES); 
@@ -196,21 +241,53 @@ DVDChanger::DoChangeDisc(const short slot, enum state cur_state)
 void
 DVDChanger::DoPlayPause()
 {
+    // build the payload
+    DoAction req(1, PLAY_CMD | STATE_PARAM);
+
+    // issue the request
+    m_device.SendMessage(req, NO_REPLIES); 
 }
 
 void
 DVDChanger::DoPrev()
 {
+    // build the payload
+    DoAction req1(1, PREV_CMD | STATE_PARAM);
+
+    // issue the request
+    m_device.SendMessage(req1, NO_REPLIES); 
+    
+    // build the payload
+    DoAction req2(1, PLAY_CMD | STATE_PARAM);
+
+    // issue the request
+    m_device.SendMessage(req2, NO_REPLIES); 
 }
 
 void
 DVDChanger::DoNext()
 {
+    // build the payload
+    DoAction req1(1, NEXT_CMD | STATE_PARAM);
+
+    // issue the request
+    m_device.SendMessage(req1, NO_REPLIES); 
+    
+    // build the payload
+    DoAction req2(1, PLAY_CMD | STATE_PARAM);
+
+    // issue the request
+    m_device.SendMessage(req2, NO_REPLIES); 
 }
 
 void
 DVDChanger::DoStop()
 {
+    // build the payload
+    DoAction req(1, STOP_CMD | STATE_PARAM);
+
+    // issue the request
+    m_device.SendMessage(req, NO_REPLIES); 
 }
 
 bool 

@@ -2,6 +2,7 @@
 #include "cdpayload.h"
 #include "discid.h"
 #include "util.h"
+#include "cdconstants.h"
 
 CDChanger::CDChanger(char* id, KenwoodDevice& dev) 
 : KenwoodChanger(id, dev)

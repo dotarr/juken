@@ -111,7 +111,7 @@ class ChangeDisc : public payload
     public:
         ChangeDisc(const byte changer, const short slot, 
                    const byte title, const short chapter,
-                   const byte mode, const enum genre genre, const bool begin)
+                   const byte mode, const enum genre genre, const byte state)
         {
             cmd = SELECT_DISC_TRACK;
             len = 10;
@@ -121,7 +121,7 @@ class ChangeDisc : public payload
             *((short*) (&data[4])) = chapter;
             data[6] = mode;
             data[7] = genre;
-            data[8] = begin ? 1 : 0;
+            data[8] = state;
             data[9] = 0;
         }
         ChangeDisc(const byte changer, const short slot, 
