@@ -1,5 +1,7 @@
 #include <common.h>
 
+#include <discid.h>
+
 #include "commands.h"
 
 extern bool done; // exit flag from juken-cli.cpp
@@ -145,6 +147,7 @@ time_print(byte reply_cmd, ushort reply_len, byte* reply_data)
         printf("%02X:%02X:%02X ", times[i].minute, times[i].second, times[i].subsecond);
         printf("\n");
     }
+    printf("discid=[%08x]\n", discid(info->num_tracks, times));
 }
 
 extern void printdata(const byte data[], int count);
