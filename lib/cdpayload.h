@@ -176,7 +176,7 @@ class TextData : public payload
                 text_len = 25;
             cmd = TEXT_DATA;
             len = 7 + text_len;
-            *((short*) (&data[0])) = index;
+            *((short*) (&data[0])) = slot;
             data[2] = index;
             data[3] = userfiles;
             data[4] = text_type;
