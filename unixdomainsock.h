@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include "util.h"
 
+// A class for interprocess communication via a unix domain socket.
+
 class UnixDomainSock
 {
     public:

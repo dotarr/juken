@@ -12,21 +12,6 @@ class Jukebox
         Jukebox();
         virtual ~Jukebox();
 
-/*
-        void Handshake(int fd);
-
-        void GetUserFiles(int fd);
-        void GetDiscTitles(int fd);
-
-        void RepeatTrack(int fd)    { IssueChangeState(fd, REPEAT_PARAM); };
-        void StopTrack(int fd)      { IssueChangeState(fd, STOP_PARAM); };
-        void PlayPauseTrack(int fd) { IssueChangeState(fd, PLAY_PAUSE_PARAM); };
-        void PrevTrack(int fd)      { IssueChangeState(fd, PREV_PARAM); };
-        void NextTrack(int fd)      { IssueChangeState(fd, NEXT_PARAM); };
-        void RewindTrack(int fd)    { IssueChangeState(fd, FASTBACK_PARAM); };
-        void ForwardTrack(int fd)   { IssueChangeState(fd, FASTFORW_PARAM); };
-*/
-
         void ProcessIncomingMessage(int fd);
         void ProcessOutgoingMessage(int fd, int msg_fd);
 

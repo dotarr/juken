@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include "util.h"
 
+// A class for communications over a serial ;port. Only basic
+// configuration of the prot is provided.
+
 class SerialDevice
 {
     public:
