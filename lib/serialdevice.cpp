@@ -5,7 +5,9 @@
 #include <common.h>
 
 #ifndef HAVE_CFMAKERAW
+BEGIN_C_DECLS
 void cfmakeraw(struct termios* termios_p);
+END_C_DECLS
 #endif
 
 #include "serialdevice.h"
