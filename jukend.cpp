@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <signal.h>
 #include <sys/time.h>
 #include <sys/time.h>
 #include <sys/socket.h>
@@ -15,10 +16,22 @@
 char* serial_device = "/dev/ttyS0";
 char* messaging_socket = "/tmp/juken";
 
+bool done = false;
+
+void
+INThandler(int sig)
+{
+    // specify to ignore the signal ...
+    //signal(sig, SIG_IGN);
+
+    done = true;
+
+    fprintf(stderr, "ctrl-c hit\n");
+}
+
 void
 ProcessTraffic(Jukebox& protocol, int juke_fd, int sock_fd)
 {
-    bool done = false;
 
     int num_conns = 0;
     int conn_fds[64];
@@ -46,7 +59,8 @@ ProcessTraffic(Jukebox& protocol, int juke_fd, int sock_fd)
 
         // select for something to do
         int num_fds = ::select(max_fd+1, &rfds, NULL, NULL, NULL);
-        ThrowIfMinus1(num_fds, "select failed: ");
+        if ( num_fds == -1 )
+            done = true;
 
         // if we have something to do ...
         if ( num_fds > 0 )
@@ -111,6 +125,9 @@ parse_args(int argc, char* argv[])
 int
 main (int argc, char* argv[])
 {
+    // install a ctrl-c signal handler
+    signal(SIGINT, INThandler);
+
     // parse parameters
     parse_args(argc, argv);
 
