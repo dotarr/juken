@@ -28,6 +28,9 @@ class DVDChanger : public KenwoodChanger
         void DoNext();
         void DoStop();
 
+        void WriteUserfileNames(const char* names[]);
+        void WriteTitleArtist(short slot, const char* title, const char* artist);
+
     private:
         bool m_setup;
 

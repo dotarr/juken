@@ -140,7 +140,7 @@ CDChanger::DoListDiscs()
     DataAccess query(RetrieveData, Text, AllSlots, CDDiscNames, UNKNOWN);
 
     // issue the request
-    m_device.SendMessage(query, HAS_REPLIES); 
+    IssueRequest(query, HAS_REPLIES); 
 
     // get the replies
     payload reply;
@@ -169,7 +169,7 @@ CDChanger::DoListContents(const short slot)
     DataAccess query(RetrieveData, Text, slot, CDTrackNames, UNKNOWN);
 
     // issue the request
-    m_device.SendMessage(query, HAS_REPLIES); 
+    IssueRequest(query, HAS_REPLIES); 
 
     // get the replies
     payload reply;
@@ -198,7 +198,7 @@ CDChanger::GetDiscId(const short slot)
     DataAccess query(RetrieveData, TOC, slot, CDTrackNames, UNKNOWN);
 
     // issue the request
-    m_device.SendMessage(query, HAS_REPLIES); 
+    IssueRequest(query, HAS_REPLIES); 
 
     char* id = NULL;
 
@@ -223,7 +223,7 @@ CDChanger::DoListBest()
     DataAccess query(RetrieveData, Listing, AllSlots, CDDiscNames, UNKNOWN);
 
     // issue the request
-    m_device.SendMessage(query, HAS_REPLIES); 
+    IssueRequest(query, HAS_REPLIES); 
 
     // get the replies
     payload reply;
@@ -246,7 +246,7 @@ CDChanger::DoChangeDisc(const short slot, enum state cur_state)
     ChangeDisc req(slot, 1, cur_state==Playing);
 
     // issue the request
-    m_device.SendMessage(req, NO_REPLIES); 
+    IssueRequest(req, NO_REPLIES); 
 }
 
 void
@@ -256,7 +256,7 @@ CDChanger::DoPlayPause()
     DoAction req(PLAY_PAUSE_CMD | STATE_PARAM);
 
     // issue the request
-    m_device.SendMessage(req, NO_REPLIES); 
+    IssueRequest(req, NO_REPLIES); 
 }
 
 void
@@ -266,13 +266,13 @@ CDChanger::DoPrev()
     DoAction req1(PREV_CMD | STATE_PARAM);
 
     // issue the request
-    m_device.SendMessage(req1, NO_REPLIES); 
+    IssueRequest(req1, NO_REPLIES); 
     
     // build the payload
     DoAction req2(NULL_PARAM);
 
     // issue the request
-    m_device.SendMessage(req2, NO_REPLIES); 
+    IssueRequest(req2, NO_REPLIES); 
 }
 
 void
@@ -282,13 +282,13 @@ CDChanger::DoNext()
     DoAction req1(NEXT_CMD | STATE_PARAM);
 
     // issue the request
-    m_device.SendMessage(req1, NO_REPLIES); 
+    IssueRequest(req1, NO_REPLIES); 
     
     // build the payload
     DoAction req2(NULL_PARAM);
 
     // issue the request
-    m_device.SendMessage(req2, NO_REPLIES); 
+    IssueRequest(req2, NO_REPLIES); 
 }
 
 void
@@ -298,7 +298,7 @@ CDChanger::DoStop()
     DoAction req(STOP_CMD | STATE_PARAM);
 
     // issue the request
-    m_device.SendMessage(req, NO_REPLIES); 
+    IssueRequest(req, NO_REPLIES); 
 }
 
 bool 

@@ -4,13 +4,25 @@
 
 #include "juken.h"
 
-char* serial_device = "/dev/juken";
-
-void
-parse_env()
+void 
+usage(char* prog_name)
 {
-    char* dev = getenv("JUKEN_DEV");
-    if ( dev != NULL )  serial_device = dev;
+#ifdef HAVE_GETOPT_LONG
+    ::fprintf(stdout, "usage: %s {-v|--version|-h|--help} device\n", prog_name);
+    ::fprintf(stdout, "\t-v, --version\tdisplay version information\n");
+    ::fprintf(stdout, "\t-h, --help\tdisplay this message\n");
+#else
+    ::fprintf(stdout, "usage: %s {-v|-h} file\n", prog_name);
+    ::fprintf(stdout, "\t-v\t\tdisplay version information\n");
+    ::fprintf(stdout, "\t-h\t\tdisplay this message\n");
+#endif
+    ::fprintf(stdout, "\t<device>\tthe device to use (defaults to /dev/juken)\n");
+}
+
+void 
+version()
+{
+    ::fprintf(stdout, "%d.%d.%d build: %d\n", 0, 1, 0, 1);
 }
 
 void
@@ -36,46 +48,31 @@ parse_args(int argc, char* argv[])
     {
         switch( c )
         {
-            case 'd':
-                serial_device = optarg;
-                ::fprintf(stdout, "using serial device: %s\n", serial_device);
-                break;
             case 'v':
-                ::fprintf(stdout, "%d.%d.%d build: %d\n", 0, 1, 0, 1);
+                version();
                 exit(EXIT_SUCCESS);
             case 'h':
-                ::fprintf(stdout, "usage: jukebox {-d <device>|--device <device>|-v|--version|-h|--help}\n");
-                ::fprintf(stdout, "\t-d, --device <device>\tthe serial device to use (defaults to /dev/juken)\n");
-                ::fprintf(stdout, "\t-v, --version\t\tdisplay version information\n");
-                ::fprintf(stdout, "\t-h, --help\t\tdisplay this message\n");
-                //::fprintf(stdout, "\t<command>\t\ta command to execute\n");
+                usage(argv[0]);
                 exit(EXIT_SUCCESS);
             case ':': ::fprintf(stderr, "missing parameter\n"); break;
             case '?': ::fprintf(stderr, "unknown option\n");    break;
         }
     }
-
-    if ( optind < argc )
-    {
-        // treat remaining as a "command"
-    }
-}
-
-void
-INThandler(int sig)
-{
-    ::fprintf(stderr, "ctrl-c hit\n");
 }
 
 int
 main(int argc, char* argv[])
 {
-    // install a ctrl-c signal handler
-    //signal(SIGINT, INThandler);
-
     // parse parameters
-    parse_env();
     parse_args(argc, argv);
+    char* serial_device = "/dev/juken";
+    if ( optind == argc-1 )
+        serial_device = argv[optind];
+    else
+    {
+        usage(argv[0]);
+        exit(EXIT_FAILURE);
+    }
 
     try
     {

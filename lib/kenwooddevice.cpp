@@ -29,49 +29,54 @@ KenwoodDevice::DoHandshake(const char* id)
     Handshake req(id);
 
     // issue the request
-    SendMessage(req, HAS_REPLIES); 
-
-    // get the reply
-    payload reply;
-    if ( RecvMessage(reply) )
+    if ( ClearToSend() )
     {
-        payload eor;
-        RecvMessage(eor);
+        SendMessage(req, HAS_REPLIES); 
+
+        // get the reply
+        payload reply;
+        if ( RecvMessage(reply) )
+        {
+            payload eor;
+            RecvMessage(eor);
+        }
+
+        Handshake info(reply);
+        return ::strdup(info.identifier());
+    }
+    else
+        return NULL;
+}
+
+bool
+KenwoodDevice::ClearToSend()
+{
+    bool acked = false;
+    WriteCntl(ENQ);
+
+    byte cntl = ReadCntl();
+    switch ( cntl )
+    {
+        case STX: ::fprintf(stderr, "->Unexpected STX\n"); break;
+        case EOT: ::fprintf(stderr, "->Unexpected EOT\n"); break;
+        case ENQ: acked = false; break;
+        case ACK: acked = true; break;
+        case NAK: ::fprintf(stderr, "->Unexpected NAK\n"); break;
     }
 
-    Handshake info(reply);
-    return ::strdup(info.identifier());
+    return acked;
 }
 
 void
 KenwoodDevice::SendMessage(const payload& msg, const bool has_replies)
 {
-    byte cntl;
-
-    // signal player we wish to transmit
-    bool acked = false;
-    while ( !acked )
-    {
-        WriteCntl(ENQ);
-
-        cntl = ReadCntl();
-        switch ( cntl )
-        {
-            case STX: ::fprintf(stderr, "->Unexpected STX\n"); break;
-            case EOT: ::fprintf(stderr, "->Unexpected EOT\n"); break;
-            case ENQ: ::fprintf(stderr, "->Unexpected ENQ\n"); break;
-            case ACK: acked = true; break;
-            case NAK: ::fprintf(stderr, "->Unexpected NAK\n"); break;
-        }
-    }
-
     bool sent = false;
     while ( !sent )
     {
         WriteCntl(STX);
         WritePayload(msg);
 
-        cntl = ReadCntl();
+        byte cntl = ReadCntl();
         switch ( cntl )
         {
             case STX: ::fprintf(stderr, "->Unexpected STX\n"); break;
@@ -82,23 +87,24 @@ KenwoodDevice::SendMessage(const payload& msg, const bool has_replies)
         }
     }
 
+}
 
-    if ( !has_replies )
+void
+KenwoodDevice::EndMessage()
+{
+    bool acked = false;
+    while ( !acked )
     {
-        acked = false;
-        while ( !acked )
-        {
-            WriteCntl(EOT);
+        WriteCntl(EOT);
 
-            cntl = ReadCntl();
-            switch ( cntl )
-            {
-                case STX: ::fprintf(stderr, "->Unexpected STX\n"); break;
-                case EOT: ::fprintf(stderr, "->Unexpected EOT\n"); break;
-                case ENQ: ::fprintf(stderr, "->Unexpected ENQ\n"); break;
-                case ACK: acked = true; break;
-                case NAK: ::fprintf(stderr, "->Unexpected NAK\n"); break;
-            }
+        byte cntl = ReadCntl();
+        switch ( cntl )
+        {
+            case STX: ::fprintf(stderr, "->Unexpected STX\n"); break;
+            case EOT: ::fprintf(stderr, "->Unexpected EOT\n"); break;
+            case ENQ: ::fprintf(stderr, "->Unexpected ENQ\n"); break;
+            case ACK: acked = true; break;
+            case NAK: ::fprintf(stderr, "->Unexpected NAK\n"); break;
         }
     }
 }

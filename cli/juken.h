@@ -34,9 +34,7 @@ class Juken : public KenwoodListener
         void DoCommand(char* line);
 
         static void DoHelp(Juken* _this, int argc, char* argv[]);
-        static void DoExport(Juken* _this, int argc, char* argv[]);
         static void DoList(Juken* _this, int argc, char* argv[]);
-        static void DoExperiment(Juken* _this, int argc, char* argv[]);
         static void GetBests(Juken* _this, int argc, char* argv[]);
         static void DoChangeDisc(Juken* _this, int argc, char* argv[]);
         static void DoPlay(Juken* _this, int argc, char* argv[]);

@@ -46,7 +46,15 @@ KenwoodChanger::DoEvent()
 void
 KenwoodChanger::IssueRequest(const payload& msg, const bool has_replies)
 {
+    while ( !m_device.ClearToSend() )
+    {
+        //m_device.WriteCntl(ACK);
+        //ProcessEvent();
+    }
     m_device.SendMessage(msg, has_replies);
+
+    if ( !has_replies )
+        m_device.EndMessage();
 }
 
 void

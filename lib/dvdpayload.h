@@ -221,6 +221,21 @@ class TextData : public payload
 {
     public:
         TextData(const payload& info) : payload(info) { }
+        TextData(const byte changer, const byte text_type, 
+                 const short index, const byte formatting,
+                 const byte userfile, const byte genre, const char* text)
+        {
+            int text_len = ::strlen(text);
+            cmd = DISC_DATA;
+            len = 7 + text_len;
+            data[0] = changer;
+            data[1] = text_type;
+            *((short*) (&data[2])) = index;
+            data[4] = formatting;
+            data[5] = userfile;
+            data[6] = genre;
+            ::memcpy(&data[7], text, text_len);
+        }
         byte page() { return (cmd==DISC_DATA) ? 0 : data[0]; }
         byte changer() { return (cmd==DISC_DATA) ? data[0] : data[1]; }
         dvd_title_type title_type() { return (dvd_title_type) ((cmd==DISC_DATA) ? data[1] : data[2]); }

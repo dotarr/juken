@@ -121,7 +121,7 @@ printf("query cmd=0x%02X len=%d\n", query.cmd, query.len);
 printdata(query.data, query.len);
 
     // issue the request
-    m_device.SendMessage(query, HAS_REPLIES); 
+    IssueRequest(query, HAS_REPLIES); 
 
     // get the replies
     payload reply;
@@ -139,7 +139,7 @@ DVDChanger::DoListDiscs()
     DataAccess query(RetrieveData, Text, DVDDiscNames, 1, 0, 0, 0);
 
     // issue the request
-    m_device.SendMessage(query, HAS_REPLIES); 
+    IssueRequest(query, HAS_REPLIES); 
 
     // get the replies
     payload reply;
@@ -168,7 +168,7 @@ DVDChanger::DoListContents(const short slot)
     DataAccess query(RetrieveData, Text, DVDChapterNames, 1, slot, 0, 0);
 
     // issue the request
-    m_device.SendMessage(query, HAS_REPLIES); 
+    IssueRequest(query, HAS_REPLIES); 
 
     // get the replies
     payload reply;
@@ -194,11 +194,10 @@ char*
 DVDChanger::GetDiscId(const short slot)
 {
     // build the payload
-    //DataAccess query(RetrieveData, TOC, DVDCDTOC, 1, slot, 0, 0);
     DataAccess query(RetrieveData, TOC, DVDCDTOC, 1, slot, 0, 0);
 
     // issue the request
-    m_device.SendMessage(query, HAS_REPLIES); 
+    IssueRequest(query, HAS_REPLIES); 
 
     char* id = NULL;
 
@@ -235,7 +234,7 @@ DVDChanger::DoChangeDisc(const short slot, enum state cur_state)
     ChangeDisc req(1, slot, 0, 0, TrackMode, 0x00, 2);
 
     // issue the request
-    m_device.SendMessage(req, NO_REPLIES); 
+    IssueRequest(req, NO_REPLIES); 
 }
 
 void
@@ -245,7 +244,7 @@ DVDChanger::DoPlayPause()
     DoAction req(1, PLAY_CMD | STATE_PARAM);
 
     // issue the request
-    m_device.SendMessage(req, NO_REPLIES); 
+    IssueRequest(req, NO_REPLIES); 
 }
 
 void
@@ -255,13 +254,13 @@ DVDChanger::DoPrev()
     DoAction req1(1, PREV_CMD | STATE_PARAM);
 
     // issue the request
-    m_device.SendMessage(req1, NO_REPLIES); 
+    IssueRequest(req1, NO_REPLIES); 
     
     // build the payload
     DoAction req2(1, PLAY_CMD | STATE_PARAM);
 
     // issue the request
-    m_device.SendMessage(req2, NO_REPLIES); 
+    IssueRequest(req2, NO_REPLIES); 
 }
 
 void
@@ -271,13 +270,13 @@ DVDChanger::DoNext()
     DoAction req1(1, NEXT_CMD | STATE_PARAM);
 
     // issue the request
-    m_device.SendMessage(req1, NO_REPLIES); 
+    IssueRequest(req1, NO_REPLIES); 
     
     // build the payload
     DoAction req2(1, PLAY_CMD | STATE_PARAM);
 
     // issue the request
-    m_device.SendMessage(req2, NO_REPLIES); 
+    IssueRequest(req2, NO_REPLIES); 
 }
 
 void
@@ -287,7 +286,69 @@ DVDChanger::DoStop()
     DoAction req(1, STOP_CMD | STATE_PARAM);
 
     // issue the request
-    m_device.SendMessage(req, NO_REPLIES); 
+    IssueRequest(req, NO_REPLIES); 
+}
+
+void
+DVDChanger::WriteUserfileNames(const char* names[])
+{
+    DataAccess query(SetUserfiles, Ready, DVDDiscNamesInGenre, 1, 0, 0, 0);
+
+    // issue the request
+    IssueRequest(query, HAS_REPLIES); 
+usleep(10);
+
+    // get the reply
+    payload reply;
+    GetOneReply(reply);
+usleep(10);
+
+    for (int i=0; i<8; i++)
+    {
+        TextData data(1, 6, 1<<i, 0, 0, 0, names[i]);
+        IssueRequest(data, NO_REPLIES); 
+    }
+usleep(10);
+}
+
+void
+DVDChanger::WriteTitleArtist(short slot, const char* title, const char* artist)
+{
+    DataAccess query(WriteText, Ready, DVDChapterNames, 1, slot, 0, 0);
+//printf("query cmd=0x%02X len=%d\n", query.cmd, query.len);
+//printdata(query.data, query.len);
+
+    // issue the request
+    IssueRequest(query, HAS_REPLIES); 
+usleep(10);
+
+    // get the reply
+    payload reply;
+    GetOneReply(reply);
+usleep(10);
+
+    TextData data(1, DVDDiscText, slot, 0, 0, 0, title);
+//printf("data  cmd=0x%02X len=%d\n", data.cmd, data.len);
+//printdata(data.data, data.len);
+    IssueRequest(data, NO_REPLIES); 
+usleep(10);
+
+    if ( artist == NULL )
+    {
+        const char none[] = { 0x01 };
+        TextData data(1, 3, slot, 0, 0, 0, none);
+//printf("data  cmd=0x%02X len=%d\n", data.cmd, data.len);
+//printdata(data.data, data.len);
+        IssueRequest(data, NO_REPLIES); 
+    }
+    else
+    {
+        TextData data(1, 3, slot, 0, 0, 0, artist);
+//printf("data  cmd=0x%02X len=%d\n", data.cmd, data.len);
+//printdata(data.data, data.len);
+        IssueRequest(data, NO_REPLIES); 
+    }
+usleep(10);
 }
 
 bool 

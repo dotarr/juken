@@ -5,7 +5,6 @@
 #include <dvdchanger.h>
 
 #include "juken.h"
-#include "exportlistener.h"
 
 #ifdef HAVE_LIBREADLINE
     #if defined(HAVE_READLINE_READLINE_H)
@@ -51,7 +50,6 @@ struct Juken::cmd Juken::m_commands[] =
     { "quit",   &Juken::DoQuit,       "quit the application" },
     { "exit",   &Juken::DoQuit,       "quit the application" },
     { "help",   &Juken::DoHelp,       "this help output" },
-    { "export", &Juken::DoExport,     "export the changer contents" },
     { "list",   &Juken::DoList,       "list the changer contents" },
     { "bests",  &Juken::GetBests,     "list the best tracks" },
     { "change", &Juken::DoChangeDisc, "change the current disc" },
@@ -400,52 +398,6 @@ Juken::DoHelp(Juken* _this, int argc, char* argv[])
 }
 
 void
-Juken::DoExport(Juken* _this, int argc, char* argv[])
-{
-    KenwoodChanger* changer = _this->m_changer;
-    char* dir = "/var/juken/db/";
-    short start = 1;
-    short end = _this->m_capacity;
-
-    if ( argc > 1 )
-        dir = argv[1];
-    if ( argc > 2 )
-        start = atoi(argv[2]);
-    if ( argc > 3 )
-        end = atoi(argv[3]);
-
-    char** titles = _this->m_titles;
-
-    for (short slot=start; slot<=end; slot++)
-    {
-        if ( titles[slot] == NULL )
-            continue;
-
-        if ( _this->m_cur_slot != slot )
-        {
-usleep(10); // an ugly hack, but I can't figure out how/why/when the player isn't "ready"
-            changer->DoChangeDisc(slot, Stopped);
-
-            changer->DoEvent();
-            changer->DoEvent();
-            changer->DoEvent();
-            changer->DoEvent();
-            changer->DoEvent();
-        }
-
-usleep(10); // an ugly hack, but I can't figure out how/why/when the player isn't "ready"
-        char* disc_id = changer->GetDiscId(slot);
-
-        ExportListener export_listener(disc_id, dir);
-        changer->pushListener(&export_listener);
-usleep(10); // an ugly hack, but I can't figure out how/why/when the player isn't "ready"
-
-        changer->DoListContents(slot);
-        changer->popListener();
-    }
-}
-
-void
 Juken::DoList(Juken* _this, int argc, char* argv[])
 {
     KenwoodChanger* changer = _this->m_changer;
@@ -511,9 +463,26 @@ void
 Juken::DoId(Juken* _this, int argc, char* argv[])
 {
     KenwoodChanger* changer = _this->m_changer;
-    int slot = atoi(argv[1]);
-    char* disc_id = changer->GetDiscId(slot);
-    ::fprintf(_this->m_file, "id=%s\n", disc_id);
+    if ( argc > 1 )
+    {
+        int slot = atoi(argv[1]);
+        char* disc_id = changer->GetDiscId(slot);
+        ::fprintf(_this->m_file, "[%3d] id=%s\n", slot, disc_id);
+    }
+    else
+    {
+        for (int slot=1; slot<_this->m_capacity; slot++)
+        {
+            if ( _this->m_titles[slot] != NULL )
+            {
+                char* disc_id = changer->GetDiscId(slot);
+                ::fprintf(_this->m_file, "[%3d] id=%s\n", slot, disc_id);
+            }
+            else
+                ::fprintf(_this->m_file, "[%3d] id=\n", slot);
+            usleep(10);
+        }
+    }
 }
 
 void
