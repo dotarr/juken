@@ -20,6 +20,7 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS([stdlib.h unistd.h stddef.h string.h errno.h])
 AC_CHECK_HEADERS([libintl.h])
 AC_CHECK_HEADERS([stdarg.h])
+AC_CHECK_HEADERS([sys/select.h])
 AC_CHECK_HEADERS([fcntl.h sys/ioctl.h termios.h])
 
 # Checks for typedefs, structures, and compiler characteristics.

@@ -19,6 +19,10 @@
 #include <unistd.h>
 #endif
 
+#if HAVE_SYS_SELECT_H
+#include <sys/select.h>
+#endif
+
 #if HAVE_ERRNO_H
 #include <errno.h>
 #endif
