@@ -42,6 +42,7 @@ Jukebox::ProcessIncomingMessage(int fd)
                 if ( cksum == checksum(cmd, msg) )
                 {
                     // process the event and acknowledge
+                    DebugConn("   processing event\n");
                     ProcessEvent(cmd, msg);
                     writecntl(fd, ACK);
                 }
@@ -79,6 +80,7 @@ Jukebox::ProcessOutgoingMessage(int fd, int msg_fd)
 {
     bool done = false;
     bool msg_sent = false;
+    bool eot_sent = false;
     byte cmd;
     byte cksum;
     struct payload msg;
@@ -103,6 +105,7 @@ Jukebox::ProcessOutgoingMessage(int fd, int msg_fd)
                 // validate the checksum
                 if ( cksum == checksum(cmd, msg) )
                 {
+                    DebugConn("   processing reply\n");
                     // send the reply onto the tool
                     writecntl(msg_fd, STX);
                     write_payload(cmd, msg, msg_fd);
@@ -129,11 +132,17 @@ Jukebox::ProcessOutgoingMessage(int fd, int msg_fd)
                 if ( msg_sent )
                 {
                     // signal player we are finished
-                    if ( send_eot ) writecntl(fd, EOT);
-                    send_eot = false;
+                    if ( send_eot )
+                        if ( eot_sent )
+                            done = true;
+                        else
+                            writecntl(fd, EOT);
+                    //send_eot = false;
+                    eot_sent = true;
                 }
                 else
                 {
+                    DebugConn("   sending request\n");
                     // write the payload to the player
                     writecntl(fd, STX);
                     write_payload(cmd, msg, fd);

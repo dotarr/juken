@@ -11,7 +11,7 @@ CFLAGS= -g -O2
 .o:
 	cc $(CFLAGS) $< -o $* libjuken.a
 
-all: depend jukend handshake query queryuserfiles querydisctitles querydisctracks playpause 
+all: depend jukend handshake query queryuserfiles querydisctitles querydisctracks playpause stop
 
 depend:
 	makedepend -f - -- $(CFLAGS) -- *.h *.cpp >.depend
@@ -31,13 +31,14 @@ queryuserfiles: queryuserfiles.o libjuken.a
 querydisctitles: querydisctitles.o libjuken.a
 querydisctracks: querydisctracks.o libjuken.a
 playpause: playpause.o libjuken.a
+stop: stop.o libjuken.a
 
 # housekeeping
 clean:
 	rm -f core tmp junk *.o *.swp *.bak .depend
 
 realclean: clean
-	rm -f libjuken.a jukend handshake query queryuserfiles querydisctitles querydisctracks playpause
+	rm -f libjuken.a jukend handshake query queryuserfiles querydisctitles querydisctracks playpause stop
 
 ifeq (.depend,$(wildcard .depend))
 include .depend
