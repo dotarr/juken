@@ -5,6 +5,7 @@
 
 void DoQuit(KenwoodChanger& changer, int argc, char* argv[]);
 void DoHelp(KenwoodChanger& changer, int argc, char* argv[]);
+void DoExport(KenwoodChanger& changer, int argc, char* argv[]);
 void DoList(KenwoodChanger& changer, int argc, char* argv[]);
 void DoExperiment(KenwoodChanger& changer, int argc, char* argv[]);
 void GetTimes(KenwoodChanger& changer, int argc, char* argv[]);

@@ -5,6 +5,7 @@ juken
 
 cli
 * add an export/import mechanism to 'backup' changer data
+* add (and use) help string in struct cmd
 * get readline usage in
 * expand functionality for editing data (perhaps a newt based console app)
 

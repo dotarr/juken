@@ -5,8 +5,6 @@
 
 #include "constants.h"
 
-typedef void (*reply_handler)(byte reply_cmd, ushort reply_len, byte* reply_data);
-
 enum mode { TrackMode, ProgramMode, BestMode, MusicTypeMode, UserfileMode };
 enum random { RandomOff, RandomSingle, RandomAll };
 

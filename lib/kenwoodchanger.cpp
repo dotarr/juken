@@ -208,45 +208,46 @@ KenwoodChanger::DoHandshake(const char* id)
     payload reply;
     GetOneReply(reply);
 
-    // process the data
     m_id = ::strdup((char*) reply.data);
-    ::fprintf(stderr, "%s\n", m_id);
+
+    // notify listener
+    m_listener.Handshake(m_id);
 }
 
 void
-KenwoodChanger::DoListDiscs(reply_handler func, byte x)
+KenwoodChanger::DoListDiscs(byte x)
 {
     DataAccess query = { 0, 1, 0, 0, x, 0 };
-    DoDiscQuery(query, func);
+    DoDiscQuery(query);
 }
 
 void
-KenwoodChanger::DoListTracks(const short slot, reply_handler func, byte x)
+KenwoodChanger::DoListTracks(const short slot, byte x)
 {
     if ( slot == 0 )
     {
         DataAccess query = { 0, 1, m_cur_slot, 0, x, 0 };
-        DoDiscQuery(query, func);
+        DoDiscQuery(query);
     }
     else
     {
         DataAccess query = { 0, 1, slot, 0, x, 0 };
-        DoDiscQuery(query, func);
+        DoDiscQuery(query);
     }
 }
 
 void
-KenwoodChanger::DoListTrackTimes(reply_handler func)
+KenwoodChanger::DoListTrackTimes()
 {
     DataAccess query = { 0, 4, m_cur_slot, 0, 1, 0 };
-    DoDiscQuery(query, func);
+    DoDiscQuery(query);
 }
 
 void
-KenwoodChanger::DoListBest(reply_handler func)
+KenwoodChanger::DoListBest()
 {
     DataAccess query = { 0, 32, 0, 0, 0, 0 };
-    DoDiscQuery(query, func);
+    DoDiscQuery(query);
 }
 
 void
@@ -287,7 +288,7 @@ KenwoodChanger::DoStop()
 }
 
 void
-KenwoodChanger::DoDiscQuery(const DataAccess& query, reply_handler func)
+KenwoodChanger::DoDiscQuery(const DataAccess& query)
 {
     // build the payload
     payload req;
@@ -301,8 +302,27 @@ KenwoodChanger::DoDiscQuery(const DataAccess& query, reply_handler func)
     // get the replies
     payload reply;
     while ( GetReply(reply) )
+    {
         // process the data
-        func(reply.cmd, reply.len, reply.data);
+        switch ( reply.cmd )
+        {
+            case 0xFE:
+                m_listener.DiscDataReply((DiscData*)reply.data);
+                break;
+
+            case 0xFD:
+                m_listener.CDTextDataReply((CDTextData*)reply.data);
+                break;
+
+            case 0x06:
+                m_listener.TrackTimesReply((TrackTimes*)reply.data);
+                break;
+
+            case 0x0D:
+                m_listener.DiscTrackListReply((DiscTrackList*)reply.data);
+                break;
+        }
+    }
 }
 
 void
