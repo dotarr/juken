@@ -34,24 +34,28 @@ DVDChanger::ProcessEvent()
 void
 DVDChanger::DoInfoEvent(const payload& event)
 {
+    printf("InfoEvent:\n");
     printdata(event.data, event.len);
 }
 
 void
 DVDChanger::DoStateEvent(const payload& event)
 {
+    printf("StateEvent:\n");
     printdata(event.data, event.len);
 }
  
 void
 DVDChanger::DoDiscEvent(const payload& event)
 {
+    printf("DiscEvent:\n");
     printdata(event.data, event.len);
 }
  
 void
 DVDChanger::DoDoorEvent(const payload& event)
 {
+    printf("DoorEvent:\n");
     printdata(event.data, event.len);
 }
 
