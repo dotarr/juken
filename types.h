@@ -1,5 +1,7 @@
-#ifndef __PAYLOAD_H__
-#define __PAYLOAD_H__
+#ifndef __TYPES_H__
+#define __TYPES_H__
+
+#include <stddef.h>
 
 typedef unsigned char  byte;
 typedef unsigned short ushort;
@@ -7,6 +9,8 @@ typedef unsigned int   uint;
 typedef unsigned long  ulong;
 
 #include "constants.h"
+
+typedef void (*reply_handler) (ushort reply_len, byte* reply_data);
 
 enum mode { TrackMode, BestMode, UserfileMode, OneRandomMode, AllRandomMode, RepeatMode };
 
@@ -23,34 +27,4 @@ enum genre
     SOUND_EFFECTS, SOUND_TRACK, SPOKEN_WORD, WORLD_MUSIC
 };
 
-
-struct payload
-{
-    ushort len;
-    byte data[MAX_PAYLOAD_LEN];
-};
-
-struct userfile_data
-{
-    byte   unknown1;
-    byte   unknown2;
-    byte   mask;
-    byte   unknown3;
-    byte   unknown4;
-    byte   unknown5;
-    byte   unknown6;
-    char   title[MAX_TITLE_LENGTH+1]; // +1 to hold null terminator
-};
-
-struct disc_data
-{
-    ushort slot;
-    byte   index;
-    byte   userfiles;
-    byte   unknown1;
-    byte   genre;
-    byte   format;
-    char   title[MAX_TITLE_LENGTH+1]; // +1 to hold null terminator
-};
-
-#endif /* __PAYLOAD_H__ */
+#endif /* __TYPES_H__ */

@@ -1,11 +1,10 @@
 #ifndef __SERIALDEVICE_H__
 #define __SERIALDEVICE_H__
 
-#include <stdio.h>
-#include "util.h"
+#include "types.h"
 
-// A class for communications over a serial ;port. Only basic
-// configuration of the prot is provided.
+// A class for communications over a serial port. Only basic
+// configuration of the port is provided at this time.
 
 class SerialDevice
 {
@@ -20,6 +19,9 @@ class SerialDevice
 
         void SetDTR();
         void ClearDTR();
+
+        void WriteFully(const void* buf, const size_t count);
+        void ReadFully(void* buf, const size_t count);
 
     protected:
         int fd;

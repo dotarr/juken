@@ -34,22 +34,23 @@ const byte DISC_EVT = 0x14;
 const byte DOOR_EVT = 0x15;
 
 // protocol parameter values
-const byte NULL_PARAM = 0xFF;
+const short NULL_PARAM = 0x00FF;
 
-const byte STATE_PARAM = 0xA0;
-const byte MODE_PARAM = 0xA1;
+const short STATE_PARAM = 0x00A0;
+const short MODE_PARAM = 0x00A1;
 
-const byte RANDOM_PARAM = 0xD4;
+const short NULL_CMD = 0xC900;
 
-const byte REPEAT_PARAM = 0xCC;
+const short STOP_CMD = 0xC900;
+const short PLAY_PAUSE_CMD = 0xCB00;
+const short PREV_CMD = 0xCE00;
+const short NEXT_CMD = 0xCF00;
+const short FASTBACK_CMD = 0x0600;
+const short FASTFORW_CMD = 0x0700;
 
-const byte STOP_PARAM = 0xC9;
-const byte PLAY_PAUSE_PARAM = 0xCB;
-const byte PREV_PARAM = 0xCE;
-const byte NEXT_PARAM = 0xCF;
+const short RANDOM_CMD = 0xD400;
+const short REPEAT_CMD = 0xCC00;
 
-const byte FASTBACK_PARAM = 0x06;
-const byte FASTFORW_PARAM = 0x07;
 
 // player state values
 const byte STOPPED_STATE = 0x40;

@@ -1,6 +1,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
@@ -9,6 +10,7 @@
 #include <unistd.h>
 
 #include "serialdevice.h"
+#include "util.h"
 
 // A class for handling serial port communications
 
@@ -53,7 +55,7 @@ SerialDevice::OpenDevice(const char* dev)
         Throw("Unable to open device: No device name provided");
 
     // open the serial port, make sure that its not the controlling tty
-    fd = ::open(dev, O_RDWR | O_NOCTTY);
+    fd = ::open(dev, O_RDWR | O_NOCTTY | O_NONBLOCK);
     ThrowIfMinus1(fd, "Unable to open %s: ", dev);
 
     // flush any garbage remaining on the port from previous operations.
@@ -61,6 +63,9 @@ SerialDevice::OpenDevice(const char* dev)
 
     // Setup the port
     SetupDefault();
+
+    // Set blocking
+    BlockingMode(true);
 
     // indicate that we are ready
     SetDTR();
@@ -76,33 +81,53 @@ SerialDevice::CloseDevice()
 
     // get the terminal attributes
     struct termios trm;
-    ThrowIfMinus1(::tcgetattr(fd, &trm),
-                 "Failed to get attributes: ");
+    ThrowIfMinus1(::tcgetattr(fd, &trm), "Failed to get attributes: ");
 
     // set terminal not to hangup on close
     trm.c_cflag &= ~HUPCL;
-    ::tcsetattr(fd, TCSADRAIN, &trm);
+    ::tcsetattr(fd, TCSAFLUSH, &trm);
+    //::tcsetattr(fd, TCSADRAIN, &trm);
+    //::tcsetattr(fd, TCSANOW, &trm);
 
     // reset the fd member
     fd = -1;
 }
 
 void
-SerialDevice::BlockingMode(bool block)
+SerialDevice::WriteFully(const void* buf, const size_t count)
 {
-    // get the current mode
-    int flags = ::fcntl(fd, F_GETFL, 0);
-    // set the mode
-    if ( block )
-        ThrowIfMinus1(::fcntl(fd, F_SETFL, flags & ~O_NDELAY),
-                     "Failed to set blocking mode: ");
-    else
-        ThrowIfMinus1(::fcntl(fd, F_SETFL, flags | O_NDELAY),
-                     "Failed to set blocking mode: ");
+    // repeat until all bytes are written (or the write fails)
+    size_t c = count;
+    const void* p = buf;
+    do 
+    {
+        ssize_t sent = ::write(fd, p, c);
+        ThrowIfMinus1(sent, "write failed: ");
+        p = ((byte*)p) + sent;
+        c -= sent;
+    }
+    while ( c > 0 );
 }
 
 void
-SerialDevice::SetupDefault() 
+SerialDevice::ReadFully(void* buf, const size_t count)
+{
+    // repeat until all bytes are read (or the read fails)
+    size_t c = count;
+    void* p = buf;
+    do 
+    {
+        ssize_t rcvd = ::read(fd, p, c);
+        ThrowIfMinus1(rcvd, "read failed: ");
+        if ( rcvd == 0 ) Throw("eof");
+        p = ((byte*)p) + rcvd;
+        c -= rcvd;
+    }
+    while ( c > 0 );
+}
+
+void
+SerialDevice::SetupDefault()
 {
     // flush any unwritten, unread data
     ::tcflush(fd, TCIOFLUSH);
@@ -131,8 +156,21 @@ SerialDevice::SetupDefault()
     tset.c_cc[VSTOP]  = _POSIX_VDISABLE;
    
     // set the attributes
-    ThrowIfMinus1(::tcsetattr(fd, TCSANOW, &tset),
+    ThrowIfMinus1(::tcsetattr(fd, TCSANOW, &tset), 
                   "Failed to set attributes: ");
 }
 
+void
+SerialDevice::BlockingMode(bool block)
+{
+    // get the current mode
+    int flags = ::fcntl(fd, F_GETFL, 0);
+    // set the mode
+    if ( block )
+        ThrowIfMinus1(::fcntl(fd, F_SETFL, flags & ~O_NDELAY),
+                     "Failed to set blocking mode: ");
+    else
+        ThrowIfMinus1(::fcntl(fd, F_SETFL, flags | O_NDELAY),
+                     "Failed to set blocking mode: ");
+}
 
