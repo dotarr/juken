@@ -430,7 +430,7 @@ KenwoodChanger::RecvMessage(payload& msg)
     }
     else
     {
-        // signal transmission error (should cause retransmit ...)
+        // signal transmission err (should cause retransmit ...)
         ::fprintf(stderr, "Bad checksum in recieved data\n");
         m_device.WriteCntl(NAK);
     }
