@@ -11,6 +11,13 @@ END_C_DECLS
 
 #include "serialdevice.h"
 
+#ifdef WIN32
+const char* SerialDevice::DefaultDevice = "COM1";
+#else
+const char* SerialDevice::DefaultDevice = "/dev/juken";
+#endif
+
+
 // A class for handling serial port communications
 
 SerialDevice::SerialDevice() 
@@ -32,20 +39,20 @@ SerialDevice::OpenDevice(const char* dev)
         Throw("Unable to open device: No device name provided");
 
     // open the serial port, make sure that its not the controlling tty
-    DebugMsg("opening %s ...", dev);
+    TraceMsg("opening %s ...", dev);
     fd = ::open(dev, O_RDWR | O_NOCTTY | O_NONBLOCK);
     ThrowIfMinus1(fd, "Unable to open %s: ", dev);
-    DebugMsg("opened\n");
+    TraceMsg("opened\n");
 
     // check to make sure that dev is a device and not say a directory
-    DebugMsg("checking for tty ...");
+    TraceMsg("checking for tty ...");
     ThrowIf(!::isatty(fd), "%s does not appear to be a device. \n", dev );
-    DebugMsg("done\n");
+    TraceMsg("done\n");
 
     // flush any garbage remaining on the port from previous operations.
-    DebugMsg("flushing ...");
+    TraceMsg("flushing ...");
     ThrowIfMinus1(::tcflush(fd, TCIOFLUSH), "Failed to flush: ");
-    DebugMsg("done\n");
+    TraceMsg("done\n");
 
     // save the ports current attributes
     SaveAttributes();
@@ -112,19 +119,19 @@ void
 SerialDevice::SaveAttributes()
 {
     // get the current attributes
-    DebugMsg("getting attributes ...");
+    TraceMsg("getting attributes ...");
     ThrowIfMinus1(::tcgetattr(fd, &m_saved_attr), 
                     "Failed to save attributes: ");
-    DebugMsg("done\n");
+    TraceMsg("done\n");
 }
 
 void
 SerialDevice::RestoreAttributes()
 {
-    DebugMsg("setting attributes...");
+    TraceMsg("setting attributes...");
     ThrowIfMinus1(::tcsetattr(fd, TCSAFLUSH, &m_saved_attr), 
                     "Failed to restore attributes: ");
-    DebugMsg("done\n");
+    TraceMsg("done\n");
 }
 
 void
@@ -134,9 +141,9 @@ SerialDevice::SetupDefault()
     ThrowIfMinus1(::tcgetattr(fd, &tset), "Failed to get attributes: ");
 
     // default raw settings 
-    DebugMsg("setting raw mode ...");
+    TraceMsg("setting raw mode ...");
     ::cfmakeraw(&tset);
-    DebugMsg("done\n");
+    TraceMsg("done\n");
 
     // 8 bits, no parity, one stop bit, 9600 baud
     tset.c_cflag = CREAD|CS8|B9600|HUPCL;
@@ -145,15 +152,15 @@ SerialDevice::SetupDefault()
     tset.c_cc[VTIME] = 50;
    
     // set the attributes
-    DebugMsg("setting 8N1 9600 baud ...");
+    TraceMsg("setting 8N1 9600 baud ...");
     ThrowIfMinus1(::tcsetattr(fd, TCSAFLUSH, &tset), "Failed to set attributes: ");
-    DebugMsg("done\n");
+    TraceMsg("done\n");
 }
 
 void
 SerialDevice::BlockingMode(bool block)
 {
-    DebugMsg("setting blocking mode ...");
+    TraceMsg("setting blocking mode ...");
     // get the current mode
     int flags = ::fcntl(fd, F_GETFL, 0);
     // set the mode
@@ -163,6 +170,6 @@ SerialDevice::BlockingMode(bool block)
     else
         ThrowIfMinus1(::fcntl(fd, F_SETFL, flags | O_NDELAY),
                      "Failed to set blocking mode: ");
-    DebugMsg("done\n");
+    TraceMsg("done\n");
 }
 

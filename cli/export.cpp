@@ -20,7 +20,7 @@ usage(char* prog_name)
     ::fprintf(stdout, "\t-h\t\tdisplay this message\n");
     ::fprintf(stdout, "\t-l\t\tlogging level (defaults to 1)\n");
 #endif
-    ::fprintf(stdout, "device:\tthe device to export data from\n");
+    ::fprintf(stdout, "device:\tthe device to export data from (defaults to %s)\n", SerialDevice::DefaultDevice);
     ::fprintf(stdout, "start_slot:\tthe first slot to export data from\n");
     ::fprintf(stdout, "end_slot:\tthe last slot to export data from\n");
 }
@@ -88,7 +88,9 @@ main(int argc, char* argv[])
     ::strcat(log_filename, ".log");
     OpenLog(log_filename, g_log_level);
 
-    char* serial_device = argv[optind++];
+    char* serial_device = (char*) SerialDevice::DefaultDevice;
+    if ( optind < argc )
+        serial_device = argv[optind++];
     short start = -1;
     if ( optind < argc )
         start = (short) atoi(argv[optind++]);

@@ -21,6 +21,8 @@ class SerialDevice
         void WriteFully(const void* buf, const size_t count);
         void ReadFully(void* buf, const size_t count);
 
+        static const char* DefaultDevice;
+
     protected:
         int fd;
 

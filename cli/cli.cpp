@@ -20,7 +20,7 @@ usage(char* prog_name)
     ::fprintf(stdout, "\t-h\t\tdisplay this message\n");
     ::fprintf(stdout, "\t-l\t\tlogging level (defaults to 1)\n");
 #endif
-    ::fprintf(stdout, "device:\tthe device to use (defaults to /dev/juken)\n");
+    ::fprintf(stdout, "device:\tthe device to use (defaults to %s)\n", SerialDevice::DefaultDevice);
 }
 
 void 
@@ -81,7 +81,7 @@ main(int argc, char* argv[])
     ::strcat(log_filename, ".log");
     OpenLog(log_filename, g_log_level);
 
-    char* serial_device = "/dev/juken";
+    char* serial_device = (char*) SerialDevice::DefaultDevice;
     if ( optind < argc )
         serial_device = argv[optind++];
 
