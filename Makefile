@@ -6,7 +6,7 @@
 CFLAGS= -g -O2
 .SUFFIXES: .cpp
 
-OBJS=   test.o \
+OBJS=   jukend.o \
 	consolelistener.o \
 	util.o \
 	serialdevice.o \
@@ -16,14 +16,14 @@ OBJS=   test.o \
 .cpp.o:
 	cc $(CFLAGS) -c $< 
 
-all: juken
+all: jukend
 
-juken: $(OBJS)
-	cc $(OBJS) -o juken 
+jukend: $(OBJS)
+	cc $(OBJS) -o jukend
 
 clean:
-	rm -f core tmp junk *.o *.so *.swp *.bak .depend
+	rm -f core *.core tmp junk *.o *.so *.swp *.bak .depend
 
 realclean: clean
-	rm -f juken 
+	rm -f jukend
 
