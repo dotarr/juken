@@ -62,7 +62,7 @@ struct Juken::cmd Juken::m_commands[] =
 };
 
 Juken::Juken(const char* serial_device)
-: m_device(NULL), m_listener(NULL), m_changer(NULL), m_done(false), m_file(stdout)
+: m_device(NULL), m_listener(NULL), m_changer(NULL), m_done(false)
 {
     m_device = new KenwoodDevice(serial_device);
     g_juken = this;
@@ -75,8 +75,8 @@ Juken::~Juken()
     rl_crlf();
     rl_callback_handler_remove();
 
-    //::fclose(m_file);
-    m_file = NULL;
+    //::fclose(stdout);
+    stdout = NULL;
 
     delete m_changer;
     m_changer = NULL;
@@ -93,10 +93,11 @@ Juken::InitState()
 {
     // handshake with device
     char* id = m_device->DoHandshake("I'm PC");
-    ::fprintf(m_file, "connection established to %s\n", id+4);
+    ::fprintf(stdout, "connection established to %s\n", id+4);
+    LogMsg("connection established to %s\n", id+4);
 
     // make a listener
-    m_listener = new ConsoleListener(m_file);
+    m_listener = new ConsoleListener(stdout);
     
     // create appropriate changer 
     if ( ::strcmp(id, "I'm CD-425M") == 0 )
@@ -152,7 +153,6 @@ void
 Juken::ListingDiscsCallback(void* context, Disc& data)
 {
     Juken* _this = (Juken*) context;
-    FILE* file = _this->m_file;
 
     char* type = "";
     switch ( data.type )
@@ -163,19 +163,18 @@ Juken::ListingDiscsCallback(void* context, Disc& data)
         case DISC_DVD_A:  type = "dvd-a"; break;
         case DISC_DVD_V:  type = "dvd";   break;
     }
-    ::fprintf(file, "[%3d] %-5s ", data.index, type);
+    ::fprintf(stdout, "[%3d] %-5s ", data.index, type);
     const char* title  = ((data.title==NULL) ? "" : data.title);
     if ( data.artist == NULL )
-        ::fprintf(file, "%s\n", title);
+        ::fprintf(stdout, "%s\n", title);
     else
-        ::fprintf(file, "%s:%s\n", title, data.artist);
+        ::fprintf(stdout, "%s:%s\n", title, data.artist);
 }
 
 void 
 Juken::ListingDiscContentsCallback(void* context, Disc& data)
 {
     Juken* _this = (Juken*) context;
-    FILE* file = _this->m_file;
 
     ListingDiscsCallback(context, data);
     if ( data.userfiles != 0 )
@@ -187,19 +186,19 @@ Juken::ListingDiscContentsCallback(void* context, Disc& data)
             if ( uf&0x01 == 1 )
             {
                 const char* name = _this->m_changer->getUserfileName(i);
-                ::fprintf(file, "    %10s %s\n", label, name);
+                ::fprintf(stdout, "    %10s %s\n", label, name);
                 label = "";
             }
             uf = uf>>1;
         }
     }
     if ( data.genre > UNASSIGNED )
-        ::fprintf(file, "        genre: %s\n", GENRE_NAMES[data.genre]);
+        ::fprintf(stdout, "        genre: %s\n", GENRE_NAMES[data.genre]);
     for (NameList::iterator iter=data.tracks.begin(); iter!=data.tracks.end(); iter++)
     {
         Name& track = (*iter);
         const char* title = ((track.text==NULL) ? "" : track.text);
-        ::fprintf(file,"  [%2d]%-21s\n", track.index, title);
+        ::fprintf(stdout,"  [%2d]%-21s\n", track.index, title);
     }
 }
 
@@ -207,6 +206,8 @@ Juken::ListingDiscContentsCallback(void* context, Disc& data)
 void
 Juken::DoCommand(char* line)
 {
+    LogMsg("DoCommand %s\n", line);
+
     // build up the argc, argv
     int argc = 0;
     char** argv = ::buildargv(line);
@@ -314,7 +315,7 @@ Juken::DoId(Juken* _this, int argc, char* argv[])
     {
         int slot = atoi(argv[1]);
         char* disc_id = changer->GetDiscId(slot);
-        ::fprintf(_this->m_file, "[%3d] id=%s\n", slot, disc_id);
+        ::fprintf(stdout, "[%3d] id=%s\n", slot, disc_id);
     }
 }
 

@@ -46,7 +46,6 @@ class Juken
         KenwoodChanger* m_changer;
 
         bool m_done;
-        FILE* m_file;
 
         static void readline_callback(char* line);
         static char** completion_callback(const char* text, int start, int end);
