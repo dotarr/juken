@@ -44,7 +44,7 @@ parse_args(int argc, char* argv[])
                 ::fprintf(stdout, "%d.%d.%d build: %d\n", 0, 1, 0, 1);
                 exit(EXIT_SUCCESS);
             case 'h':
-                ::fprintf(stdout, "usage: jukebox {-v|--version|-h|--help} <device>\n");
+                ::fprintf(stdout, "usage: jukebox {-d <device>|--device <device>|-v|--version|-h|--help}\n");
                 ::fprintf(stdout, "\t-d, --device <device>\tthe serial device to use (defaults to /dev/juken)\n");
                 ::fprintf(stdout, "\t-v, --version\t\tdisplay version information\n");
                 ::fprintf(stdout, "\t-h, --help\t\tdisplay this message\n");
