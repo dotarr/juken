@@ -38,12 +38,6 @@ AC_FUNC_VPRINTF
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([select strdup strerror memset])
 
-save_LIBS="$LIBS"
-test x"${with_readline-no}" != xno && LIBS="$LIBS -lreadline"
-AC_REPLACE_FUNCS(readline)
-AC_CHECK_FUNCS(add_history)
-LIBS="$save_LIBS"
-
 AC_CONFIG_FILES([Makefile
                  cli/Makefile
                  lib/Makefile
