@@ -43,11 +43,9 @@ Boston, MA 02111-1307, USA.  */
 
 #define INITIAL_MAXARGC 8	/* Number of args + NULL in initial argv */
 
-/*
-char** dupargv(char** vector);
+char** dupargv(char**);
 char** buildargv(char *);
 void freeargv(char **);
-*/
 
 /*
 
