@@ -4,7 +4,7 @@
 #include "xmlparser.h"
 #include <list>
 
-class Disc;
+class DiscElement;
 
 
 class ChangerData : public XMLParser
@@ -17,7 +17,7 @@ class ChangerData : public XMLParser
         const char* getDevice() { return m_device; }
         const char* getUserfileName(int i) { return m_userfiles[i]; }
         char** getUserfileNames() { m_userfiles; }
-        list<Disc*> getDiscs() { return m_discs; }
+        list<DiscElement*> getDiscs() { return m_discs; }
 
         byte getUserfileByName(const char* name);
 
@@ -30,15 +30,15 @@ class ChangerData : public XMLParser
         char* m_model;
         char* m_device;
         char* m_userfiles[8];
-        list<Disc*> m_discs;
+        list<DiscElement*> m_discs;
 };
 
 
 
-class UserfileNameHandler: public ElementHandler
+class UserfileNameElement: public ElementHandler
 {
     public:
-        UserfileNameHandler(char** names) : m_names(names) { };
+        UserfileNameElement(char** names) : m_names(names) { };
 
         ElementHandler* StartHandler(const XML_Char* element, const XML_Char** attrbutes);
         void CharHandler(const XML_Char* text, int len) { };
@@ -48,34 +48,37 @@ class UserfileNameHandler: public ElementHandler
         char** m_names;
 };
 
-class Disc : public ElementHandler
+class DiscElement : public ElementHandler
 {
     public:
-        Disc(ChangerData* changer);
-        virtual ~Disc();
+        DiscElement(ChangerData* changer);
+        virtual ~DiscElement();
 
-        ElementHandler* StartHandler(const XML_Char* element, const XML_Char** attrbutes);
-        void CharHandler(const XML_Char* text, int len) { };
-        void EndHandler(const XML_Char* element);
+        virtual ElementHandler* StartHandler(const XML_Char* element, const XML_Char** attrbutes);
+        virtual void CharHandler(const XML_Char* text, int len) { };
+        virtual void EndHandler(const XML_Char* element);
 
+        enum disc_type { cd=0, mp3, vcd, dvd, dvda };
+        virtual enum disc_type getType() = 0;
+
+        const char* getId() { return m_id; };
         short getSlot() { return m_slot; };
         const char* getTitle() { return m_title; };
         const char* getShortTitle() { return m_short_title; };
         const char* getDescription() { return m_description; };
+        const char* getArtist() { return m_artist; };
+        list<char*>& getTracks() { return m_tracks; };
+        const byte getUserfiles() { return m_userfiles; }
 
         void print()
         {
             printf("[%3d]  ", m_slot);
             printf("%-25s", m_short_title);
-            if ( m_description != NULL )
-                printf(": %-25s", m_description);
-            else
-                printf(": %-25s", " ");
-            printf("     (%2X)  ", m_userfiles);
-            printf("\n", m_description);
+            for (list<char*>::iterator iter=m_tracks.begin(); iter!=m_tracks.end(); iter++)
+                printf("  %-25s\n", *iter);
         }
 
-    private:
+    protected:
         ChangerData* m_changer;
 
         char* m_id;
@@ -83,34 +86,56 @@ class Disc : public ElementHandler
         char* m_title;
         char* m_short_title;
         char* m_description;
+        char* m_artist;
         byte m_userfiles;
+        list<char*> m_tracks;
 };
 
-class CD : public Disc
+class CDElement : public DiscElement
 {
     public:
-        CD(ChangerData* changer) : Disc(changer) { }
-        virtual ~CD() { }
+        CDElement(ChangerData* changer) : DiscElement(changer) { }
+        virtual ~CDElement() { }
+        ElementHandler* StartHandler(const XML_Char* element, const XML_Char** attrbutes);
+        enum disc_type getType() { return cd; };
 };
 
-class DVD_V : public Disc
+class MP3Element : public DiscElement
 {
     public:
-        DVD_V(ChangerData* changer) : Disc(changer) { }
-        virtual ~DVD_V() { }
+        MP3Element(ChangerData* changer) : DiscElement(changer) { }
+        virtual ~MP3Element() { }
+        enum disc_type getType() { return mp3; };
 };
 
-class MP3 : public Disc
+class VCDElement : public DiscElement
 {
     public:
-        MP3(ChangerData* changer) : Disc(changer) { }
-        virtual ~MP3() { }
+        VCDElement(ChangerData* changer) : DiscElement(changer) { }
+        virtual ~VCDElement() { }
+        enum disc_type getType() { return vcd; };
 };
 
-class UserfilesHandler: public ElementHandler
+class DVDElement : public DiscElement
 {
     public:
-        UserfilesHandler(ChangerData* changer, byte* userfiles) 
+        DVDElement(ChangerData* changer) : DiscElement(changer) { }
+        virtual ~DVDElement() { }
+        enum disc_type getType() { return dvd; };
+};
+
+class DVDAElement : public DiscElement
+{
+    public:
+        DVDAElement(ChangerData* changer) : DiscElement(changer) { }
+        virtual ~DVDAElement() { }
+        enum disc_type getType() { return dvda; };
+};
+
+class UserfilesElement: public ElementHandler
+{
+    public:
+        UserfilesElement(ChangerData* changer, byte* userfiles) 
             : m_changer(changer), m_count(0), m_userfiles(userfiles)
             { for (int i=0; i<8; i++) m_names[i] = NULL; };
 
@@ -123,6 +148,20 @@ class UserfilesHandler: public ElementHandler
         int m_count;
         char* m_names[8];
         byte* m_userfiles;
+};
+
+class TracksElement: public ElementHandler
+{
+    public:
+        TracksElement(list<char*>* tracks) 
+            : m_tracks(tracks) { }
+
+        ElementHandler* StartHandler(const XML_Char* element, const XML_Char** attrbutes);
+        void CharHandler(const XML_Char* text, int len) { };
+        void EndHandler(const XML_Char* element) { };
+
+    private:
+        list<char*>* m_tracks;
 };
 
 #endif /* JUKEN_CHANGER_DATA_H */

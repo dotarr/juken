@@ -18,7 +18,7 @@ ChangerData::~ChangerData()
 
     while ( !m_discs.empty() )
     {
-        Disc* disc = m_discs.back();
+        DiscElement* disc = m_discs.back();
         m_discs.pop_back();
         delete disc;
     }
@@ -46,16 +46,20 @@ ChangerData::StartHandler(const XML_Char* element, const XML_Char** attributes)
     else if ( ::strcmp(element, "Device") == 0 )
         return new StringHandler(&m_device);
     else if ( ::strcmp(element, "Userfiles") == 0 )
-        return new UserfileNameHandler(m_userfiles);
+        return new UserfileNameElement(m_userfiles);
     else 
     {
-        Disc* disc = NULL;
+        DiscElement* disc = NULL;
         if ( ::strcmp(element, "CD") == 0 )
-            disc = new CD(this);
-        else if ( ::strcmp(element, "DVD") == 0 )
-            disc = new DVD_V(this);
+            disc = new CDElement(this);
         else if ( ::strcmp(element, "MP3") == 0 )
-            disc = new MP3(this);
+            disc = new MP3Element(this);
+        else if ( ::strcmp(element, "VCD") == 0 )
+            disc = new VCDElement(this);
+        else if ( ::strcmp(element, "DVDA") == 0 )
+            disc = new DVDAElement(this);
+        else if ( ::strcmp(element, "DVD") == 0 )
+            disc = new DVDElement(this);
         if ( disc != NULL )
             m_discs.push_back(disc);
         return disc;
@@ -63,7 +67,7 @@ ChangerData::StartHandler(const XML_Char* element, const XML_Char** attributes)
 }
 
 ElementHandler* 
-UserfileNameHandler::StartHandler(const XML_Char* element, const XML_Char** attrbutes)
+UserfileNameElement::StartHandler(const XML_Char* element, const XML_Char** attrbutes)
 {
     if ( ::strncmp(element, "Userfile", ::strlen("Userfile")) == 0 )
     {
@@ -75,21 +79,23 @@ UserfileNameHandler::StartHandler(const XML_Char* element, const XML_Char** attr
     return NULL;
 }
 
-Disc::Disc(ChangerData* changer)
-    : m_changer(changer), m_id(NULL), m_title(NULL), m_short_title(NULL), m_description(NULL)
+DiscElement::DiscElement(ChangerData* changer)
+    : m_changer(changer), m_id(NULL), m_title(NULL), 
+      m_short_title(NULL), m_description(NULL), m_artist(NULL)
 {
 }
 
-Disc::~Disc()
+DiscElement::~DiscElement()
 {
     delete m_id;
     delete m_title;
     delete m_short_title;
     delete m_description;
+    delete m_artist;
 }
 
 ElementHandler* 
-Disc::StartHandler(const XML_Char* element, const XML_Char** attrbutes)
+DiscElement::StartHandler(const XML_Char* element, const XML_Char** attrbutes)
 {
     if ( ::strcmp(element, "ID") == 0 )
         return new StringHandler(&m_id);
@@ -101,8 +107,10 @@ Disc::StartHandler(const XML_Char* element, const XML_Char** attrbutes)
         return new StringHandler(&m_short_title);
     else if ( ::strcmp(element, "Description") == 0 )
         return new StringHandler(&m_description);
+    else if ( ::strcmp(element, "Artist") == 0 )
+        return new StringHandler(&m_artist);
     else if ( ::strcmp(element, "Userfiles") == 0 )
-        return new UserfilesHandler(m_changer, &m_userfiles);
+        return new UserfilesElement(m_changer, &m_userfiles);
     else
     {
         printf("unrecognized tag: %s\n", element);
@@ -111,19 +119,28 @@ Disc::StartHandler(const XML_Char* element, const XML_Char** attrbutes)
 }
 
 void 
-Disc::EndHandler(const XML_Char* element)
+DiscElement::EndHandler(const XML_Char* element)
 { 
     //print(); 
 }
 
+ElementHandler* 
+CDElement::StartHandler(const XML_Char* element, const XML_Char** attrbutes)
+{
+    if ( ::strcmp(element, "Tracks") == 0 )
+        return new TracksElement(&m_tracks);
+    else
+        return DiscElement::StartHandler(element, attrbutes);
+}
+
 ElementHandler*
-UserfilesHandler::StartHandler(const XML_Char* element, const XML_Char** attributes)
+UserfilesElement::StartHandler(const XML_Char* element, const XML_Char** attributes)
 {
     return new StringHandler(&m_names[m_count++]);
 }
 
 void 
-UserfilesHandler::EndHandler(const XML_Char* element)
+UserfilesElement::EndHandler(const XML_Char* element)
 {
     for (int i=0; i<m_count; i++)
     {
@@ -131,4 +148,12 @@ UserfilesHandler::EndHandler(const XML_Char* element)
         delete m_names[i];
     }
 }
+
+ElementHandler*
+TracksElement::StartHandler(const XML_Char* element, const XML_Char** attributes)
+{
+    m_tracks->push_back(NULL);
+    return new StringHandler(&m_tracks->back());
+}
+
 

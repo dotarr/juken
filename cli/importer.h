@@ -3,11 +3,11 @@
 
 #include <kenwooddevice.h>
 #include <kenwoodchanger.h>
-#include <kenwoodlistener.h>
+#include <consolelistener.h>
 
 #include "changerdata.h"
 
-class Importer : public KenwoodListener
+class Importer
 {
     public:
         Importer(const char* filename);
@@ -16,26 +16,13 @@ class Importer : public KenwoodListener
         void InitState();
 
         void Run();
-
-        bool InfoChanged(short slot, byte title, short chapter);
-        bool ModeChanged(enum mode mode, bool repeat, byte param);
-        bool StateChanged(enum state state);
-        bool DoorChanged(bool door_open);
         
-        bool TextDataReply(short slot, byte track, byte userfiles, 
-                           byte request_type, byte genre, 
-                           byte formatting, char* title);
-
     private:
-        ChangerData m_data;
-
         KenwoodDevice* m_device;
+        ConsoleListener* m_listener;
         KenwoodChanger* m_changer;
 
-        bool m_is_CD;
-
-        void import_CD_changer();
-        void import_DVD_changer();
+        ChangerData m_data;
 
         void print_data();
 };

@@ -4,22 +4,19 @@
 #include "util.h"
 #include "dvdconstants.h"
 
-DVDChanger::DVDChanger(char* id, KenwoodDevice& dev) 
-: KenwoodChanger(id, dev)
+DVDChanger::DVDChanger(char* id, KenwoodDevice& dev, KenwoodListener* listener) 
+: KenwoodChanger(id, 403, dev, listener)
 {
-    m_setup = false;
-
     m_chain_id = 1;
 
-    m_cur_slot = -1;
-    m_cur_title = (byte) -1;
-    m_cur_chapter = -1;
-    m_cur_mode = UnknownMode;
-    m_cur_repeat = UnknownRepeat;
-    m_cur_param = (byte) -1;
-    m_cur_program = (byte) -1;
-    m_cur_state = UnknownState;
-    m_cur_door_open = DoorUnknown;
+    // process InfoChanged
+    DoEvent();
+    // process StateChanged
+    DoEvent();
+
+    if ( m_cur_door_pos == DoorClosed )
+        ScanDiscs();
+    LoadUserfiles();
 }
 
 DVDChanger::~DVDChanger()
@@ -27,93 +24,54 @@ DVDChanger::~DVDChanger()
 }
 
 void
-DVDChanger::ProcessEvent()
-{
-    payload event;
-    while ( GetEvent(event) )
-    {
-        switch ( event.cmd )
-        {
-            case INFO_EVENT:  DoInfoEvent(event);  break;
-            case STATE_EVENT: DoStateEvent(event); break;
-
-            default:
-                DebugPayload("unhandled event", event, m_device.ComputeChecksum(event));
-                break;
-        }
-    }
-}
-
-void
 DVDChanger::DoInfoEvent(const payload& event)
 {
-    // cast the payload
     InfoEvent info(event);
 
-    if ( m_setup || info_changed(info) )
+    if ( info_changed(info) )
     {
-        m_cur_slot = info.slot();
-        m_cur_title = info.title();
-        m_cur_chapter = info.chapter();
-        // notify listener
-        for (int i=0; i<m_listeners.size(); i++)
-        {
-            if ( m_listeners[i]->InfoChanged(info.slot(), info.title(), info.chapter()) )
-                break;
-        }
+        InfoChanged(info.slot(), info.title(), info.chapter());
     }
-    if ( m_setup || program_changed(info) )
+    if ( program_changed(info) )
     {
-        m_cur_program = info.program();
-        // notify listener
-        for (int i=0; i<m_listeners.size(); i++)
-        {
-            if ( m_listeners[i]->ModeChanged(m_cur_mode, 
-                                             m_cur_repeat==RepeatOn, 
-                                             info.program()) ) 
-                break;
-        }
+        byte param = 0;
+        if ( m_cur_mode > UserfileMode ) param = info.userfile();
+        else if ( m_cur_mode > MusicTypeMode ) param = info.genre();
+        else if ( m_cur_mode == ProgramMode ) param = info.program();
+        ModeChanged(m_cur_mode, m_cur_repeat, param);
     }
+
+    if ( info.toc_complete() )
+        fprintf(stderr, "toc read complete\n");
 }
 
 void
 DVDChanger::DoStateEvent(const payload& event)
 {
-    // cast the payload
     StateEvent info(event);
 
-    if ( m_setup || state_changed(info) )
+    if ( mode_changed(info) || repeat_changed(info) || param_changed(info) )
     {
-        m_cur_state = info.state();
-        // notify listener
-        for (int i=0; i<m_listeners.size(); i++)
-        {
-            if ( m_listeners[i]->StateChanged(info.state()) )
-                break;
-        }
+        byte param = (info.mode()==ProgramMode ? m_cur_param : info.param());
+        ModeChanged(info.mode(), info.repeat(), param);
     }
-    if ( m_setup || mode_changed(info) || repeat_changed(info) || param_changed(info) )
+    if ( info.door_pos() != m_cur_door_pos )
     {
-        m_setup = true;
-        m_cur_mode = info.mode();
-        m_cur_repeat = info.repeat();
-        m_cur_param = info.param();
-        // notify listener
-        for (int i=0; i<m_listeners.size(); i++)
-        {
-            if ( m_listeners[i]->ModeChanged(info.mode(), 
-                                             info.repeat()==RepeatOn, 
-                                             (info.mode()==ProgramMode
-                                                ? m_cur_program 
-                                                : info.param())) )
-                break;
-        }
+        DoorChanged(info.door_pos());
     }
+    if ( state_changed(info) )
+    {
+        StateChanged(info.state());
+    }
+
+    if ( info.at_end() )
+        fprintf(stderr, "at track/disc end\n");
+    if ( info.library() )
+        fprintf(stderr, "library on\n");
 }
  
 void
-DVDChanger::DoQuery(byte a, byte b, byte c,
-                    short slot, byte title, short chapter)
+DVDChanger::DoQuery(byte a, byte b, byte c, short slot, byte title, short chapter)
 {
     // build the payload
     DataAccess query((enum access)a, (enum data_type)b, c, 
@@ -134,11 +92,12 @@ printdata(reply.data, reply.len);
     }
 }
 
-void
-DVDChanger::DoListDiscs()
+NameList
+DVDChanger::DoListUserfiles()
 {
-    // build the payload
-    DataAccess query(RetrieveData, Text, DiscNames, m_chain_id, 0, 0, 0);
+    NameList names;
+
+    DataAccess query(RetrieveDataAccess, TextDataType, UserfileNames, m_chain_id, 0, 0, 0);
 
     // issue the request
     IssueRequest(query, HAS_REPLIES); 
@@ -149,55 +108,128 @@ DVDChanger::DoListDiscs()
     {
         // process the data
         TextData info(reply);
-        for (int i=0; i<m_listeners.size(); i++)
-        {
-            if ( m_listeners[i]->TextDataReply(info.index(),
-                                               0,
-                                               0,
-                                               DiscNames,
-                                               0,
-                                               0,
-                                               info.text()) )
-                break;
-        }
+        Name data(info.index(), USERFILE_NAME, info.text());
+        names.push_back(data);
+    }
+
+    return names;
+}
+
+void
+DVDChanger::DoListUserfiles(void* context, NameCallback* callback)
+{
+    DataAccess query(RetrieveDataAccess, TextDataType, UserfileNames, m_chain_id, 0, 0, 0);
+
+    // issue the request
+    IssueRequest(query, HAS_REPLIES); 
+
+    // get the replies
+    payload reply;
+    while ( GetReply(reply) )
+    {
+        // process the data
+        TextData info(reply);
+        Name data(info.index(), USERFILE_NAME, info.text());
+        (*callback)(context, data);
     }
 }
 
 void
+DVDChanger::DoListDiscs(void* context, DiscCallback* callback)
+{
+    // build the payload
+    DataAccess query(RetrieveDataAccess, TextDataType, DiscNames, m_chain_id, 0, 0, 0);
+
+    // issue the request
+    IssueRequest(query, HAS_REPLIES); 
+
+    // get the replies
+    payload reply;
+    while ( GetReply(reply) )
+    {
+        // process the data
+        TextData info(reply);
+        byte type = 255;
+        switch ( (info.formatting()&0x7F) )
+        {
+            case 0x20: type = DISC_CD_A;   break;
+            case 0x22: type = DISC_CD_MP3; break;
+            case 0x21: type = DISC_CD_V;   break;
+            case 0x10: type = DISC_DVD_A;  break;
+            case 0x11: type = DISC_DVD_V;  break;
+        }
+        Disc data(info.index(), type, info.text(), NULL, info.userfiles(), info.genre());
+        (*callback)(context, data);
+    }
+}
+
+Disc
 DVDChanger::DoListContents(const short slot)
 {
     // build the payload
-    DataAccess query(RetrieveData, Text, DiscArtistTrackNames, m_chain_id, slot, 0, 0);
+    DataAccess query(RetrieveDataAccess, TextDataType, DiscArtistTrackNames, m_chain_id, slot, 0, 0);
 
     // issue the request
     IssueRequest(query, HAS_REPLIES); 
 
     // get the replies
+    Disc data;
     payload reply;
     while ( GetReply(reply) )
     {
         // process the data
         TextData info(reply);
-        for (int i=0; i<m_listeners.size(); i++)
+        switch ( info.text_type() )
         {
-            if ( m_listeners[i]->TextDataReply(info.index(),
-                                               0,
-                                               0,
-                                               DiscNames,
-                                               0,
-                                               0,
-                                               info.text()) )
-                break;
+            case DiscText:
+            {
+                data.index = info.index();
+                switch ( (info.formatting()&0x7F) )
+                {
+                    case 0x20: data.type = DISC_CD_A;   break;
+                    case 0x22: data.type = DISC_CD_MP3; break;
+                    case 0x21: data.type = DISC_CD_V;   break;
+                    case 0x10: data.type = DISC_DVD_A;  break;
+                    case 0x11: data.type = DISC_DVD_V;  break;
+                }
+                data.title = ::strdup(info.text());
+                data.userfiles = info.userfiles();
+                data.genre = info.genre();
+            }
+            break;
+            case TrackText:
+            {
+                Name track(info.index(), TRACK_NAME, info.text());
+                data.tracks.push_back(track);
+            }
+            break;
+            case ArtistText:
+            {
+                data.artist = ::strdup(info.text());
+            }
+            break;
         }
     }
+
+    return data;
 }
 
-char*
-DVDChanger::GetDiscId(const short slot)
+void
+DVDChanger::DoListContents(const short slot, void* context, DiscCallback* callback)
 {
-    // build the payload
-    DataAccess query(RetrieveData, TOC, TOCId, m_chain_id, slot, 0, 0);
+    Disc data = DoListContents(slot);
+    (*callback)(context, data);
+}
 
+Info
+DVDChanger::GetDiscInfo(const short slot)
+{
+    // make sure slot is current
+    if ( slot != m_cur_slot ) DoChangeDisc(slot);
+
+    // build the payload
+    DataAccess query(RetrieveDataAccess, InfoDataType, 0, m_chain_id, slot, 0, 0);
+    
     // issue the request
     IssueRequest(query, HAS_REPLIES); 
 
@@ -205,38 +237,119 @@ DVDChanger::GetDiscId(const short slot)
 
     // get the replies
     payload reply;
-    while ( GetReply(reply) )
+    GetOneReply(reply);
+
+    // process the data
+    DiscInfo info(reply);
+    byte type = 255;
+    switch ( (info.formatting()&0x7F) )
     {
-        // process the data
-        DiscTOC info(reply);
-        if ( info.formatting() == 0x20 )
+        case 0x20: type = DISC_CD_A;   break;
+        case 0x22: type = DISC_CD_MP3; break;
+        case 0x21: type = DISC_CD_V;   break;
+        case 0x10: type = DISC_DVD_A;  break;
+        case 0x11: type = DISC_DVD_V;  break;
+    }
+
+    if ( (info.formatting()&0x10) != 0 )
+        return Info(info.slot(), type, info.title_count());
+    else
+        return Info(info.slot(), type, info.length());
+}
+
+char*
+DVDChanger::GetDiscId(const short slot)
+{
+    // make sure slot is current
+    if ( slot != m_cur_slot ) DoChangeDisc(slot);
+
+    // build the payload
+    DataAccess query(RetrieveDataAccess, TOCDataType, TOCId, m_chain_id, slot, 0, 0);
+
+    // issue the request
+    IssueRequest(query, HAS_REPLIES); 
+
+    // get the replies
+    payload reply;
+    GetOneReply(reply);
+    // process the data
+    DiscTOC info(reply);
+    char* id = NULL;
+    switch ( (info.formatting()&0x7F) )
+    {
+        case 0x20: // DISC_CD_A
         {
             uint disc_id = info.disc_id();
             id = new char[8+1];
             sprintf(id, "%08x", disc_id);
         }
-        else
-        {
+        break;
+        case 0x22: // DISC_CD_MP3
+        case 0x21: // DISC_CD_V
+        case 0x10: // DISC_DVD_A
+        case 0x11: // DISC_DVD_V
             id = ::strdup(info.vol_id());
-        }
+        break;
     }
 
     return id;
 }
 
-void
-DVDChanger::DoListBest()
+byte
+DVDChanger::GetDiscUserfiles(const short slot)
 {
+    // make sure slot is current
+    if ( slot != m_cur_slot ) DoChangeDisc(slot);
+
+    // build the payload
+    DataAccess query(RetrieveDataAccess, TOCDataType, TOCId, m_chain_id, slot, 0, 0);
+    
+    // issue the request
+    IssueRequest(query, HAS_REPLIES); 
+
+    // get the replies
+    payload reply;
+    GetOneReply(reply);
+    DiscUserfiles info(reply);
+
+    return info.userfiles();
+}
+
+enum genre
+DVDChanger::GetDiscGenre(const short slot)
+{
+    // make sure slot is current
+    if ( slot != m_cur_slot ) DoChangeDisc(slot);
+
+    // build the payload
+    DataAccess query(RetrieveDataAccess, TOCDataType, TOCId, m_chain_id, slot, 0, 0);
+    
+    // issue the request
+    IssueRequest(query, HAS_REPLIES); 
+
+    // get the replies
+    payload reply;
+    GetOneReply(reply);
+    DiscGenre info(reply);
+
+    return info.genre();
 }
 
 void
-DVDChanger::DoChangeDisc(const short slot, enum state cur_state)
+DVDChanger::DoChangeDisc(const short slot)
 {
     // build the payload
-    ChangeDisc req(m_chain_id, slot, 0, 0, TrackMode, 0x00, 2);
+    ChangeDisc req(m_chain_id, slot, 0, 0, TrackMode, 0, 2);
 
     // issue the request
     IssueRequest(req, NO_REPLIES); 
+
+    // StateEvent
+    DoEvent();
+    // InfoEvent
+    DoEvent();
+    // StateEvent
+    DoEvent();
 }
 
 void
@@ -294,63 +407,64 @@ DVDChanger::DoStop()
 void
 DVDChanger::WriteUserfileNames(const char* names[])
 {
-    DataAccess query(WriteUserfiles, Ready, AllUserfileNames, m_chain_id, 0, 0, 0);
+    DataAccess query(WriteUserfilesAccess, ReadyDataType, AllUserfileNames, m_chain_id, 0, 0, 0);
 
     // issue the request
     IssueRequest(query, HAS_REPLIES); 
-usleep(10);
 
     // get the reply
     payload reply;
     GetOneReply(reply);
-usleep(10);
 
     for (int i=0; i<8; i++)
     {
         TextData data(m_chain_id, 6, 1<<i, 0, 0, 0, names[i]);
         IssueRequest(data, NO_REPLIES); 
     }
-usleep(10);
 }
 
 void
-DVDChanger::WriteTitleArtist(short slot, const char* title, const char* artist)
+DVDChanger::WriteDisc(short slot, Disc& disc)
 {
-    DataAccess query(WriteText, Ready, DiscArtistNames, m_chain_id, slot, 0, 0);
-//printf("query cmd=0x%02X len=%d\n", query.cmd, query.len);
-//printdata(query.data, query.len);
+    const char none[] = { 0x01 };
+    DataAccess query(WriteTextAccess, ReadyDataType, DiscArtistNames, m_chain_id, slot, 0, 0);
 
     // issue the request
     IssueRequest(query, HAS_REPLIES); 
-usleep(10);
 
     // get the reply
     payload reply;
     GetOneReply(reply);
-usleep(10);
 
-    TextData data(m_chain_id, DiscText, slot, 0, 0, 0, title);
-//printf("data  cmd=0x%02X len=%d\n", data.cmd, data.len);
-//printdata(data.data, data.len);
+    TextData data(m_chain_id, DiscText, slot, 0, disc.userfiles, disc.genre, disc.title);
     IssueRequest(data, NO_REPLIES); 
-usleep(10);
 
-    if ( artist == NULL )
+    NameList& tracks = disc.tracks;
+    for (NameList::iterator iter=tracks.begin(); iter!=tracks.end(); iter++)
     {
-        const char none[] = { 0x01 };
-        TextData data(m_chain_id, ArtistText, slot, 0, 0, 0, none);
-//printf("data  cmd=0x%02X len=%d\n", data.cmd, data.len);
-//printdata(data.data, data.len);
+        const Name& track = (*iter);
+        if ( track.text == NULL )
+        {
+            TextData data(m_chain_id, TrackText, track.index, 0, disc.userfiles, disc.genre, none);
+            IssueRequest(data, NO_REPLIES); 
+        }
+        else
+        {
+            TextData data(m_chain_id, TrackText, track.index, 0, disc.userfiles, disc.genre, track.text);
+            IssueRequest(data, NO_REPLIES); 
+        }
+    }
+
+    if ( disc.artist == NULL )
+    {
+        TextData data(m_chain_id, ArtistText, slot, 0, disc.userfiles, disc.genre, none);
         IssueRequest(data, NO_REPLIES); 
     }
     else
     {
-        TextData data(m_chain_id, ArtistText, slot, 0, 0, 0, artist);
-//printf("data  cmd=0x%02X len=%d\n", data.cmd, data.len);
-//printdata(data.data, data.len);
+        TextData data(m_chain_id, ArtistText, slot, 0, disc.userfiles, disc.genre, disc.artist);
         IssueRequest(data, NO_REPLIES); 
     }
-usleep(10);
 }
 
 bool 
@@ -376,7 +490,7 @@ DVDChanger::state_changed(const StateEvent& info)
 bool 
 DVDChanger::program_changed(const InfoEvent& info)
 {
-    return ( (info.program()!=m_cur_program) &&
+    return ( (info.program()!=m_cur_param) &&
              (m_cur_mode==ProgramMode) );
 }
 

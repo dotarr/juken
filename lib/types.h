@@ -3,11 +3,110 @@
 
 #include <common.h>
 
-#include "constants.h"
-
 #include <list>
 
-//typedef list<> names;
+#include "constants.h"
+
+// constants for Name.type
+const byte DISC_NAME = 0;
+const byte ARTIST_NAME = 1;
+const byte DESCRIPTION_NAME = 1;
+const byte TRACK_NAME = 2;
+const byte TITLE_NAME = 2;
+const byte USERFILE_NAME = 3;
+
+class Name
+{
+    public:
+        Name()
+            : index(0), type(255), text(NULL) { }
+        Name(const Name& name)
+            : index(name.index), type(name.type), text(NULL)
+            {
+               if ( name.text != NULL )
+                  text = ::strdup(name.text);
+            }
+        Name(short i, byte t, const char* txt)
+            : index(i), type(t), text(NULL)
+            {
+               if ( txt != NULL )
+                  text = ::strdup(txt);
+            }
+        ~Name() { delete text; text = NULL; }
+
+        short index;
+        byte type;
+        char* text;
+};
+typedef void (NameCallback)(void* context, Name& data);
+typedef std::list<Name> NameList;
+
+const byte DISC_CD_A   = 0; // CD Audio
+const byte DISC_CD_MP3 = 1; // MP3 CD
+const byte DISC_CD_V   = 2; // Video CD
+const byte DISC_DVD_A  = 3; // DVD Audio
+const byte DISC_DVD_V  = 4; // DVD Video
+
+class Disc
+{
+    public:
+        Disc()
+            : index(0), type(255), title(NULL), artist(NULL), 
+              tracks(), userfiles(0), genre(0) { }
+        Disc(const Disc& disc)
+            : index(disc.index), type(disc.type), title(NULL), artist(NULL),
+              tracks(disc.tracks), userfiles(disc.userfiles), genre(disc.genre)
+            {
+                if ( disc.title != NULL )
+                    title = ::strdup(disc.title);
+                if ( disc.artist != NULL )
+                  artist = ::strdup(disc.artist);
+            }
+        Disc(short i, byte t, const char* tit, const char* art)
+            : index(i), type(t), title(NULL), artist(NULL), 
+              tracks(), userfiles(0), genre(0)
+            {
+                if ( tit != NULL )
+                    title = ::strdup(tit);
+                if ( art != NULL )
+                  artist = ::strdup(art);
+            }
+        Disc(short i, byte t, const char* tit, const char* art, byte uf, byte g)
+            : index(i), type(t), title(NULL), artist(NULL), 
+              tracks(), userfiles(uf), genre(g)
+            {
+                if ( tit != NULL )
+                    title = ::strdup(tit);
+                if ( art != NULL )
+                  artist = ::strdup(art);
+            }
+        ~Disc() { delete title; title = NULL; delete artist; artist = NULL; }
+
+        short index;
+        byte type;
+        char* title;
+        char* artist;
+        NameList tracks;
+        byte userfiles;
+        byte genre;
+};
+typedef void (DiscCallback)(void* context, Disc& data);
+typedef std::list<Disc> DiscList;
+
+class Info
+{
+    public:
+        Info(const Info& info)
+            : index(info.index), type(info.type), count(info.count) { }
+        Info(short i, byte t, short c) 
+            : index(i), type(t), count(c) { }
+        ~Info() { }
+
+        short index;
+        byte type;
+        short count;
+};
+typedef std::list<Info> InfoList;
 
 typedef struct 
 {
@@ -42,22 +141,22 @@ typedef byte TimeStamp[17];
 
 enum access 
 { 
-    RetrieveData=0x00, 
-    WriteDiscGenre=0x10, 
-    WriteProgram=0x20, 
-    WriteUserfiles=0x40, 
-    WriteText=0x80 
+    RetrieveDataAccess=0x00, 
+    WriteDiscGenreAccess=0x10, 
+    WriteProgramAccess=0x20, 
+    WriteUserfilesAccess=0x40, 
+    WriteTextAccess=0x80 
 };
 
 enum data_type
 { 
-    Ready=0x00, 
-    Text=0x01, 
-    Info=0x02, 
-    TOC=0x04, 
-    Userfiles=0x08, 
-    Genre=0x10, 
-    Listing=0x20 
+    ReadyDataType=0x00, 
+    TextDataType=0x01, 
+    InfoDataType=0x02, 
+    TOCDataType=0x04, 
+    UserfilesDataType=0x08, 
+    GenreDataType=0x10, 
+    ListingDataType=0x20 
 };
 
 enum slots { NoSlots=-1, AllSlots = 0 };

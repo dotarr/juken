@@ -8,7 +8,7 @@ void
 usage(char* prog_name)
 {
 #ifdef HAVE_GETOPT_LONG
-    ::fprintf(stdout, "usage: %s {-v|--version|-h|--help} device\n", prog_name);
+    ::fprintf(stdout, "usage: %s {-v|--version|-h|--help} device [start_slot] [end_slot]\n", prog_name);
     ::fprintf(stdout, "\t-v, --version\t\tdisplay version information\n");
     ::fprintf(stdout, "\t-h, --help\t\tdisplay this message\n");
 #else
@@ -16,7 +16,9 @@ usage(char* prog_name)
     ::fprintf(stdout, "\t-v\t\tdisplay version information\n");
     ::fprintf(stdout, "\t-h\t\tdisplay this message\n");
 #endif
-    ::fprintf(stdout, "\t<device>\t\tthe device to export data from\n");
+    ::fprintf(stdout, "\tdevice\t\tthe device to export data from\n");
+    ::fprintf(stdout, "\tstart_slot\t\tthe first slot to export data from\n");
+    ::fprintf(stdout, "\tend_slot\t\tthe last slot to export data from\n");
 }
 
 void 
@@ -64,16 +66,22 @@ main(int argc, char* argv[])
 {
     // parse parameters
     parse_args(argc, argv);
-    if ( optind != argc-1 )
+    if ( optind >= argc )
     {
         usage(argv[0]);
         exit(EXIT_FAILURE);
     }
-    char* serial_device = argv[optind];
+    char* serial_device = argv[optind++];
+    short start = -1;
+    if ( optind < argc )
+        start = (short) atoi(argv[optind++]);
+    short end = -1;
+    if ( optind < argc )
+        end = (short) atoi(argv[optind++]);
 
     try
     {
-        Exporter exporter(serial_device);
+        Exporter exporter(serial_device, start, end);
         exporter.InitState();
         exporter.Run();
     }

@@ -2,28 +2,32 @@
 #define JUKEN_KENWOODLISTENER_H
 
 #include "types.h"
-#include "payload.h"
+//#include "payload.h"
+
+class KenwoodChanger;
 
 class KenwoodListener 
 {
     public:
         ~KenwoodListener() { };
 
-        virtual bool InfoChanged(short slot, byte title, short chapter) 
-            { return false; };
-        virtual bool ModeChanged(enum mode mode, bool repeat, byte param) 
-            { return false; };
-        virtual bool StateChanged(enum state state) 
-            { return false; };
-        virtual bool DoorChanged(bool door_open) { return false; };
-        
-        virtual bool TextDataReply(short slot, byte track, byte userfiles, 
-                                   byte request_type, byte genre, 
-                                   byte formatting, char* title) 
-            { return false; };
+        virtual void InfoChanged(KenwoodChanger* changer,
+                                 short slot, byte title, short chapter) { }
+        virtual void ModeChanged(KenwoodChanger* changer,
+                                 enum mode mode, bool repeat, byte param) { }
+        virtual void StateChanged(KenwoodChanger* changer,
+                                 enum state state) { }
+        virtual void DoorChanged(KenwoodChanger* changer,
+                                 bool door_open) { }
 
-        virtual bool DiscTrackListReply(byte num_tracks, DiscTrack* tracks)
-            { return false; };
+        enum operation { ScanDiscs, LoadUserfiles, ChangeDisc };
+
+        virtual void ProgressStart(KenwoodChanger* changer,
+                                 enum operation op, int length) { };
+        virtual void Progress(KenwoodChanger* changer,
+                                 enum operation op, int progress) { };
+        virtual void ProgressEnd(KenwoodChanger* changer,
+                                 enum operation op) { };
 
     protected:
         KenwoodListener() { };

@@ -4,17 +4,21 @@
 #include "util.h"
 #include "cdconstants.h"
 
-CDChanger::CDChanger(char* id, KenwoodDevice& dev) 
-: KenwoodChanger(id, dev)
+CDChanger::CDChanger(char* id, KenwoodDevice& dev, KenwoodListener* listener) 
+: KenwoodChanger(id, 200, dev, listener)
 {
-    m_cur_slot = -1;
-    m_cur_track = (byte) -1;
-    m_cur_mode = UnknownMode;
-    m_cur_repeat = UnknownRepeat;
-    m_cur_param = (byte) -1;
-    m_cur_program = (byte) -1;
-    m_cur_state = UnknownState;
-    m_cur_door_open = DoorUnknown;
+    // process InfoChanged
+    DoEvent();
+    // process DoorChanged
+    DoEvent();
+    // process StateChanged
+    DoEvent();
+    // process DiscChanged
+    DoEvent();
+
+    if ( m_cur_door_pos == DoorClosed )
+        ScanDiscs();
+    LoadUserfiles();
 }
 
 CDChanger::~CDChanger()
@@ -22,122 +26,61 @@ CDChanger::~CDChanger()
 }
 
 void
-CDChanger::ProcessEvent()
-{
-    payload event;
-    while ( GetEvent(event) )
-    {
-        switch ( event.cmd )
-        {
-            case INFO_EVENT:  DoInfoEvent(event);  break;
-            case STATE_EVENT: DoStateEvent(event); break;
-            case DISC_EVENT:  DoDiscEvent(event);  break;
-            case DOOR_EVENT:  DoDoorEvent(event);  break;
-
-            default:
-                DebugPayload("unhandled event", event, m_device.ComputeChecksum(event));
-                break;
-        }
-    }
-}
-
-void
 CDChanger::DoInfoEvent(const payload& event)
 {
-    // cast the payload
     InfoEvent info(event);
 
     if ( info_changed(info) )
     {
-        m_cur_slot = info.slot();
-        m_cur_track = info.track();
-        // notify listener
-        for (int i=0; i<m_listeners.size(); i++)
-        {
-            if ( m_listeners[i]->InfoChanged(info.slot(), info.track(), 0) )
-                break;
-        }
+        InfoChanged(info.slot(), info.track(), 0);
     }
     if ( mode_changed(info) || repeat_changed(info) || 
          program_changed(info) || param_changed(info) )
     {
-        m_cur_mode = info.mode();
-        m_cur_repeat = info.repeat();
-        m_cur_program = info.program();
-        m_cur_param = info.param();
-        // notify listener
-        for (int i=0; i<m_listeners.size(); i++)
-        {
-            if ( m_listeners[i]->ModeChanged(info.mode(), 
-                                             info.repeat()==RepeatOn, 
-                                             (info.mode()==ProgramMode
-                                                ? info.program() 
-                                                : info.param())) )
-                break;
-        }
+        byte param = (info.mode()==ProgramMode ? info.program() : info.param());
+        ModeChanged(info.mode(), info.repeat(), param);
     }
 }
 
 void
 CDChanger::DoStateEvent(const payload& event)
 {
-    // cast the payload
     StateEvent info(event);
 
     if ( state_changed(info) )
     {
-        m_cur_state = info.state();
-        // notify listener
-        for (int i=0; i<m_listeners.size(); i++)
-        {
-            if ( m_listeners[i]->StateChanged(info.state()) )
-                break;
-        }
+        StateChanged(info.state());
     }
 }
  
 void
 CDChanger::DoDiscEvent(const payload& event)
 {
-    // cast the payload
     DiscEvent info(event);
 
     if ( info.slot() != m_cur_slot )
     {
-        m_cur_slot = info.slot();
-        m_cur_track = 1;
-        // notify listener
-        for (int i=0; i<m_listeners.size(); i++)
-        {
-            if ( m_listeners[i]->InfoChanged(info.slot(), 1, 0) )
-                break;
-        }
+        InfoChanged(info.slot(), 1, 0);
     }
 }
  
 void
 CDChanger::DoDoorEvent(const payload& event)
 {
-    // cast the payload
     DoorEvent info(event);
 
-    if ( info.door_open() != m_cur_door_open )
+    if ( info.door_pos() != m_cur_door_pos )
     {
-        m_cur_door_open = info.door_open();
-        // notify listener
-        for (int i=0; i<m_listeners.size(); i++)
-        {
-            if ( m_listeners[i]->DoorChanged(info.door_open()==DoorOpen) )
-                break;
-        }
+        DoorChanged(info.door_pos());
     }
 }
 
-void
-CDChanger::DoListDiscs()
+NameList
+CDChanger::DoListUserfiles()
 {
-    // build the payload
-    DataAccess query(RetrieveData, Text, AllSlots, DiscNames, UNKNOWN);
+    NameList names;
+
+    DataAccess query(RetrieveDataAccess, TextDataType, 0, UserfileNames, UNKNOWN);
 
     // issue the request
     IssueRequest(query, HAS_REPLIES); 
@@ -148,54 +91,125 @@ CDChanger::DoListDiscs()
     {
         // process the data
         TextData info(reply);
-        for (int i=0; i<m_listeners.size(); i++)
-        {
-            if ( m_listeners[i]->TextDataReply(info.slot(),
-                                               info.track(),
-                                               info.userfiles(),
-                                               info.info_type(),
-                                               info.genre(),
-                                               info.formatting(),
-                                               info.text()) )
-                break;
-        }
+        Name data(info.index(), USERFILE_NAME, info.text());
+        names.push_back(data);
+    }
+
+    return names;
+}
+
+void
+CDChanger::DoListUserfiles(void* context, NameCallback* callback)
+{
+    DataAccess query(RetrieveDataAccess, TextDataType, 0, UserfileNames, UNKNOWN);
+
+    // issue the request
+    IssueRequest(query, HAS_REPLIES); 
+
+    // get the replies
+    payload reply;
+    while ( GetReply(reply) )
+    {
+        // process the data
+        TextData info(reply);
+        Name data(info.index(), USERFILE_NAME, info.text());
+        (*callback)(context, data);
     }
 }
 
 void
+CDChanger::DoListDiscs(void* context, DiscCallback* callback)
+{
+    // build the payload
+    DataAccess query(RetrieveDataAccess, TextDataType, AllSlots, DiscNames, UNKNOWN);
+
+    // issue the request
+    IssueRequest(query, HAS_REPLIES); 
+
+    // get the replies
+    payload reply;
+    while ( GetReply(reply) )
+    {
+        // process the data
+        TextData info(reply);
+        Disc data(info.slot(), DISC_CD_A, info.text(), NULL, info.userfiles(), info.genre());
+        (*callback)(context, data);
+    }
+}
+
+Disc
 CDChanger::DoListContents(const short slot)
 {
     // build the payload
-    DataAccess query(RetrieveData, Text, slot, TrackNames, UNKNOWN);
+    DataAccess query(RetrieveDataAccess, TextDataType, slot, TrackNames, UNKNOWN);
 
     // issue the request
     IssueRequest(query, HAS_REPLIES); 
 
     // get the replies
+    Disc data;
     payload reply;
     while ( GetReply(reply) )
     {
         // process the data
         TextData info(reply);
-        for (int i=0; i<m_listeners.size(); i++)
+        if ( info.index() == 0 )
         {
-            if ( m_listeners[i]->TextDataReply(info.slot(),
-                                               info.track(),
-                                               info.userfiles(),
-                                               info.info_type(),
-                                               info.genre(),
-                                               info.formatting(),
-                                               info.text()) )
-                break;
+            data.index = info.slot();
+            data.type = DISC_CD_A;
+            data.title = ::strdup(info.text());
+            data.userfiles = info.userfiles();
+            data.genre = info.genre();
+        }
+        else
+        {
+            Name track(info.index(), TRACK_NAME, info.text());
+            data.tracks.push_back(track);
         }
     }
+
+    return data;
+}
+
+void
+CDChanger::DoListContents(const short slot, void* context, DiscCallback* callback)
+{
+    Disc data = DoListContents(slot);
+    (*callback)(context, data);
+}
+
+Info
+CDChanger::GetDiscInfo(const short slot)
+{
+    // make sure slot is current
+    if ( slot != m_cur_slot ) DoChangeDisc(slot);
+
+    // build the payload
+    DataAccess query(RetrieveDataAccess, InfoDataType, slot, 0, UNKNOWN);
+    
+    // issue the request
+    IssueRequest(query, HAS_REPLIES); 
+
+    char* id = NULL;
+
+    // get the replies
+    payload reply;
+    GetOneReply(reply);
+
+    // process the data
+    DiscInfo info(reply);
+
+    return Info(info.slot(), DISC_CD_A, info.length());
 }
 
 char*
 CDChanger::GetDiscId(const short slot)
 {
+    // make sure slot is current
+    if ( slot != m_cur_slot ) DoChangeDisc(slot);
+    
     // build the payload
-    DataAccess query(RetrieveData, TOC, slot, TrackNames, UNKNOWN);
+    DataAccess query(RetrieveDataAccess, TOCDataType, slot, TrackNames, UNKNOWN);
 
     // issue the request
     IssueRequest(query, HAS_REPLIES); 
@@ -204,49 +218,80 @@ CDChanger::GetDiscId(const short slot)
 
     // get the replies
     payload reply;
-    while ( GetReply(reply) )
-    {
-        // process the data
-        DiscTOC info(reply);
-        uint disc_id = info.disc_id();
-        id = new char[8+1];
-        sprintf(id, "%08x", disc_id);
-    }
+    GetOneReply(reply);
+    
+    // process the data
+    DiscTOC info(reply);
+    uint disc_id = info.disc_id();
+    id = new char[8+1];
+    sprintf(id, "%08x", disc_id);
 
     return id;
 }
 
-void
-CDChanger::DoListBest()
+byte
+CDChanger::GetDiscUserfiles(const short slot)
 {
-    // build the payload
-    DataAccess query(RetrieveData, Listing, AllSlots, DiscNames, UNKNOWN);
+    // make sure slot is current
+    if ( slot != m_cur_slot ) DoChangeDisc(slot);
 
+    // build the payload
+    DataAccess query(RetrieveDataAccess, TOCDataType, slot, 0, UNKNOWN);
+    
     // issue the request
     IssueRequest(query, HAS_REPLIES); 
 
     // get the replies
     payload reply;
-    while ( GetReply(reply) )
-    {
-        // process the data
-        DiscListing info(reply);
-        for (int i=0; i<m_listeners.size(); i++)
-        {
-            if ( m_listeners[i]->DiscTrackListReply(info.length(), info.tracks()) )
-                break;
-        }
-    }
+    GetOneReply(reply);
+
+    // process the data
+    DiscUserfiles info(reply);
+
+    return info.userfiles();
+}
+
+enum genre
+CDChanger::GetDiscGenre(const short slot)
+{
+    // make sure slot is current
+    if ( slot != m_cur_slot ) DoChangeDisc(slot);
+
+    // build the payload
+    DataAccess query(RetrieveDataAccess, TOCDataType, slot, 0, UNKNOWN);
+    
+    // issue the request
+    IssueRequest(query, HAS_REPLIES); 
+
+    // get the replies
+    payload reply;
+    GetOneReply(reply);
+
+    // process the data
+    DiscGenre info(reply);
+
+    return info.genre();
 }
 
 void
-CDChanger::DoChangeDisc(const short slot, enum state cur_state)
+CDChanger::DoChangeDisc(const short slot)
 {
     // build the payload
-    ChangeDisc req(slot, 1, cur_state==Playing);
+    ChangeDisc req(slot, 1, 0);
 
     // issue the request
     IssueRequest(req, NO_REPLIES); 
+    
+    // StateEvent
+    DoEvent();
+    // InfoEvent
+    DoEvent();
+    // DiscEvent
+    DoEvent();
+    // StateEvent
+    DoEvent();
+    // StateEvent
+    DoEvent();
 }
 
 void
@@ -301,11 +346,63 @@ CDChanger::DoStop()
     IssueRequest(req, NO_REPLIES); 
 }
 
+void
+CDChanger::WriteUserfileNames(const char* names[])
+{
+    DataAccess query(WriteUserfilesAccess, ReadyDataType, 0, 1, UNKNOWN);
+
+    // issue the request
+    IssueRequest(query, HAS_REPLIES); 
+
+    // get the reply
+    payload reply;
+    GetOneReply(reply);
+
+    for (int i=0; i<8; i++)
+    {
+        TextData data(0, 1<<i, 0, UserfileNames, 0, 0, names[i]);
+        IssueRequest(data, NO_REPLIES); 
+    }
+}
+
+void
+CDChanger::WriteDisc(short slot, Disc& disc)
+{
+    const char none[] = { 0x01 };
+    DataAccess query(WriteTextAccess, ReadyDataType, slot, 1, UNKNOWN);
+
+    // issue the request
+    IssueRequest(query, HAS_REPLIES); 
+
+    // get the reply
+    payload reply;
+    GetOneReply(reply);
+
+    TextData data(slot, 0, disc.userfiles, DiscNames, disc.genre, 0, disc.title);
+    IssueRequest(data, NO_REPLIES); 
+
+    NameList& tracks = disc.tracks;
+    for (NameList::iterator iter=tracks.begin(); iter!=tracks.end(); iter++)
+    {
+        const Name& track = (*iter);
+        if ( track.text == NULL )
+        {
+            TextData data(slot, track.index, disc.userfiles, TrackNames, disc.genre, 0, none);
+            IssueRequest(data, NO_REPLIES); 
+        }
+        else
+        {
+            TextData data(slot, track.index, disc.userfiles, TrackNames, disc.genre, 0, track.text);
+            IssueRequest(data, NO_REPLIES); 
+        }
+    }
+}
+
 bool 
 CDChanger::info_changed(const InfoEvent& info)
 {
     return ( (info.slot()!=m_cur_slot) || 
-             (info.track()!=m_cur_track) ); 
+             (info.track()!=m_cur_title) ); 
 }
 
 bool 
@@ -323,7 +420,7 @@ CDChanger::state_changed(const StateEvent& info)
 bool 
 CDChanger::program_changed(const InfoEvent& info)
 {
-    return ( (info.program()!=m_cur_program) &&
+    return ( (info.program()!=m_cur_param) &&
              (info.mode()==ProgramMode) );
 }
 

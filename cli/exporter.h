@@ -3,42 +3,30 @@
 
 #include <kenwooddevice.h>
 #include <kenwoodchanger.h>
-#include <kenwoodlistener.h>
+#include <consolelistener.h>
 
 #include "changerdata.h"
 
-class Exporter : public KenwoodListener
+class Exporter
 {
     public:
-        Exporter(const char* device);
+        Exporter(const char* device, short start=-1, short end=-1);
         ~Exporter();
 
         void InitState();
 
         void Run();
 
-        bool InfoChanged(short slot, byte title, short chapter);
-        bool ModeChanged(enum mode mode, bool repeat, byte param);
-        bool StateChanged(enum state state);
-        bool DoorChanged(bool door_open);
-        
-        bool TextDataReply(short slot, byte track, byte userfiles, 
-                           byte request_type, byte genre, 
-                           byte formatting, char* title);
-
-    protected:
-        void DoExport(char* dir, short start, short end);
-
     private:
-        ChangerData* m_data;
-
         KenwoodDevice* m_device;
+        ConsoleListener* m_listener;
         KenwoodChanger* m_changer;
 
-        bool m_is_CD;
+        const char* m_device_name;
+        char* m_model_name;
 
-        void export_CD_changer();
-        void export_DVD_changer();
+        short m_start;
+        short m_end;
 };
 
 #endif /* JUKEN_EXPORTER_H */

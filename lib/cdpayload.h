@@ -31,6 +31,7 @@ class DiscInfo : public payload
         short slot() { return *((short*) (&data[0])); }
         byte first_track() { return data[2]; }
         byte last_track() { return data[3]; }
+        byte length() { return last_track()-first_track()+1; }
         byte formatting() { return data[4]; }
 };
 
@@ -86,13 +87,13 @@ class DoAction : public payload
 class ChangeDisc : public payload
 {
     public:
-        ChangeDisc(const short slot, const byte track, const bool begin)
+        ChangeDisc(const short slot, const byte track, const byte state)
         {
             cmd = CHANGE_DISC;
             len = 4;
             *((short*) (&data[0])) = slot;
             data[2] = track;
-            data[3] = begin ? 1 : 0;
+            data[3] = state;
         }
 };
 
@@ -100,19 +101,12 @@ class ChangeDisc : public payload
 class ChangeMode : public payload
 {
     public:
-        ChangeMode(const byte mode, const enum genre genre)
+        ChangeMode(const byte mode, const byte param)
         {
             cmd = CHANGE_MODE;
             len = 2;
             data[0] = mode;
-            data[1] = (byte) genre;
-        }
-        ChangeMode(const byte mode, const byte userfile)
-        {
-            cmd = CHANGE_MODE;
-            len = 2;
-            data[0] = mode;
-            data[1] = userfile;
+            data[1] = param;
         }
 };
 
@@ -161,18 +155,41 @@ class DoorEvent : public payload
 {
     public:
         DoorEvent(const payload& info) : payload(info) { }
-        enum door door_open() { return (enum door) data[0]; }
+        enum door door_pos() { return (enum door) data[0]; }
 };
 
 //command = 0xFD or command = 0xFE
 class TextData : public payload
 {
     public:
-        TextData(const payload& info) : payload(info) { }
+        TextData(const payload& info) : payload(info)
+            { 
+                if ( cmd==TEXT_DATA && data[7]==0x01 ) data[7] = 0;
+                if ( cmd!=TEXT_DATA && data[8]==0x01 ) data[8] = 0;
+            }
+        TextData(const short slot, const byte index, const byte userfiles,
+                 const byte text_type, const byte genre, const byte formatting,
+                 const char* text)
+        {
+            int text_len = ::strlen(text);
+            if ( text_len <= 20 )
+            {
+                text_len = 20;
+            }
+            cmd = TEXT_DATA;
+            len = 7 + text_len;
+            *((short*) (&data[0])) = index;
+            data[2] = index;
+            data[3] = userfiles;
+            data[4] = text_type;
+            data[5] = genre;
+            data[6] = formatting;
+            ::memcpy(&data[7], text, text_len);
+        }
         short slot() { return *((short*) (&data[0])); }
-        byte track() { return data[2]; }
+        byte index() { return data[2]; }
         byte userfiles() { return (cmd==TEXT_DATA) ? data[3] : 0; }
-        byte info_type() { return data[4]; }
+        byte text_type() { return data[4]; }
         byte genre() { return (cmd==TEXT_DATA) ? data[5] : 0; }
         byte formatting() { return data[6]; }
         char* text() { return (char*) ((cmd==TEXT_DATA) ? &data[7] : &data[8]); }

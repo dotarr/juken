@@ -1,3 +1,5 @@
+#include <sys/time.h>
+
 #include "kenwooddevice.h"
 #include "util.h"
 
@@ -51,6 +53,8 @@ KenwoodDevice::DoHandshake(const char* id)
 bool
 KenwoodDevice::ClearToSend()
 {
+usleep(100);
+    
     bool acked = false;
     WriteCntl(ENQ);
 
@@ -59,7 +63,7 @@ KenwoodDevice::ClearToSend()
     {
         case STX: ::fprintf(stderr, "->Unexpected STX\n"); break;
         case EOT: ::fprintf(stderr, "->Unexpected EOT\n"); break;
-        case ENQ: acked = false; break;
+        case ENQ: ::fprintf(stderr, "->Unexpected ENQ\n"); break;
         case ACK: acked = true; break;
         case NAK: ::fprintf(stderr, "->Unexpected NAK\n"); break;
     }

@@ -9,42 +9,39 @@ class StateEvent;
 class DVDChanger : public KenwoodChanger
 {
     public:
-        DVDChanger(char* id, KenwoodDevice& dev);
+        DVDChanger(char* id, KenwoodDevice& dev, KenwoodListener* listener);
         virtual ~DVDChanger();
 
-        void ProcessEvent();
         void DoInfoEvent(const payload& event);
         void DoStateEvent(const payload& event);
 
-        void DoQuery(byte a, byte b, byte c,
-                     short slot, byte title, short chapter);
-        void DoListDiscs();
-        void DoListContents(const short slot);
+        void DoQuery(byte a, byte b, byte c, short slot, byte title, short chapter);
+
+        NameList DoListUserfiles();
+        void DoListUserfiles(void* context, NameCallback* callback);
+
+        void DoListDiscs(void* context, DiscCallback* callback);
+
+        Disc DoListContents(const short slot);
+        void DoListContents(const short slot, void* context, DiscCallback* callback);
+
+        Info GetDiscInfo(const short slot);
         char* GetDiscId(const short slot);
-        void DoListBest();
-        void DoChangeDisc(const short slot, enum state cur_state);
+        byte GetDiscUserfiles(const short slot);
+        enum genre GetDiscGenre(const short slot);
+        
+        void DoChangeDisc(const short slot);
+
         void DoPlayPause();
         void DoPrev();
         void DoNext();
         void DoStop();
 
         void WriteUserfileNames(const char* names[]);
-        void WriteTitleArtist(short slot, const char* title, const char* artist);
+        void WriteDisc(short slot, Disc& disc);
 
     private:
-        bool m_setup;
-
         byte m_chain_id;
-
-        short m_cur_slot;
-        byte m_cur_title;
-        short m_cur_chapter;
-        enum mode m_cur_mode;
-        enum repeat m_cur_repeat;
-        byte m_cur_param;
-        byte m_cur_program;
-        enum state m_cur_state;
-        enum door m_cur_door_open;
 
         bool info_changed(const InfoEvent& info);
         bool mode_changed(const StateEvent& info);

@@ -38,8 +38,9 @@ class DiscInfo : public payload
 
         byte first_track() { return data[5]; }
         byte last_track() { return data[6]; }
+        byte length() { return last_track()-first_track()+1; }
 
-        byte length() { return data[5]; }
+        byte title_count() { return data[5]; }
         short* chapter_counts() { return (short*) (&data[6]); }
 };
 
@@ -111,7 +112,7 @@ class ChangeDisc : public payload
     public:
         ChangeDisc(const byte changer, const short slot, 
                    const byte title, const short chapter,
-                   const byte mode, const enum genre genre, const byte state)
+                   const byte mode, const byte param, const byte state)
         {
             cmd = CHANGE_DISC;
             len = 10;
@@ -120,23 +121,8 @@ class ChangeDisc : public payload
             data[3] = title;
             *((short*) (&data[4])) = chapter;
             data[6] = mode;
-            data[7] = genre;
+            data[7] = param;
             data[8] = state;
-            data[9] = 0;
-        }
-        ChangeDisc(const byte changer, const short slot, 
-                   const byte title, const short chapter,
-                   const byte mode, const byte userfile, const bool begin)
-        {
-            cmd = CHANGE_DISC;
-            len = 10;
-            data[0] = changer;
-            *((short*) (&data[1])) = slot;
-            data[3] = title;
-            *((short*) (&data[4])) = chapter;
-            data[6] = mode;
-            data[7] = userfile;
-            data[8] = begin ? 1 : 0;
             data[9] = 0;
         }
 };
@@ -212,7 +198,7 @@ class StateEvent : public payload
         enum mode mode() const { return (enum mode) data[3]; }
         byte param() const { return data[4]; }
         enum repeat repeat() const { return (enum repeat) data[5]; }
-        enum door door_open() const { return (enum door) data[6]; }
+        enum door door_pos() const { return (enum door) data[6]; }
         bool library() const { return (data[7]!=0); }
 };
 
@@ -220,48 +206,36 @@ class StateEvent : public payload
 class TextData : public payload
 {
     public:
-        TextData(const payload& info) : payload(info) { }
+        TextData(const payload& info) : payload(info)
+            { 
+                if ( cmd==TEXT_DATA && data[7]==0x01 ) data[7] = 0;
+                if ( cmd!=TEXT_DATA && data[8]==0x01 ) data[8] = 0;
+            }
         TextData(const byte changer, const byte text_type, 
                  const short index, const byte formatting,
-                 const byte userfile, const byte genre, const char* text)
+                 const byte userfiles, const byte genre, const char* text)
         {
             int text_len = ::strlen(text);
             if ( text_len <= 20 )
             {
-                cmd = TEXT_DATA;
-                len = 7 + text_len;
-                data[0] = changer;
-                data[1] = text_type;
-                *((short*) (&data[2])) = index;
-                data[4] = formatting;
-                data[5] = userfile;
-                data[6] = genre;
-                ::memcpy(&data[7], text, text_len);
+                text_len = 20;
             }
-            else if ( text_len <= 152 )
-            {
-                cmd = LONG_TEXT_DATA;
-                len = 8 + text_len;
-                data[0] = 1;
-                data[1] = changer;
-                data[2] = text_type;
-                *((short*) (&data[3])) = index;
-                data[5] = formatting;
-                data[6] = userfile;
-                data[7] = genre;
-                ::memcpy(&data[8], text, text_len);
-            }
-            else
-            {
-                assert(false);
-            }
+            cmd = TEXT_DATA;
+            len = 7 + text_len;
+            data[0] = changer;
+            data[1] = text_type;
+            *((short*) (&data[2])) = index;
+            data[4] = formatting;
+            data[5] = userfiles;
+            data[6] = genre;
+            ::memcpy(&data[7], text, text_len);
         }
         byte page() { return (cmd==TEXT_DATA) ? 0 : data[0]; }
         byte changer() { return (cmd==TEXT_DATA) ? data[0] : data[1]; }
-        byte title_type() { return ((cmd==TEXT_DATA) ? data[1] : data[2]); }
+        byte text_type() { return ((cmd==TEXT_DATA) ? data[1] : data[2]); }
         short index() { return *((short*) ((cmd==TEXT_DATA) ? &data[2] : &data[3])); }
         byte formatting() { return (cmd==TEXT_DATA) ? data[4] : data[5]; }
-        byte userfile() { return (cmd==TEXT_DATA) ? data[5] : data[6]; }
+        byte userfiles() { return (cmd==TEXT_DATA) ? data[5] : data[6]; }
         byte genre() { return (cmd==TEXT_DATA) ? data[6] : data[7]; }
         char* text() { return (char*) ((cmd==TEXT_DATA) ? &data[7] : &data[8]); }
 };
