@@ -45,10 +45,7 @@ AC_FUNC_MALLOC
 AC_CHECK_FUNCS([select strdup memset])
 AC_REPLACE_FUNCS(strerror)
 
-AC_CONFIG_FILES([Makefile
-                 cli/Makefile
-                 lib/Makefile
-                 common/Makefile])
+AC_CONFIG_FILES([Makefile cli/Makefile lib/Makefile common/Makefile])
 AC_OUTPUT
 
 echo \
