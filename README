@@ -11,3 +11,10 @@ that set is:
 
 See the INSTALL document for generic instructions on how to build an
 autoconf based package.
+
+After compilation you will need to inform the juken-cli program as to 
+what serial port to use. You can either:
+    1) pass the device name on the cammand line (e.g 'juken-cli /dev/ttyS0')
+    2) set an environment variable (e.g 'export JUKEN_DEV=/dev/ttyS0')
+    3) make a symlink from /dev/juken to the device (recommended)
+
