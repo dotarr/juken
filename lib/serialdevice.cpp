@@ -2,6 +2,12 @@
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 
+#include <common.h>
+
+#ifndef HAVE_CFMAKERAW
+void cfmakeraw(struct termios* termios_p);
+#endif
+
 #include "serialdevice.h"
 #include "util.h"
 
