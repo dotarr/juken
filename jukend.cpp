@@ -77,6 +77,9 @@ INThandler(int sig)
 void
 DoQuit(KenwoodChanger& changer, int argc, char* argv[])
 {
+    SelectPlayMode sdt;
+    sdt.userfile = (byte)6;
+    sdt.genre = (byte)0x10;
     done = true;
 }
 
@@ -97,7 +100,7 @@ void
 disc_print(byte reply_cmd, ushort reply_len, byte* reply_data)
 {
     // cast the reply
-    data_0xFE_a* info = (data_0xFE_a*) reply_data;
+    DiscData* info = (DiscData*) reply_data;
 
     if ( info->title[0] == 0x01 )
         info->title[0] = '\0';
@@ -122,7 +125,7 @@ track_print(byte reply_cmd, ushort reply_len, byte* reply_data)
     if ( reply_cmd == 0xFE )
     {
         // cast the reply
-        data_0xFE_a* info = (data_0xFE_a*) reply_data;
+        DiscData* info = (DiscData*) reply_data;
 
         if ( info->title[0] == 0x01 )
             info->title[0] = '\0';
@@ -153,7 +156,7 @@ track_print(byte reply_cmd, ushort reply_len, byte* reply_data)
     else if ( reply_cmd == 0xFD )
     {
         // cast the reply
-        data_0xFD* info = (data_0xFD*) reply_data;
+        CDTextData* info = (CDTextData*) reply_data;
 
         if ( info->title[0] == 0x01 )
             info->title[0] = '\0';
@@ -162,23 +165,18 @@ track_print(byte reply_cmd, ushort reply_len, byte* reply_data)
         if ( info->track == 0 )
         {
             printf("%-25s ", info->title);
-            printf("\n");
         }
         else
         {
             printf("[%3d] ", info->track);
             printf("%-25s ", info->title);
-            printf("\n");
         }
-/*
-        printf("unknown data: ");
+
+        printf("unknown : ");
         printf("0x%02X ", info->unknown_1);
         printf("0x%02X ", info->unknown_2);
         printf("0x%02X ", info->unknown_3);
-        printf("0x%02X ", info->unknown_4);
-        printf("0x%02X ", info->unknown_5);
         printf("\n");
-*/
     }
 }
 
@@ -186,8 +184,8 @@ void
 time_print(byte reply_cmd, ushort reply_len, byte* reply_data)
 {
     // cast the reply
-    data_0x06* info = (data_0x06*) reply_data;
-    start_times* times = (start_times*) &(info->start);
+    TrackTimes* info = (TrackTimes*) reply_data;
+    TimeInfo* times = (TimeInfo*) &(info->times);
 
     printf("disc: %3d ", info->slot);
     if ( info->formatting != 0x00 )
@@ -197,7 +195,7 @@ time_print(byte reply_cmd, ushort reply_len, byte* reply_data)
     for (int i=0; i<info->num_tracks+1; i++)
     {
         printf("[%3d] ", i);
-        printf("%02X:%02X:%02X ", times[i].min, times[i].sec, times[i].subsec);
+        printf("%02X:%02X:%02X ", times[i].minute, times[i].second, times[i].subsecond);
         printf("\n");
     }
 }
@@ -222,6 +220,18 @@ DoList(KenwoodChanger& changer, int argc, char* argv[])
     {
         changer.DoListDiscs(disc_print);
     }
+}
+
+void
+DoExperiment(KenwoodChanger& changer, int argc, char* argv[])
+{
+    int slot = 0;
+    byte x = 1;
+    if ( argc > 1 )
+        slot = atoi(argv[1]);
+    if ( argc > 2 )
+        x = atoi(argv[2]);
+    changer.DoListTracks(slot, track_print, x);
 }
 
 void
@@ -272,6 +282,7 @@ struct cmd commands[] =
     { "h",      DoHelp },
     { "list",   DoList },
     { "ls",     DoList },
+    { "lsx",    DoExperiment },
     { "times",  GetTimes },
     { "bests",  GetBests},
     { "change", DoChangeDisc },

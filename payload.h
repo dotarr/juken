@@ -10,11 +10,13 @@ typedef struct
     byte data[MAX_PAYLOAD_LEN];
 } payload;
 
+//command = 0x00
 typedef struct
 {
     char identifier[1];
-} data_0x00;
+} Handshake;
 
+//command = 0x03
 typedef struct
 {
     byte action;
@@ -23,22 +25,24 @@ typedef struct
     byte unknown;
     byte request_type;
     byte genre;
-} data_0x03;
+} DataAccess;
 
+//command = 0x04
 typedef struct
 {
     short slot;
     byte unknown;
     byte num_tracks;
     byte formatting;
-} data_0x04;
+} DiscInfo;
 
+//command = 0x06
 typedef struct 
 {
-    byte min;
-    byte sec;
-    byte subsec;
-} start_times;
+    byte minute;
+    byte second;
+    byte subsecond;
+} TimeInfo;
 typedef struct
 {
     short slot;
@@ -46,54 +50,67 @@ typedef struct
     byte formatting;
     byte unknown_2;
     byte num_tracks;
-    start_times start[1];
-} data_0x06;
+    TimeInfo times[1];
+} TrackTimes;
 
+//command = 0x07
 typedef struct
 {
     short slot;
     byte userfiles;
-} data_0x07;
+} DiscUserfiles;
 
+//command = 0x08
 typedef struct
 {
     short slot;
     byte genre;
-} data_0x08;
+} DiscGenre;
 
+//command = 0x09
 typedef struct
 {
     byte data_type;
-} data_0x09;
+} ReadyForData;
 
+//command = 0x0A
 typedef struct
 {
     short type;
-} data_0x0A;
+} DoAction;
 
+//command = 0x0B
 typedef struct
 {
     short slot;
     byte track;
     byte begin;
-} data_0x0B;
+} SelectDiscTrack;
 
+//command = 0x0C
 typedef struct
 {
     byte unknown;
-    byte userfile;
-} data_0x0C;
+    union
+    {
+        byte userfile;
+        byte genre;
+    };
+} SelectPlayMode;
 
+//command = 0x0D
+typedef struct 
+{
+    short slot;
+    byte track;
+} DiscTrack;
 typedef struct
 {
     byte num_tracks;
-    struct 
-    {
-        short slot;
-        byte track;
-    } best[1];
-} data_0x0D;
+    DiscTrack tracks[1];
+} DiscTrackList;
 
+//command = 0x12
 typedef struct
 {
     short slot;
@@ -104,35 +121,40 @@ typedef struct
     byte userfile;
     byte mode;
     byte repeat;
-} data_0x12;
+} ChangerInfo;
 
+//command = 0x13
 typedef struct
 {
     byte state;
-} data_0x13;
+} ChangerState;
 
+//command = 0x14
 typedef struct
 {
     short slot;
-} data_0x14;
+} ChangerDisc;
 
+//command = 0x15
 typedef struct
 {
     byte door_pos;
-} data_0x15;
+} ChangerDoor;
 
+//command = 0xFD
 typedef struct
 {
     short slot;
     byte track;
     byte unknown_1;
+    byte request_type;
     byte unknown_2;
+    byte formatting;
     byte unknown_3;
-    byte unknown_4;
-    byte unknown_5;
     char title[1];
-} data_0xFD;
+} CDTextData;
 
+//command = 0xFE
 typedef struct
 {
     short slot;
@@ -142,18 +164,18 @@ typedef struct
     byte genre;
     byte formatting;
     char title[1];
-} data_0xFE_a;
+} DiscData;
 
+//command = 0xFE
 typedef struct
 {
-    byte unknown_1;
-    byte unknown_2;
+    short unknown_1;
     byte userfile;
+    byte unknown_2;
     byte unknown_3;
     byte unknown_4;
     byte unknown_5;
-    byte unknown_6;
     char title[1];
-} data_0xFE_b;
+} UserfileData;
 
 #endif /* __PAYLOAD_H__ */

@@ -21,15 +21,15 @@ class KenwoodChanger
         void DoDoorEvent(const payload& event);
 
         void DoHandshake(const char* id);
-        void DoListDiscs(reply_handler func);
-        void DoListTracks(const short slot, reply_handler func);
+        void DoListDiscs(reply_handler func, byte x=0);
+        void DoListTracks(const short slot, reply_handler func, byte x=1);
         void DoListTrackTimes(reply_handler func);
         void DoListBest(reply_handler func);
         void DoChangeDisc(const short slot);
         void DoPlayPause();
         void DoStop();
 
-        void DoDiscQuery(const data_0x03& query, reply_handler func);
+        void DoDiscQuery(const DataAccess& query, reply_handler func);
         void DoChangeState(const short state);
 
         void IssueRequest(const payload& msg, const bool has_replies);

@@ -89,7 +89,7 @@ void
 KenwoodChanger::DoInfoEvent(const payload& event)
 {
     // cast the payload
-    data_0x12* info = (data_0x12*) event.data;
+    ChangerInfo* info = (ChangerInfo*) event.data;
 
     // save current slot/track
     m_cur_slot = info->slot;
@@ -147,7 +147,7 @@ void
 KenwoodChanger::DoStateEvent(const payload& event)
 {
     // cast the payload
-    data_0x13* info = (data_0x13*) event.data;
+    ChangerState* info = (ChangerState*) event.data;
 
     // determine the current state
     switch ( info->state )
@@ -175,7 +175,7 @@ void
 KenwoodChanger::DoDiscEvent(const payload& event)
 {
     // cast the payload
-    data_0x14* info = (data_0x14*) event.data;
+    ChangerDisc* info = (ChangerDisc*) event.data;
 
     // save current slot
     m_cur_slot = info->slot;
@@ -188,7 +188,7 @@ void
 KenwoodChanger::DoDoorEvent(const payload& event)
 {
     // cast the payload
-    data_0x15* info = (data_0x15*) event.data;
+    ChangerDoor* info = (ChangerDoor*) event.data;
 
     // determine the door state
     m_door_closed = (info->door_pos==0);
@@ -219,23 +219,23 @@ KenwoodChanger::DoHandshake(const char* id)
 }
 
 void
-KenwoodChanger::DoListDiscs(reply_handler func)
+KenwoodChanger::DoListDiscs(reply_handler func, byte x)
 {
-    data_0x03 query = { 0, 1, 0, 0, 0, 0 };
+    DataAccess query = { 0, 1, 0, 0, x, 0 };
     DoDiscQuery(query, func);
 }
 
 void
-KenwoodChanger::DoListTracks(const short slot, reply_handler func)
+KenwoodChanger::DoListTracks(const short slot, reply_handler func, byte x)
 {
     if ( slot == 0 )
     {
-        data_0x03 query = { 0, 1, m_cur_slot, 0, 1, 0 };
+        DataAccess query = { 0, 1, m_cur_slot, 0, x, 0 };
         DoDiscQuery(query, func);
     }
     else
     {
-        data_0x03 query = { 0, 1, slot, 0, 1, 0 };
+        DataAccess query = { 0, 1, slot, 0, x, 0 };
         DoDiscQuery(query, func);
     }
 }
@@ -243,14 +243,14 @@ KenwoodChanger::DoListTracks(const short slot, reply_handler func)
 void
 KenwoodChanger::DoListTrackTimes(reply_handler func)
 {
-    data_0x03 query = { 0, 4, m_cur_slot, 0, 1, 0 };
+    DataAccess query = { 0, 4, m_cur_slot, 0, 1, 0 };
     DoDiscQuery(query, func);
 }
 
 void
 KenwoodChanger::DoListBest(reply_handler func)
 {
-    data_0x03 query = { 0, 32, 0, 0, 0, 0 };
+    DataAccess query = { 0, 32, 0, 0, 0, 0 };
     DoDiscQuery(query, func);
 }
 
@@ -260,8 +260,8 @@ KenwoodChanger::DoChangeDisc(const short slot)
     // build the payload
     payload req;
     req.cmd = SELECT_DISC_REQ;
-    req.len = sizeof(data_0x0B);
-    data_0x0B* select_disc = (data_0x0B*) &req.data;
+    req.len = sizeof(SelectDiscTrack);
+    SelectDiscTrack* select_disc = (SelectDiscTrack*) &req.data;
     select_disc->slot = slot;
     select_disc->track = 1;
     select_disc->begin = (m_cur_state==Playing)?1:0;
@@ -285,12 +285,12 @@ KenwoodChanger::DoStop()
 }
 
 void
-KenwoodChanger::DoDiscQuery(const data_0x03& query, reply_handler func)
+KenwoodChanger::DoDiscQuery(const DataAccess& query, reply_handler func)
 {
     // build the payload
     payload req;
     req.cmd = QUERY_REQ;
-    req.len = sizeof(data_0x03);
+    req.len = sizeof(DataAccess);
     ::memcpy(req.data, &query, req.len);
 
     // issue the request
@@ -309,7 +309,7 @@ KenwoodChanger::DoChangeState(const short state)
     // build the payload
     payload req;
     req.cmd = STATE_REQ;
-    req.len = sizeof(data_0x0A);
+    req.len = sizeof(DoAction);
     ::memcpy(req.data, &state, req.len);
 
     // issue the request
