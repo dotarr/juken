@@ -6,13 +6,25 @@
 #include "util.h"
 
 #define DUMP_MSGS
-#define DUMP_PAYLOAD
+//#define DUMP_CONN
+//#define DUMP_PAYLOAD
 //#define TRACE_FLOW
 
 void
 DebugMsg(const char* fmt, ...)
 {
 #ifdef DUMP_MSGS
+    va_list ap;
+    va_start(ap, fmt);
+    vfprintf(stdout, fmt, ap);
+    va_end(ap);
+#endif
+}
+
+void
+DebugConn(const char* fmt, ...)
+{
+#ifdef DUMP_CONN
     va_list ap;
     va_start(ap, fmt);
     vfprintf(stdout, fmt, ap);

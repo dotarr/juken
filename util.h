@@ -4,6 +4,7 @@
 #include "types.h"
 
 void DebugMsg(const char* fmt, ...);
+void DebugConn(const char* fmt, ...);
 void DebugPayload(const char* label, const byte cmd, const struct payload& msg, const byte cksum);
 void TraceFlow(const char* fmt, ...);
 

@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <sys/time.h>
 #include <sys/time.h>
 #include <sys/socket.h>
@@ -25,8 +26,10 @@ ProcessTraffic(Jukebox& protocol, int juke_fd, int sock_fd)
     fd_set rfds;
     fd_set efds;
     
+    // repeat until ...
     while ( !done )
     {
+        // setup fd set's
         FD_ZERO(&rfds);
 
         FD_SET(juke_fd, &rfds);
@@ -41,31 +44,39 @@ ProcessTraffic(Jukebox& protocol, int juke_fd, int sock_fd)
             if ( fd > max_fd ) max_fd = fd;
         }
 
+        // select for something to do
         int num_fds = ::select(max_fd+1, &rfds, NULL, NULL, NULL);
         ThrowIfMinus1(num_fds, "select failed: ");
 
+        // if we have something to do ...
         if ( num_fds > 0 )
         {
             if ( FD_ISSET(juke_fd, &rfds) )
             {
-                //printf("incoming message detected\n");
+                // the player has a message for us
+                DebugConn("incoming message detected\n");
                 protocol.ProcessIncomingMessage(juke_fd);
             }
             for (int i=0; i<num_conns; i++)
             {
+                // handle messages from the tools
                 int fd = conn_fds[i];
                 if ( FD_ISSET(fd, &rfds) )
                 {
+                    // detect tool connection closure
                     int count;
                     ThrowIfMinus1(::ioctl(fd, FIONREAD, &count), "ioctl failed: ");
                     if ( count > 0 )
                     {
-                        //printf("outgoing message detected\n");
+                        // the tool has a message to send to the player
+                        DebugConn("outgoing message detected\n");
                         protocol.ProcessOutgoingMessage(juke_fd, fd);
                     }
                     else
                     {
-                        //printf("client connection closed\n");
+                        // the tool has closed the connection
+                        DebugConn("tool connection closed\n");
+                        // remove the connection fd from our array
                         num_conns--;
                         ::memmove(&conn_fds[i], &conn_fds[i+1], num_conns-i);
                         i--;
@@ -75,11 +86,14 @@ ProcessTraffic(Jukebox& protocol, int juke_fd, int sock_fd)
             }
             if ( FD_ISSET(sock_fd, &rfds) )
             {
-                //printf("client connection established\n");
+                // a tool has opened a connection
+                DebugConn("tool connection established\n");
+                // accept the new connection
                 struct sockaddr_un addr;
                 socklen_t addr_len = sizeof(addr);
                 int fd = ::accept(sock_fd, (struct sockaddr*) &addr, &addr_len);
                 ThrowIfMinus1(fd, "accept failed: ");
+                // add the connection to our array
                 conn_fds[num_conns++] = fd;
             }
         }
@@ -89,6 +103,7 @@ ProcessTraffic(Jukebox& protocol, int juke_fd, int sock_fd)
 void
 parse_args(int argc, char* argv[])
 {
+    // parse serial_device and messaging_socket
     if ( argc > 1 ) serial_device = argv[1];
     if ( argc > 2 ) messaging_socket = argv[2];
 }
@@ -96,27 +111,37 @@ parse_args(int argc, char* argv[])
 int
 main (int argc, char* argv[])
 {
+    // parse parameters
     parse_args(argc, argv);
 
     pid_t pid = -1;
     try
     {
+        // create communication devices
         SerialDevice device;
         UnixDomainSock ssock;
 
+        // open communication devices
         int juke_fd = device.OpenDevice(serial_device);
         int sock_fd = ssock.OpenServerSock(messaging_socket);
 
+        // create the protocol object
         Jukebox protocol;
 
+        // process traffic on communication devices
         ProcessTraffic(protocol, juke_fd, sock_fd);
     }
     catch (char* e)
     {
+        // output the error
         ::fprintf(stderr, "exception caught for pid=%d!!!\n%s\n", pid, e);
-        return 0;
+        
+        // exit with failure
+        return EXIT_FAILURE;
     }
-    return 1;
+    
+    // return with success
+    return EXIT_SUCCESS;
 }
 
 

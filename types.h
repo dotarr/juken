@@ -39,7 +39,7 @@ struct userfile_data
     byte   unknown4;
     byte   unknown5;
     byte   unknown6;
-    char   title[MAX_USER_TITLE_LENGTH+1];
+    char   title[MAX_USER_TITLE_LENGTH+1]; // +1 to hold null terminator
 };
 
 struct disc_data
@@ -50,7 +50,7 @@ struct disc_data
     byte   unknown3;
     byte   genre;
     byte   unknown4;
-    char   title[MAX_DISC_TITLE_LENGTH+1];
+    char   title[MAX_DISC_TITLE_LENGTH+1]; // +1 to hold null terminator
 };
 
 struct track_data
@@ -62,7 +62,7 @@ struct track_data
     byte unknown4;
     byte unknown5;
     byte unknown6;
-    char title[MAX_TRACK_TITLE_LENGTH+1];
+    char title[MAX_TRACK_TITLE_LENGTH+1]; // +1 to hold null terminator
 };
 
 

@@ -1,0 +1,22 @@
+Makefile
+* should be setup to use autoconf (would be better to do it sooner rather than later ...)
+
+constants.h
+* validate that MAX_PAYLOAD_LEN is accurate.
+* validate that maximums are not simply limitations of NetNamer.
+* determine first two genre values.
+
+handshake.cpp playpause.cpp query*.cpp
+* allow parameterization of messaging_socket.
+* refine parameters of query.cpp
+? allow regexpression handling in querydisc*.cpp and queryuser*.cpp
+
+jukend.cpp
+* allow for clean termination of ProcessTraffic (signal handler?)
+* ensure unix domain socket is properly unlinked (especially when handling 
+  exceptions)
+* ensure serial port is properly released (especially when handling 
+  exceptions)
+
+
+

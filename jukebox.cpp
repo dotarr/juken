@@ -8,32 +8,18 @@
 #include "jukebox.h"
 
 
-Jukebox::Jukebox() 
-{
-}
+// This class implements the primary protocol handling. The class is used
+// by the daemon to process communications to/from the player and communications
+// to/from the tools. It is also used by the tools to issue requests and to
+// process replies.
 
-Jukebox::~Jukebox()
-{
-}
+Jukebox::Jukebox() { }
 
-/*
+Jukebox::~Jukebox() { }
 
-        struct track_data* info = (struct track_data*) msg.data;
-        index = info->index;
-
-        byte title_len = msg.len-sizeof(struct track_data)+1;
-        if ( info->title[0] == 0x01 )
-            title_len = 0;
-        if ( title_len > 0 )
-            ::strncpy(title, info->title, title_len);
-        title[title_len] = '\0';
-
-        DebugMsg("unknown: %02x %02x index:%d 
-                  unknown: %02x %02x %02x %02x title:%s\n",
-                 info->unknown1, info->unknown2, index, info->unknown3, 
-                 info->unknown4, info->unknown5, info->unknown6, title);
-*/
-
+// This function processes messages received from the player. These messages
+// consist of events sent by the player in response to player state changes 
+// (e.g. someone hit the play button ...)
 void
 Jukebox::ProcessIncomingMessage(int fd)
 {
@@ -42,41 +28,52 @@ Jukebox::ProcessIncomingMessage(int fd)
     byte cksum;
     struct payload msg;
 
+    // while the message hasn't completed ...
     while ( !done )
     {
+        // read a control byte
         byte cntl = readcntl(fd);
         switch ( cntl )
         {
             case STX:
+                // read the payload from the player
                 cksum = read_payload(cmd, msg, fd);
+                // validate the checksum
                 if ( cksum == checksum(cmd, msg) )
                 {
+                    // process the event and acknowledge
                     ProcessEvent(cmd, msg);
                     writecntl(fd, ACK);
                 }
                 else
                 {
+                    // signal transmission error (should cause retransmit ...)
                     TraceFlow("Bad checksum in recieved data\n");
                     writecntl(fd, NAK);
                 }
                 break;
             case EOT:
+                // transmission completed
                 done = true;
                 writecntl(fd, ACK);
                 break;
             case ENQ:
+                // acknowledge we are ready for transmission
                 writecntl(fd, ACK);
                 break;
             case ACK:
+                // protocol corrupted?
                 TraceFlow("->Unexpected ACK\n");
                 break;
             case NAK:
+                // protocol corrupted?
                 TraceFlow("->Unexpected NAK\n");
                 break;
         }
     }
 }
 
+// This function processes messages being sent by the tools to the player.
 void
 Jukebox::ProcessOutgoingMessage(int fd, int msg_fd)
 {
@@ -86,52 +83,65 @@ Jukebox::ProcessOutgoingMessage(int fd, int msg_fd)
     byte cksum;
     struct payload msg;
 
+    // read the payload from the tool
     read_payload(cmd, msg, msg_fd);
+    // determine if we need to signal EOT or not
     bool send_eot = (readc(msg_fd) == EOT);
 
+    // signal player we wish to transmit
     writecntl(fd, ENQ);
 
     while ( !done )
     {
+        // read a control byte
         byte cntl = readcntl(fd);
         switch ( cntl )
         {
             case STX:
+                // read the payload from the player
                 cksum = read_payload(cmd, msg, fd);
+                // validate the checksum
                 if ( cksum == checksum(cmd, msg) )
                 {
+                    // send the reply onto the tool
                     writecntl(msg_fd, STX);
                     write_payload(cmd, msg, msg_fd);
                     writecntl(fd, ACK);
                 }
                 else
                 {
+                    // signal transmission error (should cause retransmit ...)
                     TraceFlow("Bad checksum in recieved data\n");
                     writecntl(fd, NAK);
                 }
                 break;
             case EOT:
+                // transmission completed
                 done = true;
                 writecntl(msg_fd, EOT);
                 writecntl(fd, ACK);
                 break;
             case ENQ:
+                // protocol corrupted?
                 TraceFlow("->Unexpected ENQ\n");
                 break;
             case ACK:
                 if ( msg_sent )
                 {
+                    // signal player we are finished
                     if ( send_eot ) writecntl(fd, EOT);
                     send_eot = false;
                 }
                 else
                 {
+                    // write the payload to the player
                     writecntl(fd, STX);
                     write_payload(cmd, msg, fd);
                     msg_sent = true;
                 }
                 break;
             case NAK:
+                // resend the payload to the player
                 writecntl(fd, STX);
                 write_payload(cmd, msg, fd);
                 break;
@@ -139,6 +149,7 @@ Jukebox::ProcessOutgoingMessage(int fd, int msg_fd)
     }
 }
 
+// The following five functions hadle state events from the player
 void
 Jukebox::ProcessEvent(const byte cmd, const struct payload& msg)
 {
@@ -151,6 +162,7 @@ Jukebox::ProcessEvent(const byte cmd, const struct payload& msg)
 
         default:
             {
+                // display the unhandled event
                 DebugMsg("cmd 0x%02X\t\n\t\t", cmd);
                 for (int i=0; i<msg.len; i++) 
                     DebugMsg(" 0x%02X", msg.data[i]);
@@ -178,8 +190,10 @@ Jukebox::HandleInfoEvent(const struct payload& msg)
         byte   repeat_mode;
     };
 
+    // cast the payload into a cur_info
     struct cur_info* info = (struct cur_info*) msg.data;
 
+    // determine the current mode
     int mode = TrackMode;
     if ( info->best_mode )
         mode = BestMode;
@@ -190,6 +204,7 @@ Jukebox::HandleInfoEvent(const struct payload& msg)
     else
         mode = TrackMode;
 
+    //display the info event
     DebugMsg("disc#: %d track: %d (of%d)\n",
              info->disc_num, info->track_num, info->track_count);
     DebugMsg("\tmode: %s\n", MODE_NAMES[mode]);
@@ -202,6 +217,7 @@ Jukebox::HandleStateEvent(const struct payload& msg)
 {
     byte s = msg.data[0];
 
+    // determine the current state
     int state = Unknown;
     switch ( s )
     {
@@ -215,21 +231,26 @@ Jukebox::HandleStateEvent(const struct payload& msg)
         default:   state = Unknown;      break;
     }
 
+    // display the current state
     DebugMsg("state: %s\n", STATE_NAMES[state]);
 }
  
 void
 Jukebox::HandleDiscEvent(const struct payload& msg)
 {
+    // determine the current disc number
     ushort d = *((ushort*) msg.data);
     int disc = d;
+    // display the current disc number
     DebugMsg("disc#: %d\n", disc);
 }
  
 void
 Jukebox::HandleReadyEvent(const struct payload& msg)
 {
+    // determine the ready state
     byte val = msg.data[0];
+    // display the ready state
     DebugMsg("ready: 0x%02X\n", val);
 }
 
@@ -242,12 +263,14 @@ Jukebox::IssueChangeState(int fd, const byte state)
         byte state;
     };
 
+    // prepare a change state request
     struct payload msg;
     struct change_state* s = (struct change_state*) msg.data;
     s->b = (state==NULL_PARAM ? NULL_PARAM : STATE_PARAM);
     s->state = state;
     msg.len = sizeof(struct change_state);
 
+    // issue the request
     IssueRequest(fd, STATE_REQ, msg, NO_REPLIES); 
 }
 
@@ -271,6 +294,7 @@ Jukebox::IssueQueryDevice(int fd,
         byte pad;
     };
  
+    // prepare a query device request
     struct payload msg;
     struct query_device* q = (struct query_device*) msg.data;
     q->b0 = b0;
@@ -281,34 +305,43 @@ Jukebox::IssueQueryDevice(int fd,
     q->b3 = b3;
     msg.len = sizeof(struct query_device) - 1;
 
+    // issue the request
     IssueRequest(fd, QUERY_REQ, msg, HAS_REPLIES); 
 }
 
 void
 Jukebox::IssueRequest(int fd, byte cmd, struct payload& msg, bool replies)
 {
+    // write the payload
     write_payload(cmd, msg, fd);
-    if ( replies )
-        writec(fd, ETB);
-    else
-        writec(fd, EOT);
+    
+    // signal if we need a reply
+    if ( replies ) writec(fd, ETB);
+    else           writec(fd, EOT);
 }
 
 bool
 Jukebox::GetReply(int fd, struct payload& msg)
 {
+    // read the prelude control byte
     byte cntl = readcntl(fd);
-    if ( cntl == EOT ) return false;
 
+    // if no more replies, signal completion
+    if ( cntl == EOT )
+        return false;
+
+    // read the reply payload
     byte cmd;
     byte cksum = read_payload(cmd, msg, fd);
 
+    // signal reply received
     return true;
 }
 
 byte
 Jukebox::checksum(byte cmd, const struct payload& msg)
 {
+    // compute the payload checksum
     byte sum = cmd + (msg.len-1);
     for (int i=0; i<msg.len; i++)
         sum += msg.data[i];
@@ -320,18 +353,24 @@ Jukebox::write_payload(const byte cmd, const struct payload& msg, int fd)
 {
     byte cksum = checksum(cmd, msg);
     DebugPayload("write_payload", cmd, msg, cksum);
+    // write the command byte
     writec(fd, cmd);
+    // write the payload
     writefully(fd, &msg, msg.len+sizeof(msg.len));
+    // write the checksum
     writec(fd, cksum);
 }
 
 byte
 Jukebox::read_payload(byte& cmd, struct payload& msg, int fd)
 {
+    // read the command
     cmd = readc(fd);
+    // read the payload
     readfully(fd, &msg.len, sizeof(msg.len));
     readfully(fd, &msg.data, msg.len);
-    byte cksum = readc(fd); //checksum
+    // read the checksum
+    byte cksum = readc(fd);
     DebugPayload("read_payload", cmd, msg, cksum);
     return cksum;
 }
@@ -339,6 +378,7 @@ Jukebox::read_payload(byte& cmd, struct payload& msg, int fd)
 void
 Jukebox::writefully(int fd, const void* buf, size_t count)
 {
+    // repeat until all bytes are written (or the write fails)
     const void* p = buf;
     do 
     {
@@ -353,6 +393,7 @@ Jukebox::writefully(int fd, const void* buf, size_t count)
 int
 Jukebox::readfully(int fd, void* buf, size_t count)
 {
+    // repeat until all bytes are read (or the read fails)
     void* p = buf;
     do 
     {
@@ -369,6 +410,7 @@ Jukebox::readfully(int fd, void* buf, size_t count)
 void
 Jukebox::writecntl(int fd, byte c)
 {
+    // writes a control byte (with possible tracing)
     switch ( c )
     {
         case NUL: TraceFlow("<- NUL\n"); break;
@@ -386,6 +428,7 @@ Jukebox::writecntl(int fd, byte c)
 byte
 Jukebox::readcntl(int fd)
 {
+    // reads a control byte (with possible tracing)
     byte c = readc(fd);
     switch ( c )
     {

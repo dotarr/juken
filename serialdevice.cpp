@@ -10,14 +10,17 @@
 
 #include "serialdevice.h"
 
+// A class for handling serial port communications
 
 SerialDevice::SerialDevice() 
 {
+    // init the fd member
     fd = -1;
 }
 
 SerialDevice::~SerialDevice()
 {
+    // close the port
     CloseDevice();
 }
 
@@ -25,7 +28,9 @@ void
 SerialDevice::SetDTR() 
 {
     int set;
+    // get the current set
     ::ioctl(fd, TIOCMGET, &set);
+    // ensure that DTR is set
     set |= TIOCM_DTR;
     ::ioctl(fd, TIOCMSET, &set);
 }
@@ -34,7 +39,9 @@ void
 SerialDevice::ClearDTR() 
 {
     int set;
+    // get the current set
     ::ioctl(fd, TIOCMGET, &set);
+    // ensure that DTR is clear
     set &= ~TIOCM_DTR;
     ::ioctl(fd, TIOCMSET, &set);
 }
@@ -64,8 +71,10 @@ SerialDevice::OpenDevice(const char* dev)
 void
 SerialDevice::CloseDevice()
 {
+    // return if not open
     if ( fd <= 0 ) return;
 
+    // get the terminal attributes
     struct termios trm;
     ThrowIfMinus1(::tcgetattr(fd, &trm),
                  "Failed to get attributes: ");
@@ -74,13 +83,16 @@ SerialDevice::CloseDevice()
     trm.c_cflag &= ~HUPCL;
     ::tcsetattr(fd, TCSADRAIN, &trm);
 
+    // reset the fd member
     fd = -1;
 }
 
 void
 SerialDevice::BlockingMode(bool block)
 {
+    // get the current mode
     int flags = ::fcntl(fd, F_GETFL, 0);
+    // set the mode
     if ( block )
         ThrowIfMinus1(::fcntl(fd, F_SETFL, flags & ~O_NDELAY),
                      "Failed to set blocking mode: ");
@@ -118,6 +130,7 @@ SerialDevice::SetupDefault()
     tset.c_cc[VSTART] = _POSIX_VDISABLE;
     tset.c_cc[VSTOP]  = _POSIX_VDISABLE;
    
+    // set the attributes
     ThrowIfMinus1(::tcsetattr(fd, TCSANOW, &tset),
                   "Failed to set attributes: ");
 }

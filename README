@@ -1,0 +1,46 @@
+
+The sources here should simply compile by typing make. My current env is a 
+Linux 2.2.12 machine and using egcs 2.95.2. (At some point the project will
+be autoconf'd ...) The only problems I can forsee in different environments 
+would be include files or library differences (most of the code is very 
+platform agnostic ...). I also will probably be migrating this to an OpenBSD
+based machine in the near future, so platform wierdities will be addressed 
+then.
+
+
+After successfully compiling the daemon "jukend" can be satrted. This daemon 
+will manage communications to and from the player, and processes traffic for 
+the individual tools. To start the daemon execute:
+
+    $ ./jukend
+      disc#: 26 track: 1 (of23)
+              mode: track
+              userfiles: 00
+              unknown: 00
+      ready: 0x00
+      state: stopped
+      disc#: 26
+
+The daemon will communicate to the player on serial port /dev/ttys0 by default
+(an alternate serial port can be specified on the command line). I usually run
+the daemon in a term of its own so I can watch its ouitput independently of the
+tools.
+
+To initiate a session with the player, the handshake tool should be executed as:
+    $ ./handshake
+      connected to CD-425M
+    $
+
+At this point the connection to the player is active, and the jukend daemon
+will print out messages received from the player. So, if you change a disc in the player, the following string would be printed:
+
+
+Also, after the handshake has executed, other tools can be executed. For example
+the disc titles can be listed by:
+    $ ./querydisctitles
+      slot:  26 unknown:00 userfiles: 00 unknown: 00 genre:Rock Music unknown:00 title:Tom Petty/Full Moon Fever
+      slot:  28 unknown:00 userfiles: 00 unknown: 00 genre:Rock Music unknown:00 title:Police/Reggatta De Blanc
+      slot:  49 unknown:00 userfiles: 00 unknown: 00 genre:Country unknown:00 title:Creedence/Chronicle V2
+      slot:  74 unknown:00 userfiles: 00 unknown: 00 genre:Rhythm & Blues unknown:00 title:Eric Clapton: Unplugged
+
+    $
