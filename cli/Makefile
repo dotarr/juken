@@ -7,6 +7,7 @@ CFLAGS= -g -O2
 .SUFFIXES: .cpp
 
 OBJS=   juken-cli.o \
+		consolelistener.o \
 		commands.o
 LIBS=   ../lib/juken.a
 

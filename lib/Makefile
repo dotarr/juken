@@ -7,7 +7,6 @@ CFLAGS= -g -O2
 .SUFFIXES: .cpp
 
 OBJS= \
-	consolelistener.o \
 	util.o \
 	serialdevice.o \
 	kenwooddevice.o \

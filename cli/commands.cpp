@@ -6,7 +6,6 @@
 #include "commands.h"
 
 #include "../lib/kenwooddevice.h"
-#include "../lib/consolelistener.h"
 
 extern bool done; // exit flag from juken-cli.cpp
 

@@ -6,9 +6,9 @@
 
 #include "../lib/kenwooddevice.h"
 #include "../lib/kenwoodchanger.h"
-#include "../lib/consolelistener.h"
 
 #include "commands.h"
+#include "consolelistener.h"
 
 #ifdef BSD
 char* serial_device = "/dev/tty00";
