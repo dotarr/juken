@@ -393,7 +393,6 @@ CDChanger::WriteDisc(short slot, Disc& disc)
     // make sure slot is current
     //if ( slot != m_cur_slot ) DoChangeDisc(slot);
 
-    const char none[] = { 0x01 };
     DataAccess query(WriteTextAccess, ReadyDataType, slot, 1, UNKNOWN);
 
     // issue the request
@@ -403,7 +402,8 @@ CDChanger::WriteDisc(short slot, Disc& disc)
     payload reply;
     GetOneReply(reply);
 
-    TextData data(slot, 0, disc.userfiles, DiscNames, disc.genre, 0, disc.title);
+    TextData data(slot, 0, disc.userfiles, DiscNames, 
+                  disc.genre, 0, disc.title);
     IssueRequest(data, NO_REPLIES); 
 
     short count = 0;
@@ -413,16 +413,9 @@ CDChanger::WriteDisc(short slot, Disc& disc)
         if ( ++count > 20 ) continue;
 
         const Name& track = (*iter);
-        if ( track.text == NULL )
-        {
-            TextData data(slot, track.index, disc.userfiles, TrackNames, disc.genre, 0, none);
-            IssueRequest(data, NO_REPLIES); 
-        }
-        else
-        {
-            TextData data(slot, track.index, disc.userfiles, TrackNames, disc.genre, 0, track.text);
-            IssueRequest(data, NO_REPLIES); 
-        }
+        TextData data(slot, track.index, disc.userfiles, TrackNames, 
+                      disc.genre, 0, track.text);
+        IssueRequest(data, NO_REPLIES); 
     }
 }
 

@@ -171,6 +171,8 @@ class TextData : public payload
                  const byte text_type, const byte genre, const byte formatting,
                  const char* text)
         {
+            if ( text == NULL )
+                text = EMPTY_TEXT;
             int text_len = ::strlen(text);
             if ( text_len > 25 )
                 text_len = 25;

@@ -215,6 +215,8 @@ class TextData : public payload
                  const short index, const byte formatting,
                  const byte userfiles, const byte genre, const char* text)
         {
+            if ( text == NULL )
+                text = EMPTY_TEXT;
             int text_len = ::strlen(text);
             if ( text_len > 20 )
                 text_len = 20;

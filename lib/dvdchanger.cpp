@@ -449,7 +449,6 @@ DVDChanger::WriteDisc(short slot, Disc& disc)
     // make sure slot is current
     //if ( slot != m_cur_slot ) DoChangeDisc(slot);
 
-    const char none[] = { 0x01 };
     DataAccess query(WriteTextAccess, ReadyDataType, DiscArtistNames, m_chain_id, slot, 0, 0);
 
     // issue the request
@@ -459,35 +458,25 @@ DVDChanger::WriteDisc(short slot, Disc& disc)
     payload reply;
     GetOneReply(reply);
 
-    TextData data(m_chain_id, DiscText, slot, 0, disc.userfiles, disc.genre, disc.title);
-    IssueRequest(data, NO_REPLIES); 
+    TextData disc_name(m_chain_id, DiscText, slot, 0, 
+                       disc.userfiles, disc.genre, disc.title);
+    IssueRequest(disc_name, NO_REPLIES); 
 
+    short count = 0;
     NameList& tracks = disc.tracks;
     for (NameList::iterator iter=tracks.begin(); iter!=tracks.end(); iter++)
     {
+        if ( ++count > 20 ) continue;
+
         const Name& track = (*iter);
-        if ( track.text == NULL )
-        {
-            TextData data(m_chain_id, TrackText, track.index, 0, disc.userfiles, disc.genre, none);
-            IssueRequest(data, NO_REPLIES); 
-        }
-        else
-        {
-            TextData data(m_chain_id, TrackText, track.index, 0, disc.userfiles, disc.genre, track.text);
-            IssueRequest(data, NO_REPLIES); 
-        }
+        TextData track_name(m_chain_id, TrackText, track.index, 0, 
+                            disc.userfiles, disc.genre, track.text);
+        IssueRequest(track_name, NO_REPLIES); 
     }
 
-    if ( disc.artist == NULL )
-    {
-        TextData data(m_chain_id, ArtistText, slot, 0, disc.userfiles, disc.genre, none);
-        IssueRequest(data, NO_REPLIES); 
-    }
-    else
-    {
-        TextData data(m_chain_id, ArtistText, slot, 0, disc.userfiles, disc.genre, disc.artist);
-        IssueRequest(data, NO_REPLIES); 
-    }
+    TextData artist_name(m_chain_id, ArtistText, slot, 0, 
+                         disc.userfiles, disc.genre, disc.artist);
+    IssueRequest(artist_name, NO_REPLIES); 
 }
 
 bool 

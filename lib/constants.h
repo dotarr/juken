@@ -19,6 +19,9 @@ const byte ETB = 0x17; // End of Transmission Block
 const bool HAS_REPLIES = true;
 const bool NO_REPLIES  = false;
 
+// value sent in TextData to represent "No Data"
+const char EMPTY_TEXT[] = { 0x01 };
+
 // protocol event/request codes 
 const byte HANDSHAKE            = 0x00;
 const byte DATA_ACCESS          = 0x03;
