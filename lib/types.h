@@ -5,11 +5,66 @@
 
 #include "constants.h"
 
-enum mode { TrackMode, ProgramMode, BestMode, MusicTypeMode, UserfileMode };
-enum random { RandomOff, RandomSingle, RandomAll };
+typedef struct 
+{
+    byte minute;
+    byte second;
+    byte subsecond;
+} TimeInfo;
 
-enum state { Unknown, Stopped, Standby, Stopping, Changing, 
-             Playing, Paused, SkipForward, SkipBackward };
+typedef struct 
+{
+    short slot;
+    byte track;
+} DiscTrack;
+
+typedef struct 
+{
+    short slot;
+    byte title;
+    short chapter;
+} DiscTitleChapter;
+
+typedef struct 
+{
+    byte b0;
+    byte b1;
+    byte b2;
+} ChapterFrame;
+
+typedef byte VolumeId[32];
+typedef byte TimeStamp[17];
+
+
+enum access { RetrieveData=0x00, SetDiscGenre=0x10, WriteProgram=0x20, 
+              SetUserfiles=0x40, WriteText=0x80 };
+enum data_type { Ready=0x00, Text=0x01, Info=0x02, TOC=0x04, 
+                 Userfiles=0x08, Genre=0x10, Listing=0x20 };
+enum cd_info_type { CDDiscNames=0x00, CDTrackNames=0x01, 
+                    CDArtistName=0x02, CDUserfileNames=0x07 };
+enum dvd_info_type { DVDDiscNames=0x01, DVDArtistNames=0x02, 
+                     DVDDiscNamesInGenre=0x03, DVDDiscNamesInUserfile=0x04, 
+                     DVDUserfileNames=0x05, DVDChapterNames=0x06, 
+                     DVDDiscName=0x07, DVDTitleName=0x08, DVDChapterName=0x09, 
+                     DVDArtistName=0x0A, DVDCDTOC=0x0B, DVDVolumeId=0x0C, 
+                     DVDTimestamp=0x0D, DVDFrames=0x0E };
+enum dvd_title_type { DVDDiscText=0x01, DVDTrackText=0x02, 
+                      DVDArtistText=0x03, DVDGenreListText=0x04, 
+                      DVDUserfileListText=0x05, DVDUserfileText=0x06 };
+
+
+enum slots { NoSlots=-1, AllSlots = 0 };
+
+enum mode { UnknownMode=-1, TrackMode=0, TrackModeRandomOne=1, 
+            TrackModeRandomAll=2, ProgramMode=3, BestMode=4,
+            MusicTypeMode=5, MusicTypeModeRandomAll=6,
+            UserfileMode=7, UserfileModeRandomOne=8, UserfileModeRandomAll=9 };
+
+enum state { UnknownState=-1, Stopped=0x40, Standby=0x41, Stopping=0x50, 
+             Changing=0x60, Playing=0x70, Paused=0x80, 
+             SkipForward=0x90, SkipBackward=0xA0 };
+enum repeat { UnknownRepeat=-1, RepeatOff=0, RepeatOn=1 }; 
+enum door { DoorUnknown=-1, DoorClosed=0, DoorOpen=1 }; 
  
 enum genre
 {

@@ -6,17 +6,15 @@
 class ExportListener : public KenwoodListener
 {
     public:
-        ExportListener(uint disc_id, const char* path);
+        ExportListener(const char* disc_id, const char* path);
         ~ExportListener();
 
-        bool DiscDataReply(short slot, byte track, byte userfiles, 
+        bool TextDataReply(short slot, byte track, byte userfiles, 
                            byte request_type, byte genre, 
                            byte formatting, char* title);
-        bool CDTextDataReply(short slot, byte track, byte request_type,
-                             byte formatting, char* title);
 
     protected:
-        void OpenFile(uint disc_id, const char* path);
+        void OpenFile(const char* disc_id, const char* path);
         void CloseFile();
 
     private:

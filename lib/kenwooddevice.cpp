@@ -26,10 +26,7 @@ char*
 KenwoodDevice::DoHandshake(const char* id)
 {
     // build the payload
-    payload req;
-    req.cmd = HANDSHAKE;
-    req.len = ::strlen(id);
-    ::memcpy(req.data, id, req.len);
+    Handshake req(id);
 
     // issue the request
     SendMessage(req, HAS_REPLIES); 
@@ -42,8 +39,8 @@ KenwoodDevice::DoHandshake(const char* id)
         RecvMessage(eor);
     }
 
-    Handshake* info = (Handshake*) reply.data;
-    return ::strdup(info->identifier);
+    Handshake info(reply);
+    return ::strdup(info.identifier());
 }
 
 void
@@ -80,7 +77,7 @@ KenwoodDevice::SendMessage(const payload& msg, const bool has_replies)
             case STX: ::fprintf(stderr, "->Unexpected STX\n"); break;
             case EOT: ::fprintf(stderr, "->Unexpected EOT\n"); break;
             case ENQ: ::fprintf(stderr, "->Unexpected ENQ\n"); break;
-            case ACK: sent = true; break;
+            case ACK: sent = true; break; 
             case NAK: ::fprintf(stderr, "->Unexpected NAK\n"); break;
         }
     }
@@ -117,14 +114,16 @@ KenwoodDevice::RecvMessage(payload& msg)
         msg.cmd = 0xFF;
         return false;
     }
-    else if ( cntl != STX )
+    else while ( cntl != STX )
     {
         switch ( cntl )
         {
             case ENQ: ::fprintf(stderr, "->Unexpected ENQ\n"); break;
-            case ACK: ::fprintf(stderr, "->Unexpected ACK\n"); break;
+            case ACK: break;
             case NAK: ::fprintf(stderr, "->Unexpected NAK\n"); break;
         }
+        WriteCntl(ACK);
+        cntl = ReadCntl();
     }
 
     byte cksum = ReadPayload(msg);

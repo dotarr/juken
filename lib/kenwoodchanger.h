@@ -24,6 +24,7 @@ class KenwoodChanger
 
         virtual void DoListDiscs() = 0;
         virtual void DoListContents(const short slot) = 0;
+        virtual char* GetDiscId(const short slot) = 0;
         virtual void DoListBest() = 0;
         virtual void DoChangeDisc(const short slot, enum state cur_state) = 0;
         virtual void DoPlayPause() = 0;

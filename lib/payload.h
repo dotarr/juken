@@ -3,36 +3,34 @@
 
 #include "types.h"
 
-typedef struct
+class payload
 {
-    byte cmd;
-    ushort len;
-    byte data[MAX_PAYLOAD_LEN];
-} payload;
+    public:
+        payload() : cmd(0), len(0) { }
+        payload(const payload& info)
+        {
+            cmd = info.cmd;
+            len = info.len;
+            ::memcpy(data, info.data, len+1);
+        }
+        payload(const byte cmd, const ushort len, const byte* data)
+        {
+            this->cmd = cmd;
+            this->len = len;
+            ::memcpy(this->data, data, len);
+        }
+        byte cmd;
+        ushort len;
+        byte data[MAX_PAYLOAD_LEN];
+};
 
 //command = 0x00
-typedef struct
+class Handshake : public payload
 {
-    char identifier[1];
-} Handshake;
-
-typedef struct 
-{
-    byte minute;
-    byte second;
-    byte subsecond;
-} TimeInfo;
-
-typedef struct 
-{
-    short slot;
-    byte track;
-} DiscTrack;
-
-typedef struct 
-{
-    short slot;
-    byte track;
-} DiscTrackChapter;
+    public:
+        Handshake(const payload& info) : payload(info) { }
+        Handshake(const char* id) : payload(HANDSHAKE, (ushort) ::strlen(id), (byte*) id) { }
+        char* identifier() { return (char*) data; }
+};
 
 #endif /* JUKEN_PAYLOAD_H */

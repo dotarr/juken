@@ -15,19 +15,14 @@ class Juken : public KenwoodListener
 
         void Run();
 
-        bool InfoChanged(short slot, byte track, enum mode mode, 
-                         enum random random, bool repeat, 
-                         byte userfile);
+        bool InfoChanged(short slot, byte title, short chapter);
+        bool ModeChanged(enum mode mode, bool repeat, byte param);
         bool StateChanged(enum state state);
-        bool DiscChanged(short slot);
-        bool DoorChanged(bool door_closed);
+        bool DoorChanged(bool door_open);
         
-        bool DiscDataReply(short slot, byte track, byte userfiles, 
+        bool TextDataReply(short slot, byte track, byte userfiles, 
                            byte request_type, byte genre, 
                            byte formatting, char* title);
-        bool CDTextDataReply(short slot, byte track, byte request_type,
-                             byte formatting, char* title);
-        bool DiscTrackListReply(int num_tracks, DiscTrack* info);
 
     protected:
         typedef void (*cmd_func)(Juken* _this, int argc, char* argv[]);
@@ -48,6 +43,7 @@ class Juken : public KenwoodListener
         static void DoPrev(Juken* _this, int argc, char* argv[]);
         static void DoNext(Juken* _this, int argc, char* argv[]);
         static void DoStop(Juken* _this, int argc, char* argv[]);
+        static void DoId(Juken* _this, int argc, char* argv[]);
         static void DoQuit(Juken* _this, int argc, char* argv[]);
 
 
@@ -59,16 +55,11 @@ class Juken : public KenwoodListener
 
         bool m_done;
 
+        enum door m_door_state;
+
         FILE* m_file;
 
-        bool        m_door_closed;
         short       m_cur_slot;
-        byte        m_cur_track;
-        enum state  m_cur_state;
-        enum mode   m_cur_mode;
-        enum random m_cur_random;
-        bool        m_cur_repeat;
-        byte        m_cur_userfile;
         short       m_capacity;
         char**      m_titles;
 

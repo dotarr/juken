@@ -73,14 +73,10 @@ const byte SKIPBACK_STATE       = 0xA0;
 
 // strings for player mode
 const char* const MODE_NAMES[] = 
-    { "track", "program", "best selection", "genre", "userfile" };
-const char* const RANDOM_NAMES[] = 
-    { "random off" , "one random", "all random" };
-
-// strings for player state
-const char* const STATE_NAMES[] = 
-    { "UNKNOWN", "stopped", "standby", "stopping", "changing", 
-      "playing", "paused", "skip forward", "skip backward" };
+    { "track", "track (one random)", "track (all random)",
+      "program", "best selection", 
+      "musictype", "musictype (all random)", 
+      "userfile", "userfile (one random)", "userfile (all random)" };
 
 // strings for disc genre
 const char* const GENRE_NAMES[] = 

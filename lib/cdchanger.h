@@ -3,6 +3,9 @@
 
 #include "kenwoodchanger.h"
 
+class InfoEvent;
+class StateEvent;
+
 class CDChanger : public KenwoodChanger
 {
     public:
@@ -17,7 +20,7 @@ class CDChanger : public KenwoodChanger
 
         void DoListDiscs();
         void DoListContents(const short slot);
-        uint GetDiscId(const short slot);
+        char* GetDiscId(const short slot);
         void DoListBest();
         void DoChangeDisc(const short slot, enum state cur_state);
         void DoPlayPause();
@@ -25,11 +28,23 @@ class CDChanger : public KenwoodChanger
         void DoNext();
         void DoStop();
 
-    protected:
-        void DoDiscQuery(const byte* query);
-        void DoChangeState(const short state);
-
     private:
+        short m_cur_slot;
+        byte m_cur_track;
+        enum mode m_cur_mode;
+        enum repeat m_cur_repeat;
+        byte m_cur_param;
+        byte m_cur_program;
+        enum state m_cur_state;
+        enum door m_cur_door_open;
+
+        bool info_changed(const InfoEvent& info);
+        bool mode_changed(const InfoEvent& info);
+        bool state_changed(const StateEvent& info);
+        bool program_changed(const InfoEvent& info);
+        bool repeat_changed(const InfoEvent& info);
+        bool param_changed(const InfoEvent& info);
+
         CDChanger();
         CDChanger(const CDChanger& changer);
 };

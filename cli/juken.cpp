@@ -42,6 +42,7 @@ struct Juken::cmd Juken::m_short_commands[] =
     { "cd",     &Juken::DoChangeDisc, "change the current disc" },
     { "p",      &Juken::DoPlay,       "play/pause the current disc" },
     { "s",      &Juken::DoStop,       "stop the current disc" },
+    { "id",     &Juken::DoId,         "get current discid" },
     { NULL, NULL }
 };
 
@@ -67,16 +68,11 @@ Juken::Juken(const char* serial_device)
 {
     m_done = false;
 
+    m_door_state = DoorUnknown;
+
     m_file = stdout;
 
-    m_door_closed = true;
     m_cur_slot = 0;
-    m_cur_track = 0;
-    m_cur_state = Stopped;
-    m_cur_mode = TrackMode;
-    m_cur_random = RandomOff;
-    m_cur_repeat = false;
-    m_cur_userfile = 0x00;
 
     m_capacity = 0;
     m_titles = (char**) NULL;
@@ -140,7 +136,7 @@ Juken::InitState()
     // process DiscChanged
 //    m_changer->DoEvent();
 
-    if ( m_door_closed )
+    if ( m_door_state!=DoorOpen )
     {
         // obtain disc listing
         if ( m_titles == NULL )
@@ -150,14 +146,17 @@ Juken::InitState()
                 m_titles[i] = NULL;
         }
 
-        ::fprintf(m_file, "listing discs\n");
-        usleep(10);
+        if (true)
+        {
+            ::fprintf(m_file, "listing discs\n");
+            usleep(10);
 
-        m_loading_titles = true;
+            m_loading_titles = true;
 usleep(10); // an ugly hack, but I can't figure out how/why/when the player isn't "ready"
-        m_changer->DoListDiscs();
-        m_loading_titles = false;
-        ::fprintf(m_file, "\n");
+            m_changer->DoListDiscs();
+            m_loading_titles = false;
+            ::fprintf(m_file, "\n");
+        }
     }
 }
 
@@ -204,40 +203,43 @@ Juken::Run()
 
 // ------------------------------ Listener Interface ---------------------------------
 bool
-Juken::InfoChanged(short slot, byte track, enum mode mode, 
-                             enum random random, bool repeat, 
-                             byte userfile)
+Juken::InfoChanged(short slot, byte title, short chapter) 
 {
     m_cur_slot = slot;
-    m_cur_track = track;
-    m_cur_mode = mode;
-    m_cur_random = random;
-    m_cur_repeat = repeat;
-    m_cur_userfile = userfile;
 
     //display the info event
-    ::fprintf(m_file, "disc#: %d track: %d", slot, track);
-    ::fprintf(m_file, " mode: %s", MODE_NAMES[mode]);
+    if ( chapter == 0 )
+        ::fprintf(m_file, "disc: %d track: %d\n", slot, title);
+    else
+        ::fprintf(m_file, "disc: %d title: %d chapter: %d\n", slot, title, chapter);
+
+    return false;
+}
+
+bool
+Juken::ModeChanged(enum mode mode, bool repeat, byte param)
+{
+    ::fprintf(m_file, "mode: %s", MODE_NAMES[mode]);
+
     switch ( mode )
     {
+        case ProgramMode:
+            ::fprintf(m_file, " (%d)", param);
+            break;
         case UserfileMode:
-            ::fprintf(m_file, "(0x%02X)", userfile);
+        case UserfileModeRandomOne:
+        case UserfileModeRandomAll:
+            ::fprintf(m_file, " (0x%02X)", param);
+            break;
+        case MusicTypeMode:
+        case MusicTypeModeRandomAll:
+            ::fprintf(m_file, " (%s)", GENRE_NAMES[param]);
             break;
     }
 
-    if ( random!=RandomOff || repeat )
-    {
-        ::fprintf(m_file, " (");
-        if ( random != RandomOff ) 
-        {
-            ::fprintf(m_file, "%s", RANDOM_NAMES[random]);
-            if ( repeat )
-                ::fprintf(m_file, ",");
-        }
-        if ( repeat )
-            ::fprintf(m_file, "repeat");
-        ::fprintf(m_file, ")");
-    }
+    if ( repeat )
+        ::fprintf(m_file, " (repeat)");
+
     ::fprintf(m_file, "\n");
 
     return false;
@@ -246,32 +248,30 @@ Juken::InfoChanged(short slot, byte track, enum mode mode,
 bool
 Juken::StateChanged(enum state state)
 {
-    m_cur_state = state;
-
     // display the current state
-    ::fprintf(m_file, "state: %s\n", STATE_NAMES[state]);
+    switch ( state )
+    {
+        case Stopped:      ::fprintf(m_file, "state: stopped\n"); break;
+        case Standby:      ::fprintf(m_file, "state: standby\n"); break;
+        case Stopping:     ::fprintf(m_file, "state: stopping\n"); break;
+        case Changing:     ::fprintf(m_file, "state: changing\n"); break;
+        case Playing:      ::fprintf(m_file, "state: playing\n"); break;
+        case Paused:       ::fprintf(m_file, "state: paused\n"); break;
+        case SkipForward:  ::fprintf(m_file, "state: skip forward\n"); break;
+        case SkipBackward: ::fprintf(m_file, "state: skip backward\n"); break;
+        default:           ::fprintf(m_file, "state: UNKNOWN\n"); break;
+    }
 
     return false;
 }
 
 bool
-Juken::DiscChanged(short slot)
+Juken::DoorChanged(bool door_open)
 {
-    m_cur_slot = slot;
+    bool uncache_titles = door_open && (m_door_state!=DoorUnknown);
+    bool reload_titles = !door_open && (m_door_state!=DoorUnknown);
 
-    // display the current disc number
-    ::fprintf(m_file, "disc#: %d\n", slot);
-
-    m_cur_slot = slot;
-
-    return false;
-}
-
-bool
-Juken::DoorChanged(bool door_closed)
-{
-    bool uncache_titles = (!door_closed && m_door_closed);
-    bool reload_titles = (door_closed && !m_door_closed);
+    m_door_state = (door_open ? DoorOpen : DoorClosed);
 
     if ( uncache_titles )
     {
@@ -283,10 +283,8 @@ Juken::DoorChanged(bool door_closed)
         m_titles = NULL;
     }
 
-    m_door_closed = door_closed;
-
     // display the door state
-    ::fprintf(m_file, "door: %s\n", door_closed?"closed":"open");
+    ::fprintf(m_file, "door: %s\n", door_open?"open":"closed");
 
     if ( reload_titles )
     {
@@ -312,7 +310,7 @@ usleep(10); // an ugly hack, but I can't figure out how/why/when the player isn'
 }
 
 bool
-Juken::DiscDataReply(short slot, byte track, byte userfiles, 
+Juken::TextDataReply(short slot, byte track, byte userfiles, 
                      byte request_type, byte genre, 
                      byte formatting, char* title)
 {
@@ -349,50 +347,6 @@ Juken::DiscDataReply(short slot, byte track, byte userfiles,
         ::fprintf(m_file, "\n");
     }
 
-    return false;
-}
-
-bool
-Juken::CDTextDataReply(short slot, byte track, byte request_type,
-                       byte formatting, char* title)
-{
-    if ( title[0] == 0x01 )
-        title[0] = '\0';
-
-    // output the reply
-    if ( track == 0 )
-    {
-        if ( m_loading_titles )
-        {
-            m_titles[slot] = strdup(title);
-            ::fprintf(m_file, "#");
-            ::fflush(m_file);
-        }
-        else
-        {
-            ::fprintf(m_file, "%-25s ", title);
-        }
-    }
-    else
-    {
-        ::fprintf(m_file, "[%3d] ", track);
-        ::fprintf(m_file, "%-25s ", title);
-    }
-
-/*
-    ::fprintf(m_file, "unknown : ");
-    ::fprintf(m_file, "0x%02X ", unknown_1);
-    ::fprintf(m_file, "0x%02X ", unknown_2);
-    ::fprintf(m_file, "0x%02X ", unknown_3);
-    ::fprintf(m_file, "\n");
-*/
-
-    return false;
-}
-
-bool
-Juken::DiscTrackListReply(int num_tracks, DiscTrack* info)
-{
     return false;
 }
 
@@ -447,7 +401,7 @@ Juken::DoHelp(Juken* _this, int argc, char* argv[])
 void
 Juken::DoExport(Juken* _this, int argc, char* argv[])
 {
-    CDChanger* changer = ((CDChanger*) _this->m_changer);
+    KenwoodChanger* changer = _this->m_changer;
     char* dir = "/var/juken/db/";
     short start = 1;
     short end = _this->m_capacity;
@@ -479,9 +433,9 @@ usleep(10); // an ugly hack, but I can't figure out how/why/when the player isn'
         }
 
 usleep(10); // an ugly hack, but I can't figure out how/why/when the player isn't "ready"
-        uint discid = changer->GetDiscId(slot);
+        char* disc_id = changer->GetDiscId(slot);
 
-        ExportListener export_listener(discid, dir);
+        ExportListener export_listener(disc_id, dir);
         changer->pushListener(&export_listener);
 usleep(10); // an ugly hack, but I can't figure out how/why/when the player isn't "ready"
 
@@ -493,7 +447,7 @@ usleep(10); // an ugly hack, but I can't figure out how/why/when the player isn'
 void
 Juken::DoList(Juken* _this, int argc, char* argv[])
 {
-    CDChanger* changer = ((CDChanger*) _this->m_changer);
+    KenwoodChanger* changer = _this->m_changer;
     if ( argc > 1 )
     {
         int slot = atoi(argv[1]);
@@ -508,14 +462,14 @@ Juken::DoList(Juken* _this, int argc, char* argv[])
 void
 Juken::GetBests(Juken* _this, int argc, char* argv[])
 {
-    CDChanger* changer = ((CDChanger*) _this->m_changer);
+    KenwoodChanger* changer = _this->m_changer;
     changer->DoListBest();
 }
 
 void
 Juken::DoChangeDisc(Juken* _this, int argc, char* argv[])
 {
-    CDChanger* changer = ((CDChanger*) _this->m_changer);
+    KenwoodChanger* changer = _this->m_changer;
     int slot = 0;
     if ( argc > 1 )
     {
@@ -527,29 +481,38 @@ Juken::DoChangeDisc(Juken* _this, int argc, char* argv[])
 void
 Juken::DoPlay(Juken* _this, int argc, char* argv[])
 {
-    CDChanger* changer = ((CDChanger*) _this->m_changer);
+    KenwoodChanger* changer = _this->m_changer;
     changer->DoPlayPause();
 }
 
 void
 Juken::DoPrev(Juken* _this, int argc, char* argv[])
 {
-    CDChanger* changer = ((CDChanger*) _this->m_changer);
+    KenwoodChanger* changer = _this->m_changer;
     changer->DoPrev();
 }
 
 void
 Juken::DoNext(Juken* _this, int argc, char* argv[])
 {
-    CDChanger* changer = ((CDChanger*) _this->m_changer);
+    KenwoodChanger* changer = _this->m_changer;
     changer->DoNext();
 }
 
 void
 Juken::DoStop(Juken* _this, int argc, char* argv[])
 {
-    CDChanger* changer = ((CDChanger*) _this->m_changer);
+    KenwoodChanger* changer = _this->m_changer;
     changer->DoStop();
+}
+
+void
+Juken::DoId(Juken* _this, int argc, char* argv[])
+{
+    KenwoodChanger* changer = _this->m_changer;
+    int slot = atoi(argv[1]);
+    char* disc_id = changer->GetDiscId(slot);
+    ::fprintf(_this->m_file, "id=%s\n", disc_id);
 }
 
 void

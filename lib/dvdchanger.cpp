@@ -6,6 +6,15 @@
 DVDChanger::DVDChanger(char* id, KenwoodDevice& dev) 
 : KenwoodChanger(id, dev)
 {
+    m_cur_slot = -1;
+    m_cur_title = (byte) -1;
+    m_cur_chapter = -1;
+    m_cur_mode = UnknownMode;
+    m_cur_repeat = UnknownRepeat;
+    m_cur_param = (byte) -1;
+    m_cur_program = (byte) -1;
+    m_cur_state = UnknownState;
+    m_cur_door_open = DoorUnknown;
 }
 
 DVDChanger::~DVDChanger()
@@ -22,8 +31,6 @@ DVDChanger::ProcessEvent()
         {
             case INFO_EVENT:  DoInfoEvent(event);  break;
             case STATE_EVENT: DoStateEvent(event); break;
-            case DISC_EVENT:  DoDiscEvent(event);  break;
-            case DOOR_EVENT:  DoDoorEvent(event);  break;
 
             default:
                 DebugPayload("unhandled event", event, m_device.ComputeChecksum(event));
@@ -35,80 +42,96 @@ DVDChanger::ProcessEvent()
 void
 DVDChanger::DoInfoEvent(const payload& event)
 {
-    byte changer = event.data[0];
-    InfoEvent* info = (InfoEvent*) &event.data[1];
+    // cast the payload
+    InfoEvent info(event);
 
-    printf("InfoEvent(%d): ", changer);
-    printf("D%03d T%02d C%02d\n", info->slot, info->title, info->chapter);
-printf("hex\t%02X ", info->unknown_1);
-printf("%02X ", info->unknown_2);
-printf("%02X ", info->unknown_3);
-printf("%02X ", info->unknown_4);
-printf("%02X\n", info->unknown_5);
-printf("decimal\t%02d ", info->unknown_1);
-printf("%02d ", info->unknown_2);
-printf("%02d ", info->unknown_3);
-printf("%02d ", info->unknown_4);
-printf("%02d\n", info->unknown_5);
+    if ( info_changed(info) )
+    {
+        m_cur_slot = info.slot();
+        m_cur_title = info.title();
+        m_cur_chapter = info.chapter();
+        // notify listener
+        for (int i=0; i<m_listeners.size(); i++)
+        {
+            if ( m_listeners[i]->InfoChanged(info.slot(), info.title(), info.chapter()) )
+                break;
+        }
+    }
+    if ( program_changed(info) )
+    {
+        m_cur_program = info.program();
+        // notify listener
+        for (int i=0; i<m_listeners.size(); i++)
+        {
+            if ( m_listeners[i]->ModeChanged(m_cur_mode, 
+                                             m_cur_repeat==RepeatOn, 
+                                             info.program()) ) 
+                break;
+        }
+    }
 }
 
 void
 DVDChanger::DoStateEvent(const payload& event)
 {
-    Foo bar(event.data);
+    // cast the payload
+    StateEvent info(event);
 
-    byte changer = event.data[0];
-    StateEvent* info = (StateEvent*) &event.data[1];
-
-    printf("StateEvent(%d): ", changer);
-    enum state state;
-    switch ( info->state )
+    if ( state_changed(info) )
     {
-        case STOPPED_STATE:  state = Stopped;      break;
-        case STANDBY_STATE:  state = Standby;      break;
-        case STOPPING_STATE: state = Stopping;     break;
-        case CHANGING_STATE: state = Changing;     break;
-        case PLAYING_STATE:  state = Playing;      break;
-        case PAUSED_STATE:   state = Paused;       break;
-        case SKIPFORW_STATE: state = SkipForward;  break;
-        case SKIPBACK_STATE: state = SkipBackward; break;
-        default:             state = Unknown;      break;
+        m_cur_state = info.state();
+        // notify listener
+        for (int i=0; i<m_listeners.size(); i++)
+        {
+            if ( m_listeners[i]->StateChanged(info.state()) )
+                break;
+        }
     }
-if ( state == Unknown )
-    printf("%s(%02X)\n", "unknown", info->state);
-else
-    printf("%s\n", STATE_NAMES[state]);
-printf("hex\t%02X ", info->unknown_1);
-printf("%02X ", info->unknown_2);
-printf("%02X ", info->unknown_3);
-printf("%02X ", info->unknown_4);
-printf("%02X ", info->unknown_5);
-printf("%02X\n", info->unknown_6);
-printf("decimal\t%02d ", info->unknown_1);
-printf("%02d ", info->unknown_2);
-printf("%02d ", info->unknown_3);
-printf("%02d ", info->unknown_4);
-printf("%02d ", info->unknown_5);
-printf("%02d\n", info->unknown_6);
+    if ( mode_changed(info) || repeat_changed(info) || param_changed(info) )
+    {
+        m_cur_mode = info.mode();
+        m_cur_repeat = info.repeat();
+        m_cur_param = info.param();
+        // notify listener
+        for (int i=0; i<m_listeners.size(); i++)
+        {
+            if ( m_listeners[i]->ModeChanged(info.mode(), 
+                                             info.repeat()==RepeatOn, 
+                                             (info.mode()==ProgramMode
+                                                ? m_cur_program 
+                                                : info.param())) )
+                break;
+        }
+    }
 }
  
-void
-DVDChanger::DoDiscEvent(const payload& event)
-{
-    printf("DiscEvent:\n");
-    printdata(event.data, event.len);
-}
- 
-void
-DVDChanger::DoDoorEvent(const payload& event)
-{
-    printf("DoorEvent:\n");
-    printdata(event.data, event.len);
-}
-
 void
 DVDChanger::DoListDiscs()
 {
+    // build the payload
+    DataAccess query(RetrieveData, Text, DVDDiscNames, 1, 0, 0, 0);
+
+    // issue the request
+    m_device.SendMessage(query, HAS_REPLIES); 
+
+    // get the replies
+    payload reply;
+    while ( GetReply(reply) )
+    {
+        // process the data
+        TextData info(reply);
+        for (int i=0; i<m_listeners.size(); i++)
+        {
+            if ( m_listeners[i]->TextDataReply(info.index(),
+                                               0,
+                                               info.userfile(),
+                                               CDDiscNames,
+                                               info.genre(),
+                                               info.formatting(),
+                                               info.text()) )
+                break;
+        }
+    }
 }
 
 void
@@ -116,10 +139,43 @@ DVDChanger::DoListContents(const short slot)
 {
 }
 
-uint
+char*
 DVDChanger::GetDiscId(const short slot)
 {
-    return 0;
+printf("GetDiscId:\n");
+    // build the payload
+    DataAccess query(RetrieveData, TOC, DVDCDTOC, 1, slot, 0, 0);
+
+printf("query\n");
+printdata(query.data, query.len);
+
+    // issue the request
+    m_device.SendMessage(query, HAS_REPLIES); 
+
+    char* id = NULL;
+
+    // get the replies
+    payload reply;
+    while ( GetReply(reply) )
+    {
+printf("reply\n");
+printdata(reply.data, reply.len);
+
+        // process the data
+        DiscTOC info(reply);
+        if ( info.formatting() == 0x20 )
+        {
+            uint disc_id = info.disc_id();
+            id = new char[8+1];
+            sprintf(id, "%08x", disc_id);
+        }
+        else
+        {
+            id = ::strdup(info.vol_id());
+        }
+    }
+
+    return id;
 }
 
 void
@@ -130,50 +186,71 @@ DVDChanger::DoListBest()
 void
 DVDChanger::DoChangeDisc(const short slot, enum state cur_state)
 {
+    // build the payload
+    ChangeDisc req(1, slot, 1, 1, TrackMode, 0x00, cur_state==Playing);
+
+    // issue the request
+    m_device.SendMessage(req, NO_REPLIES); 
 }
 
 void
 DVDChanger::DoPlayPause()
 {
-    DoChangeState(PLAY_PAUSE_CMD | STATE_PARAM);
 }
 
 void
 DVDChanger::DoPrev()
 {
-    DoChangeState(PREV_CMD | STATE_PARAM);
-    DoChangeState(NULL_PARAM);
 }
 
 void
 DVDChanger::DoNext()
 {
-    DoChangeState(NEXT_CMD | STATE_PARAM);
-    DoChangeState(NULL_PARAM);
 }
 
 void
 DVDChanger::DoStop()
 {
-    DoChangeState(STOP_CMD | STATE_PARAM);
 }
 
-void
-DVDChanger::DoDiscQuery(const byte* query)
+bool 
+DVDChanger::info_changed(const InfoEvent& info)
 {
+    return ( (info.slot()!=m_cur_slot) || 
+             (info.title()!=m_cur_title) || 
+             (info.chapter()!=m_cur_chapter) );
 }
 
-void
-DVDChanger::DoChangeState(const short state)
+bool 
+DVDChanger::mode_changed(const StateEvent& info)
 {
-    // build the payload
-    payload req;
-    req.cmd = DO_ACTION;
-    req.len = sizeof(DoAction);
-    ::memcpy(req.data, &state, req.len);
+    return (info.mode() != m_cur_mode);
+}
 
-    // issue the request
-    m_device.SendMessage(req, NO_REPLIES); 
+bool 
+DVDChanger::state_changed(const StateEvent& info)
+{
+    return (info.state() != m_cur_state);
+}
+
+bool 
+DVDChanger::program_changed(const InfoEvent& info)
+{
+    return ( (info.program()!=m_cur_program) &&
+             (m_cur_mode==ProgramMode) );
+}
+
+bool 
+DVDChanger::repeat_changed(const StateEvent& info)
+{
+    return (info.repeat() != m_cur_repeat);
+}
+
+bool 
+DVDChanger::param_changed(const StateEvent& info)
+{
+    return ( (info.param()!=m_cur_param) &&
+             (info.mode()>=MusicTypeMode) );
 }
 
 

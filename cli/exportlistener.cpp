@@ -4,7 +4,7 @@
 
 #include "exportlistener.h"
 
-ExportListener::ExportListener(uint disc_id, const char* path)
+ExportListener::ExportListener(const char* disc_id, const char* path)
     : m_file(NULL), m_num_tracks(0)
 {
     OpenFile(disc_id, path);
@@ -17,7 +17,7 @@ ExportListener::~ExportListener()
 }
 
 bool
-ExportListener::DiscDataReply(short slot, byte track, byte userfiles, 
+ExportListener::TextDataReply(short slot, byte track, byte userfiles, 
                               byte request_type, byte genre, 
                               byte formatting, char* title)
 {
@@ -43,37 +43,12 @@ ExportListener::DiscDataReply(short slot, byte track, byte userfiles,
     return true;
 }
 
-bool
-ExportListener::CDTextDataReply(short slot, byte track, byte request_type,
-                                byte formatting, char* title)
-{
-    if ( title[0] == 0x01 )
-        title[0] = '\0';
-
-    // output the reply
-    if ( track == 0 )
-    {
-        ::fprintf(m_file, "DTITLE=%s\n", title);
-        ::fprintf(m_file, "DYEAR=\n");
-        ::fprintf(m_file, "DGENRE=\n");
-    }
-    else
-    {
-        ::fprintf(m_file, "TITLE%d=%s\n", track-1, title);
-        m_num_tracks = track;
-    }
-
-    return true;
-}
-
 void
-ExportListener::OpenFile(uint disc_id, const char* path)
+ExportListener::OpenFile(const char* disc_id, const char* path)
 {
     char* fname = (char*) malloc(strlen(path)+8+1);
     strcpy(fname, path);
-    char id_str[8+1];
-    sprintf(id_str, "%08x", disc_id);
-    strcat(fname, id_str);
+    strcat(fname, disc_id);
     
     printf("exporting to file: %s\n", fname);
     m_file = fopen(fname, "w+");

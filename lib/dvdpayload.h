@@ -2,163 +2,242 @@
 #define JUKEN_DVDPAYLOAD_H
 
 #include "payload.h"
+#include "discid.h"
 
-struct Foo
+//
+//command = 0x03
+class DataAccess : public payload
 {
-    Foo(const byte* data)
-    {
-        changer = data[0];
-    }
-    byte changer;
+    public:
+        DataAccess(enum access access, enum data_type type, 
+                   enum dvd_info_type info_type, byte changer, short slot, 
+                   byte title, short chapter)
+        {
+            cmd = DATA_ACCESS;
+            len = 10;
+            data[0] = (byte) access;
+            data[1] = (byte) type;
+            data[2] = (byte) info_type;
+            data[3] = changer;
+            *((short*) (&data[4])) = slot;
+            data[6] = title;
+            *((short*) (&data[7])) = chapter;
+            data[9] = 0;
+        }
 };
 
-//command = 0x03
-typedef struct
-{
-    byte action;
-    byte data_type;
-    byte unknown_1;
-    byte unknown_2;
-    short slot;
-    byte unknown_3;
-    byte unknown_4;
-    byte unknown_5;
-    byte unknown_6;
-} DataAccess;
-
 //command = 0x04
-typedef struct
+class DiscInfo : public payload
 {
-    byte changer;
-    byte unknown_1;
-    short slot;
-    byte unknown_2;
-    char data[1];
-} DiscInfo;
+    public:
+        DiscInfo(const payload& info) : payload(info) { }
+        byte page() { return data[0]; }
+        byte changer() { return data[1]; }
+        short slot() { return *((short*) (&data[2])); }
+        byte formatting() { return data[4]; }
+
+        byte first_track() { return data[5]; }
+        byte last_track() { return data[6]; }
+
+        byte length() { return data[5]; }
+        short* chapter_counts() { return (short*) (&data[6]); }
+};
 
 //command = 0x06
-typedef struct
+class DiscTOC : public payload
 {
-    byte changer;
-    byte unknown_1;
-    short slot;
-    byte unknown_2;
-    byte formatting;
-    char data[1];
-} TrackTimes;
+    public:
+        DiscTOC(const payload& info) : payload(info) { }
+        byte page() { return data[0]; }
+        byte changer() { return data[1]; }
+        short slot() { return *((short*) (&data[2])); }
+        byte formatting() { return data[4]; }
+        
+        byte first_track() { return data[5]; }
+        byte last_track() { return data[6]; }
+        byte length() { return last_track()-first_track()+1; }
+        TimeInfo max_time() { return *((TimeInfo*) (&data[7])); }
+        TimeInfo* times() { return (TimeInfo*) (&data[10]); }
+        uint disc_id() { return ::discid(length(), times()); }
+
+        char* vol_id() { return (char*) (&data[5]); }
+} ;
 
 //command = 0x07
-typedef struct
+class DiscUserfiles : public payload
 {
-    byte changer;
-    short slot;
-    byte userfiles;
-} DiscUserfiles;
+    public:
+        DiscUserfiles(const payload& info) : payload(info) { }
+        byte changer() { return data[0]; }
+        short slot() { return *((short*) (&data[1])); }
+        byte userfiles() { return data[3]; }
+};
 
 //command = 0x08
-typedef struct
+class DiscGenre : public payload
 {
-    byte changer;
-    short slot;
-    byte genre;
-} DiscGenre;
+    public:
+        DiscGenre(const payload& info) : payload(info) { }
+        byte changer() { return data[0]; }
+        short slot() { return *((short*) (&data[1])); }
+        enum genre genre() { return (enum genre) data[3]; }
+};
 
 //command = 0x09
-typedef struct
+class ReadyForData : public payload
 {
-    byte data_type;
-} ReadyForData;
+    public:
+        ReadyForData(const payload& info) : payload(info) { }
+        byte changer() { return data[0]; }
+        dvd_info_type type() { return (dvd_info_type) data[1]; }
+};
 
 //command = 0x0A
-typedef struct
+class DoAction : public payload
 {
-    byte changer;
-    short type;
-} DoAction;
+    public:
+        DoAction(const byte changer, const short action)
+        {
+            cmd = DO_ACTION;
+            len = 3;
+            data[0] = changer;
+            *((short*) (&data[1])) = action;
+        }
+};
 
 //command = 0x0B
-typedef struct
+class ChangeDisc : public payload
 {
-    byte changer;
-    short slot;
-    byte unknown_1;
-    byte unknown_2;
-    byte unknown_3;
-    byte unknown_4;
-    byte unknown_5;
-    byte unknown_6;
-    byte unknown_7;
-} SelectDiscTrack;
+    public:
+        ChangeDisc(const byte changer, const short slot, 
+                   const byte title, const short chapter,
+                   const byte mode, const enum genre genre, const bool begin)
+        {
+            cmd = SELECT_DISC_TRACK;
+            len = 10;
+            data[0] = changer;
+            *((short*) (&data[1])) = slot;
+            data[3] = title;
+            *((short*) (&data[4])) = chapter;
+            data[6] = mode;
+            data[7] = genre;
+            data[8] = begin ? 1 : 0;
+            data[9] = 0;
+        }
+        ChangeDisc(const byte changer, const short slot, 
+                   const byte title, const short chapter,
+                   const byte mode, const byte userfile, const bool begin)
+        {
+            cmd = SELECT_DISC_TRACK;
+            len = 10;
+            data[0] = changer;
+            *((short*) (&data[1])) = slot;
+            data[3] = title;
+            *((short*) (&data[4])) = chapter;
+            data[6] = mode;
+            data[7] = userfile;
+            data[8] = begin ? 1 : 0;
+            data[9] = 0;
+        }
+};
+
+//command = 0x0C
+class ChapterFrames : public payload
+{
+    public:
+        ChapterFrames(const payload& info) : payload(info) { }
+        byte page() { return data[0]; }
+        byte changer() { return data[1]; }
+        short slot() { return *((short*) (&data[2])); }
+        short length() { return *((short*) (&data[4])); }
+        ChapterFrame* frames() { return (ChapterFrame*) (&data[6]); }
+};
 
 //command = 0x0D
-typedef struct
+class DiscListing : public payload
 {
-    byte changer;
-    byte num_tracks;
-    DiscTrackChapter tracks[1];
-} DiscTrackList;
+    public:
+        DiscListing(const payload& info) : payload(info) { }
+        byte changer() { return data[0]; }
+        byte length() { return data[1]; }
+        DiscTitleChapter* tracks() { (DiscTitleChapter*) (&data[2]); }
+} ;
+
+//command = 0x0E
+class DiscVolumeId : public payload
+{
+    public:
+        DiscVolumeId(const payload& info) : payload(info) { }
+        byte changer() { return data[0]; }
+        short slot() { return *((short*) (&data[1])); }
+        byte formatting() { return data[3]; }
+        VolumeId* volume_id() { (VolumeId*) (&data[4]); }
+} ;
+
+//command = 0x0F
+class DiscTimeStamp : public payload
+{
+    public:
+        DiscTimeStamp(const payload& info) : payload(info) { }
+        byte changer() { return data[0]; }
+        short slot() { return *((short*) (&data[1])); }
+        byte formatting() { return data[3]; }
+        TimeStamp* volume_id() { (TimeStamp*) (&data[4]); }
+} ;
 
 //command = 0x12
-typedef struct
+class InfoEvent : public payload
 {
-    short slot;
-    byte title;
-    byte chapter;
-    byte unknown_1;
-    byte unknown_2;
-    byte unknown_3;
-    byte unknown_4;
-    byte unknown_5;
-} InfoEvent;
+    public:
+        InfoEvent(const payload& info) : payload(info) { }
+        byte changer() const { return data[0]; }
+        short slot() const { return *((short*) (&data[1])); }
+        byte title() const { return data[3]; }
+        short chapter() const { return *((short*) (&data[4])); }
+        byte program() const { return data[6]; }
+        byte formatting() const { return data[7]; }
+        bool toc_complete() const { return (data[8]!=0); }
+        byte genre() const { return data[9]; }
+        byte userfile() const { return data[10]; }
+};
 
 //command = 0x13
-typedef struct
+class StateEvent : public payload
 {
-    byte state;
-    byte unknown_1;
-    byte unknown_2;
-    byte unknown_3;
-    byte unknown_4;
-    byte unknown_5;
-    byte unknown_6;
-} StateEvent;
+    public:
+        StateEvent(const payload& info) : payload(info) { }
+        byte changer() const { return data[0]; }
+        enum state state() const { return (enum state) data[1]; }
+        bool at_end() const { return (data[2]!=0); }
+        enum mode mode() const { return (enum mode) data[3]; }
+        byte param() const { return data[4]; }
+        enum repeat repeat() const { return (enum repeat) data[5]; }
+        enum door door_open() const { return (enum door) data[6]; }
+        bool library() const { return (data[7]!=0); }
+};
 
-//command = 0xFD
-typedef struct
+//command = 0xFD or command = 0xFE
+class TextData : public payload
 {
-    byte changer;
-    byte unknown_1;
-    byte unknown_2;
-    short slot;
-    byte unknown_3;
-    byte unknown_4;
-    byte unknown_5;
-    char title[1];
-} CDTextData;
-
-//command = 0xFE
-typedef struct
-{
-    byte changer;
-    byte unknown_1;
-    short slot;
-    byte unknown_2;
-    byte unknown_3;
-    byte genre;
-    char title[1];
-} DiscData;
+    public:
+        TextData(const payload& info) : payload(info) { }
+        byte page() { return (cmd==DISC_DATA) ? 0 : data[0]; }
+        byte changer() { return (cmd==DISC_DATA) ? data[0] : data[1]; }
+        dvd_title_type title_type() { return (dvd_title_type) ((cmd==DISC_DATA) ? data[1] : data[2]); }
+        short index() { return *((short*) ((cmd==DISC_DATA) ? &data[2] : &data[3])); }
+        byte formatting() { return (cmd==DISC_DATA) ? data[4] : data[5]; }
+        byte userfile() { return (cmd==DISC_DATA) ? data[5] : data[6]; }
+        byte genre() { return (cmd==DISC_DATA) ? data[6] : data[7]; }
+        char* text() { return (char*) ((cmd==DISC_DATA) ? &data[7] : &data[8]); }
+};
 
 //command = 0xFE
-typedef struct
+class UserfileData : public payload
 {
-    byte changer;
-    short unknown_1;
-    byte userfile;
-    byte unknown_2;
-    byte unknown_3;
-    byte unknown_4;
-    byte unknown_5;
-    char title[1];
-} UserfileData;
+    public:
+        UserfileData(const payload& info) : payload(info) { }
+        byte userfile() { return data[2]; }
+        char* title() { return ::strdup((char*) &data[7]); }
+};
 
-#endif /* JUKEN_DVDPAYLOAD_H */
+#endif /* JUKEN_CDPAYLOAD_H */
