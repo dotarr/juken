@@ -96,8 +96,9 @@ KenwoodDevice::EndMessage()
             case NAK: ::fprintf(stderr, "->Unexpected NAK\n"); break;
         }
     }
-    m_event_pending = CheckForEvent(1000000);
     //::sleep(1);
+    //m_event_pending = CheckForEvent(0);
+    m_event_pending = CheckForEvent(1000000);
 }
 
 bool
@@ -109,8 +110,9 @@ KenwoodDevice::RecvMessage(payload& msg)
     {
         WriteCntl(ACK);
         msg.cmd = 0xFF;
-        m_event_pending = CheckForEvent(1000000);
         //::sleep(1);
+        m_event_pending = CheckForEvent(100);
+        //m_event_pending = CheckForEvent(1000000);
         return false;
     }
     else if ( cntl == ACK )
