@@ -2,7 +2,7 @@
 #define JUKEN_KENWOODLISTENER_H
 
 #include "types.h"
-#include "payload.h"
+#include "cdpayload.h"
 
 class KenwoodListener 
 {
@@ -18,7 +18,6 @@ class KenwoodListener
         
         virtual bool DiscDataReply(DiscData* info) { return false; };
         virtual bool CDTextDataReply(CDTextData* info) { return false; };
-        virtual bool TrackTimesReply(TrackTimes* info) { return false; };
         virtual bool DiscTrackListReply(DiscTrackList* info) { return false; };
 
     protected:

@@ -24,7 +24,6 @@ class Juken : public KenwoodListener
         
         bool DiscDataReply(DiscData* info);
         bool CDTextDataReply(CDTextData* info);
-        bool TrackTimesReply(TrackTimes* info);
         bool DiscTrackListReply(DiscTrackList* info);
 
     protected:
@@ -40,7 +39,6 @@ class Juken : public KenwoodListener
         static void DoExport(Juken* _this, int argc, char* argv[]);
         static void DoList(Juken* _this, int argc, char* argv[]);
         static void DoExperiment(Juken* _this, int argc, char* argv[]);
-        static void GetTimes(Juken* _this, int argc, char* argv[]);
         static void GetBests(Juken* _this, int argc, char* argv[]);
         static void DoChangeDisc(Juken* _this, int argc, char* argv[]);
         static void DoPlay(Juken* _this, int argc, char* argv[]);

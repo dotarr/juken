@@ -4,8 +4,8 @@
 
 #define DUMP_MSGS
 //#define DUMP_CONN
-//#define DUMP_PAYLOAD
-//#define TRACE_FLOW
+#define DUMP_PAYLOAD
+#define TRACE_FLOW
 
 void
 DebugMsg(const char* fmt, ...)

@@ -4,13 +4,16 @@
 
 #include "exportlistener.h"
 
-ExportListener::ExportListener(const char* path)
-    : m_data_dir(path), m_file(NULL), m_tracks_left(0)
+ExportListener::ExportListener(uint disc_id, const char* path)
+    : m_file(NULL), m_num_tracks(0)
 {
+    OpenFile(disc_id, path);
+    ::fprintf(m_file, "DISCID=[%08x]\n", disc_id);
 }
 
 ExportListener::~ExportListener()
 {
+    CloseFile();
 }
 
 bool
@@ -32,9 +35,7 @@ ExportListener::DiscDataReply(DiscData* info)
     else
     {
         ::fprintf(m_file, "TITLE%d=%s\n", info->track-1, info->title);
-        m_tracks_left--;
-        if ( m_tracks_left == 0 )
-            CloseFile(info->track);
+        m_num_tracks = info->track;
     }
 
     return true;
@@ -56,33 +57,17 @@ ExportListener::CDTextDataReply(CDTextData* info)
     else
     {
         ::fprintf(m_file, "TITLE%d=%s\n", info->track-1, info->title);
-        m_tracks_left--;
-        if ( m_tracks_left == 0 )
-            CloseFile(info->track);
+        m_num_tracks = info->track;
     }
 
     return true;
 }
 
-bool
-ExportListener::TrackTimesReply(TrackTimes* info)
-{
-    TimeInfo* times = (TimeInfo*) &(info->times);
-    int disc_id = discid(info->num_tracks, times);
-    m_tracks_left = info->num_tracks;
-
-    OpenFile(disc_id);
-
-    ::fprintf(m_file, "DISCID=[%08x]\n", disc_id);
-
-    return true;
-}
-
 void
-ExportListener::OpenFile(uint disc_id)
+ExportListener::OpenFile(uint disc_id, const char* path)
 {
-    char* fname = (char*) malloc(strlen(m_data_dir)+8+1);
-    strcpy(fname, m_data_dir);
+    char* fname = (char*) malloc(strlen(path)+8+1);
+    strcpy(fname, path);
     char id_str[8+1];
     sprintf(id_str, "%08x", disc_id);
     strcat(fname, id_str);
@@ -93,10 +78,10 @@ ExportListener::OpenFile(uint disc_id)
 }
 
 void
-ExportListener::CloseFile(short num_tracks)
+ExportListener::CloseFile()
 {
     ::fprintf(m_file, "EXTD=\n");
-    for (int i=0; i<num_tracks; i++)
+    for (int i=0; i<m_num_tracks; i++)
         ::fprintf(m_file, "EXTT%d=\n", i);
     ::fprintf(m_file, "PLAYORDER=\n");
 

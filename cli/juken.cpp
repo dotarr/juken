@@ -1,6 +1,8 @@
 #include <common.h>
 
 #include <discid.h>
+#include <cdchanger.h>
+#include <dvdchanger.h>
 
 #include "juken.h"
 #include "exportlistener.h"
@@ -51,7 +53,6 @@ struct Juken::cmd Juken::m_commands[] =
     { "help",   &Juken::DoHelp,       "this help output" },
     { "export", &Juken::DoExport,     "export the changer contents" },
     { "list",   &Juken::DoList,       "list the changer contents" },
-    { "times",  &Juken::GetTimes,     "list the current discs track start times" },
     { "bests",  &Juken::GetBests,     "list the best tracks" },
     { "change", &Juken::DoChangeDisc, "change the current disc" },
     { "play",   &Juken::DoPlay,       "play the current disc" },
@@ -117,8 +118,16 @@ Juken::InitState()
     ::fprintf(m_file, "connection established to %s\n", id+4);
 
     // create appropriate changer 
-    m_changer = new KenwoodChanger(id, *m_device);
-    m_capacity = 200;
+    if ( ::strcmp(id, "I'm CD-425M") == 0 )
+    {
+        m_changer = new CDChanger(id, *m_device);
+        m_capacity = 200;
+    }
+    else
+    {
+        m_changer = new DVDChanger(id, *m_device);
+        m_capacity = 403;
+    }
 
     // add this as a listener that prints events and data to stdout
     m_changer->pushListener(this);
@@ -146,6 +155,7 @@ Juken::InitState()
         usleep(10);
 
         m_loading_titles = true;
+usleep(10); // an ugly hack, but I can't figure out how/why/when the player isn't "ready"
         m_changer->DoListDiscs();
         m_loading_titles = false;
         ::fprintf(m_file, "\n");
@@ -293,6 +303,7 @@ Juken::DoorChanged(bool door_closed)
         usleep(10);
 
         m_loading_titles = true;
+usleep(10); // an ugly hack, but I can't figure out how/why/when the player isn't "ready"
         m_changer->DoListDiscs();
         m_loading_titles = false;
         ::fprintf(m_file, "\n");
@@ -376,27 +387,6 @@ Juken::CDTextDataReply(CDTextData* info)
 }
 
 bool
-Juken::TrackTimesReply(TrackTimes* info)
-{
-    TimeInfo* times = (TimeInfo*) &(info->times);
-
-    ::fprintf(m_file, "disc: %3d ", info->slot);
-    if ( info->formatting != 0x00 )
-        ::fprintf(m_file, "formatting: %s ", (info->formatting==0x13)?"cd-text":"unknown");
-    ::fprintf(m_file, "\n");
-    // output the reply
-    for (int i=0; i<info->num_tracks+1; i++)
-    {
-        ::fprintf(m_file, "[%3d] ", i);
-        ::fprintf(m_file, "%02X:%02X:%02X ", times[i].minute, times[i].second, times[i].subsecond);
-        ::fprintf(m_file, "\n");
-    }
-    ::fprintf(m_file, "discid=[%08x]\n", discid(info->num_tracks, times));
-
-    return false;
-}
-
-bool
 Juken::DiscTrackListReply(DiscTrackList* info)
 {
     //::fprintf(m_file, "%s cmd=%d len=%d\n", "best data", reply_cmd, reply_len);
@@ -456,6 +446,7 @@ Juken::DoHelp(Juken* _this, int argc, char* argv[])
 void
 Juken::DoExport(Juken* _this, int argc, char* argv[])
 {
+    CDChanger* changer = ((CDChanger*) _this->m_changer);
     char* dir = "/var/juken/db/";
     short start = 1;
     short end = _this->m_capacity;
@@ -467,9 +458,6 @@ Juken::DoExport(Juken* _this, int argc, char* argv[])
     if ( argc > 3 )
         end = atoi(argv[3]);
 
-    ExportListener export_listener(dir);
-    _this->m_changer->pushListener(&export_listener);
-
     char** titles = _this->m_titles;
 
     for (short slot=start; slot<=end; slot++)
@@ -479,98 +467,101 @@ Juken::DoExport(Juken* _this, int argc, char* argv[])
 
         if ( _this->m_cur_slot != slot )
         {
-            _this->m_changer->DoChangeDisc(slot, Stopped);
+usleep(10); // an ugly hack, but I can't figure out how/why/when the player isn't "ready"
+            changer->DoChangeDisc(slot, Stopped);
 
-            _this->m_changer->DoEvent();
-            _this->m_changer->DoEvent();
-            _this->m_changer->DoEvent();
-            _this->m_changer->DoEvent();
-            _this->m_changer->DoEvent();
+            changer->DoEvent();
+            changer->DoEvent();
+            changer->DoEvent();
+            changer->DoEvent();
+            changer->DoEvent();
         }
 
 usleep(10); // an ugly hack, but I can't figure out how/why/when the player isn't "ready"
-        _this->m_changer->DoListTrackTimes(slot);
+        uint discid = changer->GetDiscId(slot);
+
+        ExportListener export_listener(discid, dir);
+        changer->pushListener(&export_listener);
 usleep(10); // an ugly hack, but I can't figure out how/why/when the player isn't "ready"
-        _this->m_changer->DoListTracks(slot);
-usleep(10); // an ugly hack, but I can't figure out how/why/when the player isn't "ready"
+
+        changer->DoListContents(slot);
+        changer->popListener();
     }
-    _this->m_changer->popListener();
 }
 
 void
 Juken::DoList(Juken* _this, int argc, char* argv[])
 {
+    CDChanger* changer = ((CDChanger*) _this->m_changer);
     if ( argc > 1 )
     {
         int slot = atoi(argv[1]);
-        _this->m_changer->DoListTracks(slot);
+        changer->DoListContents(slot);
     }
     else
     {
-        _this->m_changer->DoListDiscs();
+        changer->DoListDiscs();
     }
 }
 
 void
 Juken::DoExperiment(Juken* _this, int argc, char* argv[])
 {
+    CDChanger* changer = ((CDChanger*) _this->m_changer);
     int slot = 0;
     byte x = 1;
     if ( argc > 1 )
         slot = atoi(argv[1]);
     if ( argc > 2 )
         x = atoi(argv[2]);
-    _this->m_changer->DoListTracks(slot, x);
-}
-
-void
-Juken::GetTimes(Juken* _this, int argc, char* argv[])
-{
-    int slot = 0;
-    if ( argc > 1 )
-        slot = atoi(argv[1]);
-     _this->m_changer->DoListTrackTimes(slot);
+    changer->DoListContents(slot, x);
 }
 
 void
 Juken::GetBests(Juken* _this, int argc, char* argv[])
 {
-    _this->m_changer->DoListBest();
+    CDChanger* changer = ((CDChanger*) _this->m_changer);
+    changer->DoListBest();
 }
 
 void
 Juken::DoChangeDisc(Juken* _this, int argc, char* argv[])
 {
+    CDChanger* changer = ((CDChanger*) _this->m_changer);
     int slot = 0;
     if ( argc > 1 )
     {
         slot = atoi(argv[1]);
-        _this->m_changer->DoChangeDisc(slot, Stopped); //Playing);
+        changer->DoChangeDisc(slot, Stopped); //Playing);
     }
 }
 
 void
 Juken::DoPlay(Juken* _this, int argc, char* argv[])
 {
-    _this->m_changer->DoPlayPause();
+    CDChanger* changer = ((CDChanger*) _this->m_changer);
+    changer->DoPlayPause();
 }
 
 void
 Juken::DoPrev(Juken* _this, int argc, char* argv[])
 {
-    _this->m_changer->DoPrevTrack();
+    CDChanger* changer = ((CDChanger*) _this->m_changer);
+    changer->DoPrev();
 }
 
 void
 Juken::DoNext(Juken* _this, int argc, char* argv[])
 {
-    _this->m_changer->DoNextTrack();
+    CDChanger* changer = ((CDChanger*) _this->m_changer);
+    changer->DoNext();
 }
 
 void
 Juken::DoStop(Juken* _this, int argc, char* argv[])
 {
-    _this->m_changer->DoStop();
+    CDChanger* changer = ((CDChanger*) _this->m_changer);
+    changer->DoStop();
 }
 
 void

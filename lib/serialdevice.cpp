@@ -33,10 +33,12 @@ SerialDevice::OpenDevice(const char* dev)
         Throw("Unable to open device: No device name provided");
 
     // check to make sure that dev is a device and not say a directory
+/*
     struct stat m;
     memset(&m, 0, sizeof( m ));
     ThrowIf( ! S_ISCHR(m.st_mode),  "%s does not appear to be a device. \n", dev );
     
+*/
     // open the serial port, make sure that its not the controlling tty
     fd = ::open(dev, O_RDWR | O_NOCTTY | O_NONBLOCK);
     ThrowIfMinus1(fd, "Unable to open %s: ", dev);
@@ -131,6 +133,10 @@ SerialDevice::SetupDefault()
 
     // 8 bits, no parity, one stop bit, 9600 baud
     tset.c_cflag = CREAD|CS8|B9600|CRTSCTS|HUPCL;
+    //tset.c_cflag &= ~CSTOPB;
+
+    tset.c_cc[VMIN] = 1;
+    tset.c_cc[VTIME] = 50;
    
     // set the attributes
     ThrowIfMinus1(::tcsetattr(fd, TCSAFLUSH, &tset), "Failed to set attributes: ");

@@ -6,7 +6,7 @@
 #include "kenwooddevice.h"
 #include "kenwoodlistener.h"
 #include "types.h"
-#include "payload.h"
+#include "cdpayload.h"
 
 // A class for communications to a Kenwood changer via a serial port.
 
@@ -20,36 +20,27 @@ class KenwoodChanger
         void popListener();
 
         void DoEvent();
-        void ProcessEvent();
-        void DoInfoEvent(const payload& event);
-        void DoStateEvent(const payload& event);
-        void DoDiscEvent(const payload& event);
-        void DoDoorEvent(const payload& event);
+        virtual void ProcessEvent() = 0;
 
-        void DoListDiscs(byte x=0);
-        void DoListTracks(const short slot, byte x=1);
-        void DoListTrackTimes(const short slot);
-        void DoListBest();
-        void DoChangeDisc(const short slot, enum state cur_state);
-        void DoPlayPause();
-        void DoPrevTrack();
-        void DoNextTrack();
-        void DoStop();
+        virtual void DoListDiscs(byte x=0) = 0;
+        virtual void DoListContents(const short slot, byte x=1) = 0;
+        virtual void DoListBest() = 0;
+        virtual void DoChangeDisc(const short slot, enum state cur_state) = 0;
+        virtual void DoPlayPause() = 0;
+        virtual void DoPrev() = 0;
+        virtual void DoNext() = 0;
+        virtual void DoStop() = 0;
 
-        void DoDiscQuery(const DataAccess& query);
-        void DoChangeState(const short state);
+    protected:
+        KenwoodDevice& m_device;
+        deque<KenwoodListener*> m_listeners;
 
         void IssueRequest(const payload& msg, const bool has_replies);
         void GetOneReply(payload& reply);
         bool GetReply(payload& reply);
         bool GetEvent(payload& event);
 
-    protected:
-
     private:
-        KenwoodDevice& m_device;
-        deque<KenwoodListener*> m_listeners;
-
         KenwoodChanger();
         KenwoodChanger(const KenwoodChanger& changer);
 };

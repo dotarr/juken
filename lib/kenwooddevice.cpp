@@ -42,7 +42,8 @@ KenwoodDevice::DoHandshake(const char* id)
         RecvMessage(eor);
     }
 
-    return ::strdup((char*) reply.data);
+    Handshake* info = (Handshake*) reply.data;
+    return ::strdup(info->identifier);
 }
 
 void
