@@ -1,7 +1,7 @@
 #ifndef __CONSOLELISTENER_H__
 #define __CONSOLELISTENER_H__
 
-#include "../lib/kenwoodlistener.h"
+#include <kenwoodlistener.h>
 
 class ConsoleListener : public KenwoodListener
 {

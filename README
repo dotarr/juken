@@ -1,12 +1,13 @@
 
-The sources here should simply compile by typing make. My current env is a 
-Linux 2.2.12 machine and using egcs 2.95.2. (At some point the project will
-be autoconf'd ...) The only problems I can forsee in different environments 
-would be include files or library differences (most of the code is very 
-platform agnostic ...). I also will probably be migrating this to an OpenBSD
-based machine in the near future, so platform wierdities will be addressed 
-then.
+The sources now use autoconf/make to build. 
 
-A port to Win32 is also on the drawing board, but at this point, I'm preferring linux since I can telnet to my linux laptop from my office ...
+For the moment I'm not distributing the "autotools" generated files. In 
+order to prepare the tree for a build, you will need to execute:
+    $ ./bootstrap
+iThis will also require that you have a recent st of autotools. For me
+that set is:
+    autoconf version 2.5x
+    automake version 1.4x
 
-More docs on how the commandline test app can be used will be forthcoming.
+See the INSTALL document for generic instructions on how to build an
+autoconf based package.

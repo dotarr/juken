@@ -5,8 +5,6 @@
 
 #include "commands.h"
 
-#include "../lib/kenwooddevice.h"
-
 extern bool done; // exit flag from juken-cli.cpp
 
 typedef void (*cmd_func)(KenwoodChanger& changer, int argc, char* argv[]);

@@ -4,8 +4,8 @@
 
 #include <signal.h>
 
-#include "../lib/kenwooddevice.h"
-#include "../lib/kenwoodchanger.h"
+#include <kenwooddevice.h>
+#include <kenwoodchanger.h>
 
 #include "commands.h"
 #include "consolelistener.h"

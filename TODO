@@ -1,12 +1,2 @@
-Makefile
-* should be setup to use autoconf (would be better to do it sooner rather than later ...)
-
-constants.h
-* validate that MAX_PAYLOAD_LEN is accurate.
-* validate that maximums are not simply limitations of NetNamer.
-* determine first two genre values.
-
-test.cpp
-* extend the commandline interface (primarily for the editing of disc data).
 
 

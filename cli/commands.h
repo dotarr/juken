@@ -1,4 +1,7 @@
-#include "../lib/kenwoodchanger.h"
+#ifndef __COMMANDS_H__
+#define __COMMANDS_H__
+
+#include <kenwoodchanger.h>
 
 void DoQuit(KenwoodChanger& changer, int argc, char* argv[]);
 void DoHelp(KenwoodChanger& changer, int argc, char* argv[]);
@@ -12,3 +15,5 @@ void DoNext(KenwoodChanger& changer, int argc, char* argv[]);
 void DoStop(KenwoodChanger& changer, int argc, char* argv[]);
  
 void DoCommand(KenwoodChanger& changer);
+
+#endif /* __COMMANDS_H__ */
