@@ -4,9 +4,9 @@
 #include <unistd.h>
 #include <string.h>
 
-#include "kenwooddevice.h"
-#include "kenwoodchanger.h"
-#include "consolelistener.h"
+#include "lib/kenwooddevice.h"
+#include "lib/kenwoodchanger.h"
+#include "lib/consolelistener.h"
 
 #ifdef BSD
 char* serial_device = "/dev/tty00";
