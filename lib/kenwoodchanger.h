@@ -1,5 +1,5 @@
-#ifndef __KENWOODCHANGER_H__
-#define __KENWOODCHANGER_H__
+#ifndef JUKEN_KENWOODCHANGER_H
+#define JUKEN_KENWOODCHANGER_H
 
 #include "kenwooddevice.h"
 #include "kenwoodlistener.h"
@@ -70,4 +70,4 @@ class KenwoodChanger
         KenwoodChanger(const KenwoodChanger& changer);
 };
 
-#endif /* __KENWOODCHANGER_H__ */
+#endif /* JUKEN_KENWOODCHANGER_H */

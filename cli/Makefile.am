@@ -1,10 +1,10 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
 
-INCLUDES        = -I$(top_builddir)/lib -I$(top_srcdir)/lib
+INCLUDES        = -I$(top_builddir)/lib -I$(top_builddir)/common
 
 bin_PROGRAMS        = juken-cli
 juken_cli_SOURCES   = juken-cli.cpp \
                       commands.cpp \
                       consolelistener.cpp
 
-juken_cli_LDADD     = $(top_builddir)/lib/libjuken.a
+juken_cli_LDADD     = $(top_builddir)/lib/libjuken.a $(top_builddir)/common/libcommon.a

@@ -1,5 +1,5 @@
-#ifndef __SERIALDEVICE_H__
-#define __SERIALDEVICE_H__
+#ifndef JUKEN_SERIALDEVICE_H
+#define JUKEN_SERIALDEVICE_H
 
 #include "types.h"
 #include <termios.h>
@@ -39,4 +39,4 @@ class SerialDevice
         SerialDevice(const SerialDevice&);
 };
 
-#endif /* __SERIALDEVICE_H__ */
+#endif /* JUKEN_SERIALDEVICE_H */

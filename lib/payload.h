@@ -1,5 +1,5 @@
-#ifndef __PAYLOAD_H__
-#define __PAYLOAD_H__
+#ifndef JUKEN_PAYLOAD_H
+#define JUKEN_PAYLOAD_H
 
 #include "types.h"
 
@@ -178,4 +178,4 @@ typedef struct
     char title[1];
 } UserfileData;
 
-#endif /* __PAYLOAD_H__ */
+#endif /* JUKEN_PAYLOAD_H */

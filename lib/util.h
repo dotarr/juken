@@ -1,5 +1,7 @@
-#ifndef __UTIL_H__
-#define __UTIL_H__
+#ifndef JUKEN_UTIL_H
+#define JUKEN_UTIL_H
+
+#include <common.h>
 
 #include "types.h"
 #include "payload.h"
@@ -9,12 +11,4 @@ void DebugConn(const char* fmt, ...);
 void DebugPayload(const char* label, const payload& msg, const byte cksum);
 void TraceFlow(const char* fmt, ...);
 
-void ThrowIf(bool cond, const char* fmt, ...);
-void ThrowIfMinus1(int val, const char* fmt, ...);
-void ThrowIfNeg(int val, const char* fmt, ...);
-void ThrowIfNull(const void* p, const char* fmt, ...);
-void Throw(const char* fmt, ...);
-
-void printdata(const byte data[], int count);
-
-#endif /* __UTIL_H__ */
+#endif /* JUKEN_UTIL_H */

@@ -1,5 +1,5 @@
-#ifndef __COMMANDS_H__
-#define __COMMANDS_H__
+#ifndef JUKEN_COMMANDS_H
+#define JUKEN_COMMANDS_H
 
 #include <kenwoodchanger.h>
 
@@ -16,4 +16,4 @@ void DoStop(KenwoodChanger& changer, int argc, char* argv[]);
  
 void DoCommand(KenwoodChanger& changer);
 
-#endif /* __COMMANDS_H__ */
+#endif /* JUKEN_COMMANDS_H */

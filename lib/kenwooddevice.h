@@ -1,5 +1,5 @@
-#ifndef __KENWOODDEVICE_H__
-#define __KENWOODDEVICE_H__
+#ifndef JUKEN_KENWOODDEVICE_H
+#define JUKEN_KENWOODDEVICE_H
 
 #include "serialdevice.h"
 #include "types.h"
@@ -28,4 +28,4 @@ class KenwoodDevice : public SerialDevice
         KenwoodDevice(const KenwoodDevice&);
 };
 
-#endif /* __KENWOODDEVICE_H__ */
+#endif /* JUKEN_KENWOODDEVICE_H */

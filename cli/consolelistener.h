@@ -1,5 +1,5 @@
-#ifndef __CONSOLELISTENER_H__
-#define __CONSOLELISTENER_H__
+#ifndef JUKEN_CONSOLELISTENER_H
+#define JUKEN_CONSOLELISTENER_H
 
 #include <kenwoodlistener.h>
 
@@ -20,4 +20,4 @@ class ConsoleListener : public KenwoodListener
     private:
 };
 
-#endif /* __CONSOLELISTENER_H__ */
+#endif /* JUKEN_CONSOLELISTENER_H */

@@ -1,5 +1,3 @@
-#include <stdio.h>
-
 #include "kenwooddevice.h"
 #include "util.h"
 

@@ -1,16 +1,11 @@
-#ifndef __TYPES_H__
-#define __TYPES_H__
+#ifndef JUKEN_TYPES_H
+#define JUKEN_TYPES_H
 
-#include <stddef.h>
-
-typedef unsigned char  byte;
-typedef unsigned short ushort;
-typedef unsigned int   uint;
-typedef unsigned long  ulong;
+#include <common.h>
 
 #include "constants.h"
 
-typedef void (*reply_handler) (byte reply_cmd, ushort reply_len, byte* reply_data);
+typedef void (*reply_handler)(byte reply_cmd, ushort reply_len, byte* reply_data);
 
 enum mode { TrackMode, ProgramMode, BestMode, MusicTypeMode, UserfileMode };
 enum random { RandomOff, RandomSingle, RandomAll };
@@ -51,4 +46,4 @@ enum genre
     WORLD_MUSIC                 = 28  // 0x1C
 };
 
-#endif /* __TYPES_H__ */
+#endif /* JUKEN_TYPES_H */

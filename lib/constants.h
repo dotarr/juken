@@ -1,5 +1,5 @@
-#ifndef __CONSTANTS_H__
-#define __CONSTANTS_H__
+#ifndef JUKEN_CONSTANTS_H
+#define JUKEN_CONSTANTS_H
 
 // some maximums that exist in the protocol
 const ushort MAX_PAYLOAD_LEN = 1024; // if this aint big enough we have to redo alot
@@ -84,4 +84,4 @@ const char* const GENRE_NAMES[] =
     "Sound Effects","Sound Track","Spoken Word","World Music"
 };
 
-#endif
+#endif /* JUKEN_CONSTANTS_H */

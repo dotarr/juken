@@ -1,5 +1,5 @@
-#ifndef __KENWOODLISTENER_H__
-#define __KENWOODLISTENER_H__
+#ifndef JUKEN_KENWOODLISTENER_H
+#define JUKEN_KENWOODLISTENER_H
 
 #include "types.h"
 
@@ -18,4 +18,4 @@ class KenwoodListener
     private:
 };
 
-#endif /* __KENWOODLISTENER_H__ */
+#endif /* JUKEN_KENWOODLISTENER_H */
