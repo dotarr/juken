@@ -13,7 +13,7 @@
 class KenwoodChanger
 {
     public:
-        KenwoodChanger(KenwoodDevice& dev);
+        KenwoodChanger(char* id, KenwoodDevice& dev);
         virtual ~KenwoodChanger();
 
         void pushListener(KenwoodListener* listener);

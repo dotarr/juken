@@ -1,7 +1,7 @@
 #include "kenwoodchanger.h"
 #include "util.h"
 
-KenwoodChanger::KenwoodChanger(KenwoodDevice& dev) 
+KenwoodChanger::KenwoodChanger(char* id, KenwoodDevice& dev) 
 : m_device(dev)
 {
 }
