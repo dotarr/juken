@@ -18,7 +18,7 @@ class ConsoleListener : public KenwoodListener
         void Progress(KenwoodChanger* changer, enum operation op, int progress);
         void ProgressEnd(KenwoodChanger* changer, enum operation op);
 
-    private:
+    protected:
         static const char* scanning_discs_str;
         static const char* loading_userfiles_str;
 

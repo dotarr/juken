@@ -15,11 +15,12 @@ class KenwoodDevice : public SerialDevice
 
         char* DoHandshake(const char* id);
 
-        bool CheckForEvent(int usecs);
+        bool getEventPending() { return m_event_pending; }
+        bool setEventPending(bool pending) { m_event_pending = pending; }
+
         void SendMessage(const payload& msg, const bool has_replies);
         void EndMessage();
         bool RecvMessage(payload& msg);
-
 
         void WritePayload(const payload& msg);
         byte ReadPayload(payload& msg);
@@ -29,9 +30,11 @@ class KenwoodDevice : public SerialDevice
         void WriteCntl(byte c);
         byte ReadCntl();
 
-    protected:
-
     private:
+        bool m_event_pending;
+
+        bool CheckForEvent(int usecs);
+
         KenwoodDevice();
         KenwoodDevice(const KenwoodDevice&);
 };

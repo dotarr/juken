@@ -68,14 +68,10 @@ LoggingListener::DoorChanged(KenwoodChanger* changer, bool door_open)
     LogMsg("door: %s\n", door_open?"open":"closed");
 }
 
-const char* LoggingListener::scanning_discs_str = 
-                            "scanning discs ...      ";
-const char* LoggingListener::loading_userfiles_str = 
-                            "loading userfile names ...    ";
-
 void
 LoggingListener::ProgressStart(KenwoodChanger* changer, enum operation op, int length)
 {
+    ConsoleListener::ProgressStart(changer, op, length);
     switch ( op )
     {
         case ScanDiscs:
@@ -92,6 +88,7 @@ LoggingListener::ProgressStart(KenwoodChanger* changer, enum operation op, int l
 void
 LoggingListener::Progress(KenwoodChanger* changer, enum operation op, int progress)
 {
+    ConsoleListener::Progress(changer, op, progress);
     switch ( op )
     {
         case ScanDiscs:
@@ -111,9 +108,13 @@ LoggingListener::ProgressEnd(KenwoodChanger* changer, enum operation op)
     switch ( op )
     {
         case ScanDiscs:
+            back_space(5);
+            ::fprintf(m_file, "complete\n");
             LogMsg("complete\n");
         break;
         case LoadUserfiles:
+            back_space(3);
+            ::fprintf(m_file, "complete\n");
             LogMsg("complete\n");
         break;
         default:

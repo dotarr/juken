@@ -53,6 +53,7 @@ Importer::Run()
     const char* names[8];
     for (int i=0; i<8; i++) names[i] = m_data.getUserfileName(i);
 
+    ::fprintf(stderr, "writing userfile names\n");
     LogMsg("writing userfile names\n");
     m_changer->WriteUserfileNames(names);
 
@@ -84,7 +85,6 @@ Importer::Run()
             LogMsg("writing disc: %d title: %s artist: %s\n", slot, title, artist);
         }
         m_changer->WriteDisc(slot, disc);
-usleep(500);
 
         iter++;
     }
@@ -96,21 +96,21 @@ usleep(500);
 void
 Importer::print_data()
 {
-    ::fprintf(stdout, "changer %s [%s]\n", m_data.getModel(), m_data.getDevice());
+    ::fprintf(stderr, "changer %s [%s]\n", m_data.getModel(), m_data.getDevice());
     typedef char* foo;
     const char* names[8];
     for (int i=0; i<8; i++) names[i] = m_data.getUserfileName(i);
 
     for (int i=0; i<8; i++)
     {
-        ::fprintf(stdout, "  userfile[%d] %s\n", i, names[i]);
+        ::fprintf(stderr, "  userfile[%d] %s\n", i, names[i]);
     }
 
     list<DiscElement*> discs = m_data.getDiscs();
     list<DiscElement*>::iterator iter = discs.begin();
     while ( iter != discs.end() )
     {
-        (*iter)->print(stdout);
+        (*iter)->print(stderr);
         iter++;
     }
 }

@@ -20,6 +20,7 @@ class KenwoodChanger
         void popListener();
 
         void DoEvent();
+        void DoAnyEvents();
         virtual void DoInfoEvent(const payload& event) { };
         virtual void DoStateEvent(const payload& event) { };
         virtual void DoDiscEvent(const payload& event) { };

@@ -34,6 +34,8 @@ KenwoodChanger::~KenwoodChanger()
 void
 KenwoodChanger::DoEvent()
 {
+    m_device.setEventPending(false);
+
     byte cntl;
 
     if ( (cntl=m_device.ReadCntl()) != ENQ )
@@ -62,6 +64,13 @@ KenwoodChanger::DoEvent()
             DebugPayload("unhandled event", event.cmd, event.len, event.data);
             break;
     }
+}
+
+void
+KenwoodChanger::DoAnyEvents()
+{
+    while ( m_device.getEventPending() )
+        DoEvent();
 }
 
 void
@@ -151,8 +160,7 @@ KenwoodChanger::LoadUserfiles()
 void
 KenwoodChanger::IssueRequest(const payload& msg, const bool has_replies)
 {
-    if ( m_device.CheckForEvent(100) )
-        DoEvent();
+    DoAnyEvents();
 
     m_device.SendMessage(msg, has_replies);
 

@@ -14,7 +14,7 @@ const char* DV5050M_ID = "I'm DV-5050M";
 
 
 KenwoodDevice::KenwoodDevice(const char* dev) 
-: SerialDevice()
+: SerialDevice(), m_event_pending(false)
 {
     OpenDevice(dev);
 }
@@ -42,31 +42,6 @@ KenwoodDevice::DoHandshake(const char* id)
 
     Handshake info(reply);
     return ::strdup(info.identifier());
-}
-
-bool
-KenwoodDevice::CheckForEvent(int usecs)
-{
-#if 1
-    usleep(usecs);
-#else
-    struct timeval time = { 0, usecs };
-    int fd = GetFileDescriptor();
-    fd_set fds;
-
-    FD_ZERO(&fds);
-    FD_SET(fd, &fds);
-
-    int count = ::select(fd+1, &fds, NULL, NULL, &time);
-
-    if ( count != 0 )
-    {
-        printf("select returned %d\n", count);
-        LogMsg("!!!! we got something !!!!\n");
-    }
-#endif
-
-    return false;
 }
 
 void
@@ -121,6 +96,8 @@ KenwoodDevice::EndMessage()
             case NAK: ::fprintf(stderr, "->Unexpected NAK\n"); break;
         }
     }
+    m_event_pending = CheckForEvent(1000000);
+    //::sleep(1);
 }
 
 bool
@@ -132,6 +109,8 @@ KenwoodDevice::RecvMessage(payload& msg)
     {
         WriteCntl(ACK);
         msg.cmd = 0xFF;
+        m_event_pending = CheckForEvent(1000000);
+        //::sleep(1);
         return false;
     }
     else if ( cntl == ACK )
@@ -238,4 +217,27 @@ KenwoodDevice::ReadCntl()
     }
     return c;
 }
+
+bool
+KenwoodDevice::CheckForEvent(int usecs)
+{
+    int secs = usecs/1000000;
+    usecs = usecs%1000000;
+    struct timeval time = { secs, usecs };
+
+    int fd = GetFileDescriptor();
+    fd_set fds;
+
+    FD_ZERO(&fds);
+    FD_SET(fd, &fds);
+
+    DebugMsg("select(%d.%06d)\n", secs, usecs);
+    int count = ::select(fd+1, &fds, NULL, NULL, &time);
+
+    if ( count != 0 )
+        DebugMsg("!!!! we got an unsolicited ENQ !!!!\n");
+
+    return (count!=0);
+}
+
 

@@ -7,14 +7,12 @@ CDChanger::CDChanger(char* id, KenwoodDevice& dev, KenwoodListener* listener)
 : KenwoodChanger(id, 200, dev, listener)
 {
     InfoMsg("CDChanger::CDChanger(%s, device, listener)\n", id);
+    //
     // process InfoChanged
-    DoEvent();
     // process DoorChanged
-    DoEvent();
     // process StateChanged
-    DoEvent();
     // process DiscChanged
-    DoEvent();
+    DoAnyEvents();
 
     if ( m_cur_door_pos == DoorClosed )
         ScanDiscs();
@@ -298,15 +296,11 @@ CDChanger::DoChangeDisc(const short slot)
     IssueRequest(req, NO_REPLIES); 
     
     // StateEvent
-    DoEvent();
     // InfoEvent
-    DoEvent();
     // DiscEvent
-    DoEvent();
     // StateEvent
-    DoEvent();
     // StateEvent
-    DoEvent();
+    DoAnyEvents();
 }
 
 void
@@ -416,12 +410,12 @@ CDChanger::WriteDisc(short slot, Disc& disc)
         const Name& track = (*iter);
         if ( track.text == NULL )
         {
-            TextData data(slot, track.index, disc.userfiles, TrackNames, disc.genre, 0, none);
+            TextData data(slot, track.index, 0, TrackNames, disc.genre, 0, none);
             IssueRequest(data, NO_REPLIES); 
         }
         else
         {
-            TextData data(slot, track.index, disc.userfiles, TrackNames, disc.genre, 0, track.text);
+            TextData data(slot, track.index, 0, TrackNames, disc.genre, 0, track.text);
             IssueRequest(data, NO_REPLIES); 
         }
     }

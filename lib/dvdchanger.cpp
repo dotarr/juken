@@ -10,9 +10,8 @@ DVDChanger::DVDChanger(char* id, KenwoodDevice& dev, KenwoodListener* listener)
     m_chain_id = 1;
 
     // process InfoChanged
-    DoEvent();
     // process StateChanged
-    DoEvent();
+    DoAnyEvents();
 
     if ( m_cur_door_pos == DoorClosed )
         ScanDiscs();
@@ -357,11 +356,9 @@ DVDChanger::DoChangeDisc(const short slot)
     IssueRequest(req, NO_REPLIES); 
 
     // StateEvent
-    DoEvent();
     // InfoEvent
-    DoEvent();
     // StateEvent
-    DoEvent();
+    DoAnyEvents();
 }
 
 void

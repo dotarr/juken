@@ -1,12 +1,12 @@
 #ifndef JUKEN_LOGGING_LISTENER_H
 #define JUKEN_LOGGING_LISTENER_H
 
-#include <kenwoodlistener.h>
+#include "consolelistener.h"
 
-class LoggingListener : public KenwoodListener
+class LoggingListener : public ConsoleListener
 {
     public:
-        LoggingListener() { }
+        LoggingListener() : ConsoleListener(stderr) { }
         ~LoggingListener() { }
 
         void InfoChanged(KenwoodChanger* changer, short slot, byte title, short chapter);
@@ -17,10 +17,6 @@ class LoggingListener : public KenwoodListener
         void ProgressStart(KenwoodChanger* changer, enum operation op, int length);
         void Progress(KenwoodChanger* changer, enum operation op, int progress);
         void ProgressEnd(KenwoodChanger* changer, enum operation op);
-
-    private:
-        static const char* scanning_discs_str;
-        static const char* loading_userfiles_str;
 };
 
 #endif /* JUKEN_LOGGING_LISTENER_H */

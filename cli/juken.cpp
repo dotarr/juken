@@ -134,7 +134,7 @@ Juken::Run()
             {
                 // do an event
                 rl_crlf();
-                m_changer->DoEvent();
+                m_changer->DoAnyEvents();
                 rl_on_new_line();
                 rl_redisplay();
             }
