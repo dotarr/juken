@@ -21,6 +21,8 @@ class ConsoleListener : public KenwoodListener
         bool TrackTimesReply(TrackTimes* info);
         bool DiscTrackListReply(DiscTrackList* info);
 
+        short getCurSlot() { return m_cur_slot; }
+        
         short getCapacity() { return m_capacity; }
         char** getTitles() { return m_titles; }
 
@@ -29,6 +31,7 @@ class ConsoleListener : public KenwoodListener
     private:
         FILE* m_file; // the file too fprintf to
 
+        short m_cur_slot;
         short m_capacity;
         char** m_titles;
 };

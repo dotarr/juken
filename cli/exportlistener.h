@@ -6,20 +6,22 @@
 class ExportListener : public KenwoodListener
 {
     public:
-        ExportListener(FILE* f);
+        ExportListener(const char* path);
         ~ExportListener();
 
         bool DiscDataReply(DiscData* info);
         bool CDTextDataReply(CDTextData* info);
         bool TrackTimesReply(TrackTimes* info);
-        bool DiscTrackListReply(DiscTrackList* info);
 
     protected:
+        void OpenFile(uint disc_id);
+        void CloseFile(short num_tracks);
 
     private:
-        FILE* m_file; // the file too export to
-        uint  m_discid;
-        short m_track_count;
+        const char* m_data_dir;
+
+        FILE* m_file;
+        short m_tracks_left;
 };
 
 #endif /* JUKEN_EXPORTLISTENER_H */

@@ -70,6 +70,8 @@ ConsoleListener::DiscChanged(short slot)
     // display the current disc number
     ::fprintf(m_file, "disc#: %d\n", slot);
 
+    m_cur_slot = slot;
+
     return false;
 }
 
@@ -100,9 +102,9 @@ ConsoleListener::DiscDataReply(DiscData* info)
     {
         m_titles[info->slot] = strdup(info->title);
 
-        ::fprintf(m_file, "%-25s ", info->title);
+        ::fprintf(m_file, "[%3d] %-25s ", info->slot, info->title);
         if ( info->genre != UNKNOWN )
-            ::fprintf(m_file, "genre: %-22s(%d) ", GENRE_NAMES[info->genre], info->genre);
+            ::fprintf(m_file, "genre: %-22s(%2d) ", GENRE_NAMES[info->genre], info->genre);
         if ( info->userfiles != 0x00 )
             ::fprintf(m_file, " userfiles: 0x%02X ", info->userfiles);
         if ( info->formatting != 0x00 )
@@ -111,7 +113,7 @@ ConsoleListener::DiscDataReply(DiscData* info)
     }
     else
     {
-        ::fprintf(m_file, "[%3d] ", info->track);
+        ::fprintf(m_file, "[%2d] ", info->track);
         ::fprintf(m_file, "%-25s ", info->title);
         if ( info->request_type != 0x01 )
             ::fprintf(m_file, "   request_type: 0x%02X ", info->request_type);

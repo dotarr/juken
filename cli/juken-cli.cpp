@@ -215,6 +215,15 @@ main(int argc, char* argv[])
         g_listener = &listener;
         changer.pushListener(&listener);
         
+        changer.DoEvent();
+        changer.DoEvent();
+        changer.DoEvent();
+        changer.DoEvent();
+
+        usleep(10);
+        ::fprintf(stdout, "listing discs\n");
+        changer.DoListDiscs();
+
         // setup readline callbacks
         rl_callback_handler_install("juken> ", readline_callback);
         rl_attempted_completion_function = completion_callback;

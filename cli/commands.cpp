@@ -1,6 +1,7 @@
 #include <common.h>
 
 #include "commands.h"
+#include "consolelistener.h"
 #include "exportlistener.h"
 
 #include <readline/readline.h>
@@ -10,7 +11,6 @@ extern char** buildargv(char *);
 extern void freeargv(char **);
 END_C_DECLS
 
-extern bool g_done; // exit flag from juken-cli.cpp
 
 struct cmd short_commands[] = 
 {
@@ -56,17 +56,41 @@ DoHelp(KenwoodChanger& changer, int argc, char* argv[])
 void
 DoExport(KenwoodChanger& changer, int argc, char* argv[])
 {
-    int slot = 0;
+    char* dir = "/var/juken/";
     if ( argc > 1 )
-        slot = atoi(argv[1]);
+    {
+        dir = argv[1];
+    }
 
-    ExportListener export_listener(stdout);
+    ExportListener export_listener(dir);
     changer.pushListener(&export_listener);
 
-    changer.DoListTrackTimes(slot);
-usleep(1); // an ugly hack, but I can't figure out how/why/when the player isn't "ready"
-    changer.DoListTracks(slot);
+    extern ConsoleListener* g_listener;
+    char** titles = g_listener->getTitles();
+    short capacity = g_listener->getCapacity();
 
+    for (short slot=1; slot<=capacity; slot++)
+    {
+        if ( titles[slot] == NULL )
+            continue;
+
+        if ( g_listener->getCurSlot() != slot )
+        {
+            changer.DoChangeDisc(slot, Stopped);
+
+            changer.DoEvent();
+            changer.DoEvent();
+            changer.DoEvent();
+            changer.DoEvent();
+            changer.DoEvent();
+        }
+
+usleep(10); // an ugly hack, but I can't figure out how/why/when the player isn't "ready"
+        changer.DoListTrackTimes(slot);
+usleep(10); // an ugly hack, but I can't figure out how/why/when the player isn't "ready"
+        changer.DoListTracks(slot);
+usleep(10); // an ugly hack, but I can't figure out how/why/when the player isn't "ready"
+    }
     changer.popListener();
 }
 
@@ -118,7 +142,7 @@ DoChangeDisc(KenwoodChanger& changer, int argc, char* argv[])
     if ( argc > 1 )
     {
         slot = atoi(argv[1]);
-        changer.DoChangeDisc(slot, Playing);
+        changer.DoChangeDisc(slot, Stopped); //Playing);
     }
 }
 
@@ -149,6 +173,7 @@ DoStop(KenwoodChanger& changer, int argc, char* argv[])
 void
 DoQuit(KenwoodChanger& changer, int argc, char* argv[])
 {
+    extern bool g_done; // exit flag from juken-cli.cpp
     g_done = true;
 }
 

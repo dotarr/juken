@@ -4,17 +4,13 @@
 
 #include "exportlistener.h"
 
-ExportListener::ExportListener(FILE* f)
-    : m_file(f), m_discid(0), m_track_count(0)
+ExportListener::ExportListener(const char* path)
+    : m_data_dir(path), m_file(NULL), m_tracks_left(0)
 {
 }
 
 ExportListener::~ExportListener()
 {
-    ::fprintf(m_file, "EXTD=\n");
-    for (int i=0; i<m_track_count; i++)
-        ::fprintf(m_file, "EXTT%d=\n", i);
-    ::fprintf(m_file, "PLAYORDER=\n");
 }
 
 bool
@@ -36,7 +32,9 @@ ExportListener::DiscDataReply(DiscData* info)
     else
     {
         ::fprintf(m_file, "TITLE%d=%s\n", info->track-1, info->title);
-        m_track_count++;
+        m_tracks_left--;
+        if ( m_tracks_left == 0 )
+            CloseFile(info->track);
     }
 
     return true;
@@ -58,7 +56,9 @@ ExportListener::CDTextDataReply(CDTextData* info)
     else
     {
         ::fprintf(m_file, "TITLE%d=%s\n", info->track-1, info->title);
-        m_track_count++;
+        m_tracks_left--;
+        if ( m_tracks_left == 0 )
+            CloseFile(info->track);
     }
 
     return true;
@@ -68,16 +68,38 @@ bool
 ExportListener::TrackTimesReply(TrackTimes* info)
 {
     TimeInfo* times = (TimeInfo*) &(info->times);
-    m_discid = discid(info->num_tracks, times);
-    ::fprintf(m_file, "DISCID=[%08x]\n", m_discid);
+    int disc_id = discid(info->num_tracks, times);
+    m_tracks_left = info->num_tracks;
+
+    OpenFile(disc_id);
+
+    ::fprintf(m_file, "DISCID=[%08x]\n", disc_id);
 
     return true;
 }
 
-bool
-ExportListener::DiscTrackListReply(DiscTrackList* info)
+void
+ExportListener::OpenFile(uint disc_id)
 {
-    return true;
+    char* fname = (char*) malloc(strlen(m_data_dir)+8+1);
+    strcpy(fname, m_data_dir);
+    char id_str[8+1];
+    sprintf(id_str, "%08x", disc_id);
+    strcat(fname, id_str);
+    
+    printf("exporting to file: %s\n", fname);
+    m_file = fopen(fname, "w+");
+    ThrowIfNull(m_file, "unable to open %s: %s", fname, strerror(errno));
 }
 
+void
+ExportListener::CloseFile(short num_tracks)
+{
+    ::fprintf(m_file, "EXTD=\n");
+    for (int i=0; i<num_tracks; i++)
+        ::fprintf(m_file, "EXTT%d=\n", i);
+    ::fprintf(m_file, "PLAYORDER=\n");
 
+    ::fclose(m_file);
+    m_file = NULL;
+}
