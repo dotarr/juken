@@ -105,25 +105,30 @@ Exporter::Run()
 
             ::fprintf(stdout, "    <ID>%s</ID>\n", disc_id);
             ::fprintf(stdout, "    <Slot>%03d</Slot>\n", disc.index);
-            if ( disc.title != NULL )
-            {
-                ::fprintf(stdout, "    <ShortTitle>%s</ShortTitle>\n", disc.title);
-            }
-            if ( disc.artist != NULL )
-            {
-                switch ( disc.type )
-                {
-                    case DISC_CD_A:
-                    case DISC_DVD_A:
-                        ::fprintf(stdout, "    <Artist>%s</Artist>\n", disc.artist);
-                    break;
 
-                    case DISC_CD_MP3:
-                    case DISC_CD_V:
-                    case DISC_DVD_V:
+            if ( disc.title != NULL )
+                ::fprintf(stdout, "    <ShortTitle>%s</ShortTitle>\n", disc.title);
+            else
+                ::fprintf(stdout, "    <ShortTitle></ShortTitle>\n");
+
+            switch ( disc.type )
+            {
+                case DISC_CD_A:
+                case DISC_DVD_A:
+                    if ( disc.artist != NULL )
+                        ::fprintf(stdout, "    <Artist>%s</Artist>\n", disc.artist);
+                    else
+                        ::fprintf(stdout, "    <Artist></Artist>\n");
+                break;
+
+                case DISC_CD_MP3:
+                case DISC_CD_V:
+                case DISC_DVD_V:
+                    if ( disc.artist != NULL )
                         ::fprintf(stdout, "    <Description>%s</Description>\n", disc.artist);
-                    break;
-                }
+                    else
+                        ::fprintf(stdout, "    <Description></Description>\n");
+                break;
             }
 
             if ( disc.genre > UNASSIGNED )
