@@ -145,6 +145,13 @@ SerialDevice::SetupDefault()
     ::cfmakeraw(&tset);
     TraceMsg("done\n");
 
+#ifdef WIN32
+    // for some reason this is NECESSARY under cygwin
+    // set speed
+    cfsetispeed(&tset, B9600);
+    cfsetospeed(&tset, B9600);
+#endif
+
     // 8 bits, no parity, one stop bit, 9600 baud
     tset.c_cflag = CREAD|CS8|B9600|HUPCL;
 
