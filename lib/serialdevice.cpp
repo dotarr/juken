@@ -10,7 +10,6 @@ END_C_DECLS
 #endif
 
 #include "serialdevice.h"
-#include "util.h"
 
 // A class for handling serial port communications
 

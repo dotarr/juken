@@ -3,4 +3,4 @@
 INCLUDES        = -I$(top_builddir)/common
 
 noinst_LIBRARIES    = libjuken.a
-libjuken_a_SOURCES  = serialdevice.cpp kenwooddevice.cpp kenwoodchanger.cpp cdchanger.cpp dvdchanger.cpp util.cpp discid.cpp
+libjuken_a_SOURCES  = serialdevice.cpp kenwooddevice.cpp kenwoodchanger.cpp cdchanger.cpp dvdchanger.cpp discid.cpp
