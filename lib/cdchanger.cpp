@@ -1,12 +1,12 @@
 #include "cdchanger.h"
 #include "cdpayload.h"
 #include "discid.h"
-#include "util.h"
 #include "cdconstants.h"
 
 CDChanger::CDChanger(char* id, KenwoodDevice& dev, KenwoodListener* listener) 
 : KenwoodChanger(id, 200, dev, listener)
 {
+    InfoMsg("CDChanger::CDChanger(%s, device, listener)\n", id);
     // process InfoChanged
     DoEvent();
     // process DoorChanged
@@ -23,11 +23,13 @@ CDChanger::CDChanger(char* id, KenwoodDevice& dev, KenwoodListener* listener)
 
 CDChanger::~CDChanger()
 {
+    InfoMsg("CDChanger::~CDChanger()\n");
 }
 
 void
 CDChanger::DoInfoEvent(const payload& event)
 {
+    InfoMsg("CDChanger::DoInfoEvent()\n");
     InfoEvent info(event);
 
     if ( info_changed(info) )
@@ -45,6 +47,7 @@ CDChanger::DoInfoEvent(const payload& event)
 void
 CDChanger::DoStateEvent(const payload& event)
 {
+    InfoMsg("CDChanger::DoStateEvent()\n");
     StateEvent info(event);
 
     if ( state_changed(info) )
@@ -56,6 +59,7 @@ CDChanger::DoStateEvent(const payload& event)
 void
 CDChanger::DoDiscEvent(const payload& event)
 {
+    InfoMsg("CDChanger::DoDiscEvent()\n");
     DiscEvent info(event);
 
     if ( info.slot() != m_cur_slot )
@@ -67,6 +71,7 @@ CDChanger::DoDiscEvent(const payload& event)
 void
 CDChanger::DoDoorEvent(const payload& event)
 {
+    InfoMsg("CDChanger::DoDoorEvent()\n");
     DoorEvent info(event);
 
     if ( info.door_pos() != m_cur_door_pos )
@@ -78,6 +83,7 @@ CDChanger::DoDoorEvent(const payload& event)
 NameList
 CDChanger::DoListUserfiles()
 {
+    InfoMsg("CDChanger::DoListUserfiles()\n");
     NameList names;
 
     DataAccess query(RetrieveDataAccess, TextDataType, 0, UserfileNames, UNKNOWN);
@@ -101,6 +107,7 @@ CDChanger::DoListUserfiles()
 void
 CDChanger::DoListUserfiles(void* context, NameCallback* callback)
 {
+    InfoMsg("CDChanger::DoListUserfiles(callback)\n");
     DataAccess query(RetrieveDataAccess, TextDataType, 0, UserfileNames, UNKNOWN);
 
     // issue the request
@@ -120,6 +127,7 @@ CDChanger::DoListUserfiles(void* context, NameCallback* callback)
 void
 CDChanger::DoListDiscs(void* context, DiscCallback* callback)
 {
+    InfoMsg("CDChanger::DoListDiscs(callback)\n");
     // build the payload
     DataAccess query(RetrieveDataAccess, TextDataType, AllSlots, DiscNames, UNKNOWN);
 
@@ -140,6 +148,7 @@ CDChanger::DoListDiscs(void* context, DiscCallback* callback)
 Disc
 CDChanger::DoListContents(const short slot)
 {
+    InfoMsg("CDChanger::DoListContents(%d)\n", slot);
     // build the payload
     DataAccess query(RetrieveDataAccess, TextDataType, slot, TrackNames, UNKNOWN);
 
@@ -174,6 +183,7 @@ CDChanger::DoListContents(const short slot)
 void
 CDChanger::DoListContents(const short slot, void* context, DiscCallback* callback)
 {
+    InfoMsg("CDChanger::DoListContents(callback)\n");
     Disc data = DoListContents(slot);
     (*callback)(context, data);
 }
@@ -181,6 +191,7 @@ CDChanger::DoListContents(const short slot, void* context, DiscCallback* callbac
 Info
 CDChanger::GetDiscInfo(const short slot)
 {
+    InfoMsg("CDChanger::GetDiscInfo(%d)\n", slot);
     // make sure slot is current
     if ( slot != m_cur_slot ) DoChangeDisc(slot);
 
@@ -205,6 +216,7 @@ CDChanger::GetDiscInfo(const short slot)
 char*
 CDChanger::GetDiscId(const short slot)
 {
+    InfoMsg("CDChanger::GetDiscId(%d)\n", slot);
     // make sure slot is current
     if ( slot != m_cur_slot ) DoChangeDisc(slot);
     
@@ -232,6 +244,7 @@ CDChanger::GetDiscId(const short slot)
 byte
 CDChanger::GetDiscUserfiles(const short slot)
 {
+    InfoMsg("CDChanger::GetDiscUserfiles(%d)\n", slot);
     // make sure slot is current
     if ( slot != m_cur_slot ) DoChangeDisc(slot);
 
@@ -254,6 +267,7 @@ CDChanger::GetDiscUserfiles(const short slot)
 enum genre
 CDChanger::GetDiscGenre(const short slot)
 {
+    InfoMsg("CDChanger::GetDiscGenre(%d)\n", slot);
     // make sure slot is current
     if ( slot != m_cur_slot ) DoChangeDisc(slot);
 
@@ -276,6 +290,7 @@ CDChanger::GetDiscGenre(const short slot)
 void
 CDChanger::DoChangeDisc(const short slot)
 {
+    InfoMsg("CDChanger::DoChangeDisc(%d)\n", slot);
     // build the payload
     ChangeDisc req(slot, 1, 0);
 
@@ -297,6 +312,7 @@ CDChanger::DoChangeDisc(const short slot)
 void
 CDChanger::DoPlayPause()
 {
+    InfoMsg("CDChanger::DoPlayPause()\n");
     // build the payload
     DoAction req(PLAY_PAUSE_CMD | STATE_PARAM);
 
@@ -307,6 +323,7 @@ CDChanger::DoPlayPause()
 void
 CDChanger::DoPrev()
 {
+    InfoMsg("CDChanger::DoPrev()\n");
     // build the payload
     DoAction req1(PREV_CMD | STATE_PARAM);
 
@@ -323,6 +340,7 @@ CDChanger::DoPrev()
 void
 CDChanger::DoNext()
 {
+    InfoMsg("CDChanger::DoNext()\n");
     // build the payload
     DoAction req1(NEXT_CMD | STATE_PARAM);
 
@@ -339,6 +357,7 @@ CDChanger::DoNext()
 void
 CDChanger::DoStop()
 {
+    InfoMsg("CDChanger::DoStop()\n");
     // build the payload
     DoAction req(STOP_CMD | STATE_PARAM);
 
@@ -349,6 +368,9 @@ CDChanger::DoStop()
 void
 CDChanger::WriteUserfileNames(const char* names[])
 {
+    InfoMsg("CDChanger::WriteUserfileNames(%s, %s, %s, %s, %s, %s, %s, %s)\n",
+            names[0], names[1], names[2], names[3],
+            names[4], names[5], names[6], names[7]);
     DataAccess query(WriteUserfilesAccess, ReadyDataType, 0, 1, UNKNOWN);
 
     // issue the request
@@ -368,6 +390,10 @@ CDChanger::WriteUserfileNames(const char* names[])
 void
 CDChanger::WriteDisc(short slot, Disc& disc)
 {
+    InfoMsg("CDChanger::WriteDisc(%s)\n", (const char*) disc);
+    // make sure slot is current
+    //if ( slot != m_cur_slot ) DoChangeDisc(slot);
+
     const char none[] = { 0x01 };
     DataAccess query(WriteTextAccess, ReadyDataType, slot, 1, UNKNOWN);
 
@@ -381,9 +407,12 @@ CDChanger::WriteDisc(short slot, Disc& disc)
     TextData data(slot, 0, disc.userfiles, DiscNames, disc.genre, 0, disc.title);
     IssueRequest(data, NO_REPLIES); 
 
+    short count = 0;
     NameList& tracks = disc.tracks;
     for (NameList::iterator iter=tracks.begin(); iter!=tracks.end(); iter++)
     {
+        if ( ++count > 20 ) continue;
+
         const Name& track = (*iter);
         if ( track.text == NULL )
         {
