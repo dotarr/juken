@@ -21,46 +21,54 @@ const byte ETB = 0x17; // End of Transmission Block
 
 // flags for whether a request has a reply or not
 const bool HAS_REPLIES = true;
-const bool NO_REPLIES = false;
+const bool NO_REPLIES  = false;
 
 // protocol event/request codes 
-const byte HANDSHAKE_REQ = 0x00;
-const byte QUERY_REQ = 0x03;
-const byte STATE_REQ = 0x0A;
-const byte SELECT_DISC_REQ = 0x0B;
-
-const byte INFO_EVT = 0x12;
-const byte STATE_EVT = 0x13;
-const byte DISC_EVT = 0x14;
-const byte DOOR_EVT = 0x15;
+const byte HANDSHAKE            = 0x00;
+const byte DATA_ACCESS          = 0x03;
+const byte DISC_INFO            = 0x04;
+const byte TRACK_TIMES          = 0x06;
+const byte DISC_USERFILES       = 0x07;
+const byte DISC_GENRE           = 0x09;
+const byte DO_ACTION            = 0x0A;
+const byte SELECT_DISC_TRACK    = 0x0B;
+const byte SELECT_PLAY_MODE     = 0x0C;
+const byte DISC_TRACK_LIST      = 0x0D;
+const byte INFO_EVENT           = 0x12;
+const byte STATE_EVENT          = 0x13;
+const byte DISC_EVENT           = 0x14;
+const byte DOOR_EVENT           = 0x15;
+const byte CD_TEXT_DATA         = 0xFD;
+const byte DISC_DATA            = 0xFE;
+const byte USERFILE_DATA        = 0xFE;
 
 // protocol parameter values
-const short NULL_PARAM = 0x00FF;
+const short NULL_PARAM          = 0xFFFF;
 
-const short STATE_PARAM = 0x00A0;
-const short MODE_PARAM = 0x00A1;
+const short STATE_PARAM         = 0x00A0;
+const short MODE_PARAM          = 0x00A1;
 
-const short NULL_CMD = 0xC900;
+const short NULL_CMD            = 0xC900;
 
-const short STOP_CMD = 0xC900;
-const short PLAY_PAUSE_CMD = 0xCB00;
-const short PREV_CMD = 0xCE00;
-const short NEXT_CMD = 0xCF00;
-const short FASTBACK_CMD = 0x0600;
-const short FASTFORW_CMD = 0x0700;
+const short STOP_CMD            = 0xC900;
+const short PLAY_PAUSE_CMD      = 0xCB00;
+const short PREV_CMD            = 0xCE00;
+const short NEXT_CMD            = 0xCF00;
+const short FASTBACK_CMD        = 0x0600;
+const short FASTFORW_CMD        = 0x0700;
 
-const short RANDOM_CMD = 0xD400;
-const short REPEAT_CMD = 0xCC00;
+const short RANDOM_CMD          = 0xD400;
+const short REPEAT_CMD          = 0xCC00;
 
 
 // player state values
-const byte STOPPED_STATE = 0x40;
-const byte STOPPING_STATE = 0x50;
-const byte CHANGING_STATE = 0x60;
-const byte PLAYING_STATE = 0x70;
-const byte PAUSED_STATE = 0x80;
-const byte SKIPFORW_STATE = 0x90;
-const byte SKIPBACK_STATE = 0xA0;
+const byte STOPPED_STATE        = 0x40;
+const byte STOPPING_STATE       = 0x50;
+const byte CHANGING_STATE       = 0x60;
+const byte PLAYING_STATE        = 0x70;
+const byte PAUSED_STATE         = 0x80;
+const byte SKIPFORW_STATE       = 0x90;
+const byte SKIPBACK_STATE       = 0xA0;
 
 // strings for player mode
 const char* const MODE_NAMES[] = 

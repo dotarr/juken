@@ -28,6 +28,7 @@ class KenwoodChanger
         void DoListBest();
         void DoChangeDisc(const short slot);
         void DoPlayPause();
+        void DoPrevTrack();
         void DoNextTrack();
         void DoStop();
 

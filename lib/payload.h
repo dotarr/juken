@@ -121,25 +121,25 @@ typedef struct
     byte userfile;
     byte mode;
     byte repeat;
-} ChangerInfo;
+} InfoEvent;
 
 //command = 0x13
 typedef struct
 {
     byte state;
-} ChangerState;
+} StateEvent;
 
 //command = 0x14
 typedef struct
 {
     short slot;
-} ChangerDisc;
+} DiscEvent;
 
 //command = 0x15
 typedef struct
 {
     byte door_pos;
-} ChangerDoor;
+} DoorEvent;
 
 //command = 0xFD
 typedef struct

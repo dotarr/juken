@@ -68,10 +68,10 @@ KenwoodChanger::DoEvent()
     {
         switch ( event.cmd )
         {
-            case INFO_EVT:  DoInfoEvent(event);  break;
-            case STATE_EVT: DoStateEvent(event); break;
-            case DISC_EVT:  DoDiscEvent(event);  break;
-            case DOOR_EVT:  DoDoorEvent(event);  break;
+            case INFO_EVENT:  DoInfoEvent(event);  break;
+            case STATE_EVENT: DoStateEvent(event); break;
+            case DISC_EVENT:  DoDiscEvent(event);  break;
+            case DOOR_EVENT:  DoDoorEvent(event);  break;
 
             default:
                 DebugPayload("unhandled event", event, m_device.ComputeChecksum(event));
@@ -84,7 +84,7 @@ void
 KenwoodChanger::DoInfoEvent(const payload& event)
 {
     // cast the payload
-    ChangerInfo* info = (ChangerInfo*) event.data;
+    InfoEvent* info = (InfoEvent*) event.data;
 
     // save current slot/track
     m_cur_slot = info->slot;
@@ -142,7 +142,7 @@ void
 KenwoodChanger::DoStateEvent(const payload& event)
 {
     // cast the payload
-    ChangerState* info = (ChangerState*) event.data;
+    StateEvent* info = (StateEvent*) event.data;
 
     // determine the current state
     switch ( info->state )
@@ -170,7 +170,7 @@ void
 KenwoodChanger::DoDiscEvent(const payload& event)
 {
     // cast the payload
-    ChangerDisc* info = (ChangerDisc*) event.data;
+    DiscEvent* info = (DiscEvent*) event.data;
 
     // save current slot
     m_cur_slot = info->slot;
@@ -183,7 +183,7 @@ void
 KenwoodChanger::DoDoorEvent(const payload& event)
 {
     // cast the payload
-    ChangerDoor* info = (ChangerDoor*) event.data;
+    DoorEvent* info = (DoorEvent*) event.data;
 
     // determine the door state
     m_door_closed = (info->door_pos==0);
@@ -197,7 +197,7 @@ KenwoodChanger::DoHandshake(const char* id)
 {
     // build the payload
     payload req;
-    req.cmd = HANDSHAKE_REQ;
+    req.cmd = HANDSHAKE;
     req.len = ::strlen(id);
     ::memcpy(req.data, id, req.len);
 
@@ -255,7 +255,7 @@ KenwoodChanger::DoChangeDisc(const short slot)
 {
     // build the payload
     payload req;
-    req.cmd = SELECT_DISC_REQ;
+    req.cmd = SELECT_DISC_TRACK;
     req.len = sizeof(SelectDiscTrack);
     SelectDiscTrack* select_disc = (SelectDiscTrack*) &req.data;
     select_disc->slot = slot;
@@ -275,10 +275,17 @@ KenwoodChanger::DoPlayPause()
 }
 
 void
+KenwoodChanger::DoPrevTrack()
+{
+    DoChangeState(PREV_CMD | STATE_PARAM);
+    DoChangeState(NULL_PARAM);
+}
+
+void
 KenwoodChanger::DoNextTrack()
 {
     DoChangeState(NEXT_CMD | STATE_PARAM);
-    DoChangeState(0xFFFF);
+    DoChangeState(NULL_PARAM);
 }
 
 void
@@ -292,7 +299,7 @@ KenwoodChanger::DoDiscQuery(const DataAccess& query)
 {
     // build the payload
     payload req;
-    req.cmd = QUERY_REQ;
+    req.cmd = DATA_ACCESS;
     req.len = sizeof(DataAccess);
     ::memcpy(req.data, &query, req.len);
 
@@ -306,19 +313,19 @@ KenwoodChanger::DoDiscQuery(const DataAccess& query)
         // process the data
         switch ( reply.cmd )
         {
-            case 0xFE:
+            case DISC_DATA:
                 m_listener.DiscDataReply((DiscData*)reply.data);
                 break;
 
-            case 0xFD:
+            case CD_TEXT_DATA:
                 m_listener.CDTextDataReply((CDTextData*)reply.data);
                 break;
 
-            case 0x06:
+            case TRACK_TIMES:
                 m_listener.TrackTimesReply((TrackTimes*)reply.data);
                 break;
 
-            case 0x0D:
+            case DISC_TRACK_LIST:
                 m_listener.DiscTrackListReply((DiscTrackList*)reply.data);
                 break;
         }
@@ -330,7 +337,7 @@ KenwoodChanger::DoChangeState(const short state)
 {
     // build the payload
     payload req;
-    req.cmd = STATE_REQ;
+    req.cmd = DO_ACTION;
     req.len = sizeof(DoAction);
     ::memcpy(req.data, &state, req.len);
 

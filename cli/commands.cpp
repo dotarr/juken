@@ -24,6 +24,7 @@ struct cmd commands[] =
     { "cd",     DoChangeDisc, "change the current disc" },
     { "play",   DoPlay, "play the current disc" },
     { "pause",  DoPlay, "pause the current disc" },
+    { "prev",   DoPrev, "play the previous track on the current disc" },
     { "next",   DoNext, "play the next track on the current disc" },
     { "p",      DoPlay, "play/pause the current disc" },
     { "stop",   DoStop, "stop the current disc" },
@@ -100,6 +101,12 @@ void
 DoPlay(KenwoodChanger& changer, int argc, char* argv[])
 {
     changer.DoPlayPause();
+}
+
+void
+DoPrev(KenwoodChanger& changer, int argc, char* argv[])
+{
+    changer.DoPrevTrack();
 }
 
 void

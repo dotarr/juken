@@ -12,6 +12,7 @@ void GetTimes(KenwoodChanger& changer, int argc, char* argv[]);
 void GetBests(KenwoodChanger& changer, int argc, char* argv[]);
 void DoChangeDisc(KenwoodChanger& changer, int argc, char* argv[]);
 void DoPlay(KenwoodChanger& changer, int argc, char* argv[]);
+void DoPrev(KenwoodChanger& changer, int argc, char* argv[]);
 void DoNext(KenwoodChanger& changer, int argc, char* argv[]);
 void DoStop(KenwoodChanger& changer, int argc, char* argv[]);
  
