@@ -223,7 +223,7 @@ time_print(byte reply_cmd, ushort reply_len, byte* reply_data)
 {
     // cast the reply
     data_0x06* info = (data_0x06*) reply_data;
-    struct start_times* times = (struct start_times*) &(info->start);
+    start_times* times = (start_times*) &(info->start);
 
     printf("disc: %3d ", info->slot);
     if ( info->formatting != 0x00 )

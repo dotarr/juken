@@ -46,7 +46,7 @@ typedef struct
     byte formatting;
     byte unknown_2;
     byte num_tracks;
-    struct start_times start[1];
+    start_times start[1];
 } data_0x06;
 
 typedef struct
