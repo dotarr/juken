@@ -131,7 +131,6 @@ SerialDevice::SaveAttributes()
     // get the current attributes
     ThrowIfMinus1(::tcgetattr(fd, &m_saved_attr), 
                     "Failed to save attributes: ");
-
 }
 
 void

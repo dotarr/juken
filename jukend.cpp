@@ -8,10 +8,11 @@
 #include "kenwoodchanger.h"
 #include "consolelistener.h"
 
-#if 0
+#ifdef BSD
+char* serial_device = "/dev/tty00";
+#else
 char* serial_device = "/dev/ttyS0";
 #endif
-char* serial_device = "/dev/tty00";
 
 bool done = false;
 
@@ -26,7 +27,8 @@ void
 parse_args(int argc, char* argv[])
 {
     char* short_opts = "vhd:";
-#if 0
+
+#ifdef HAS_GETOPT_LONG
     struct option long_opts[] = {
         { "version", no_argument, NULL, 'v' },
         { "help", no_argument, NULL, 'h' },
@@ -35,10 +37,11 @@ parse_args(int argc, char* argv[])
 #endif
 
     int c = EOF;
-#if 0
+#ifdef HAS_GETOPT_LONG
     while( (c=::getopt_long(argc, argv, short_opts, long_opts, NULL)) != EOF )
-#endif
+#else
     while( (c=::getopt(argc, argv, short_opts)) != EOF )
+#endif
     {
         switch( c )
         {
@@ -49,7 +52,11 @@ parse_args(int argc, char* argv[])
                 ::fprintf(stdout, "usage: jukebox {-v|--version|-h|--help} <device>\n");
                 ::fprintf(stdout, "\t-v, --version\tdisplay version information\n");
                 ::fprintf(stdout, "\t-h, --help\tdisplay this message\n");
+#ifdef BSD
+                ::fprintf(stdout, "\t<device>\tthe serial device to use (defaults to /dev/tty00)\n");
+#else
                 ::fprintf(stdout, "\t<device>\tthe serial device to use (defaults to /dev/ttyS0)\n");
+#endif
                 exit(EXIT_SUCCESS);
             case ':': ::fprintf(stderr, "missing parameter\n"); break;
             case '?': ::fprintf(stderr, "unknown option\n");    break;
