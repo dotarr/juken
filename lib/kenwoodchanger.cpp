@@ -1,5 +1,4 @@
 #include "kenwoodchanger.h"
-#include "util.h"
 
 KenwoodChanger::KenwoodChanger(char* id, short capacity, 
                                KenwoodDevice& dev, KenwoodListener* listener) 
@@ -60,7 +59,7 @@ KenwoodChanger::DoEvent()
         case DOOR_EVENT:  DoDoorEvent(event);  break;
 
         default:
-            DebugPayload("unhandled event", event, m_device.ComputeChecksum(event));
+            DebugPayload("unhandled event", event.cmd, event.len, event.data);
             break;
     }
 }
@@ -68,6 +67,7 @@ KenwoodChanger::DoEvent()
 void
 KenwoodChanger::InfoChanged(short slot, byte title, short chapter)
 {
+    InfoMsg("KenwoodChanger::InfoChanged(%d, %d, %d)\n", slot, title, chapter);
     m_cur_slot = slot;
     m_cur_title = title;
     m_cur_chapter = chapter;
@@ -78,6 +78,7 @@ KenwoodChanger::InfoChanged(short slot, byte title, short chapter)
 void
 KenwoodChanger::ModeChanged(enum mode mode, enum repeat repeat, byte param)
 {
+    InfoMsg("KenwoodChanger::ModeChanged(%d, %d, %d)\n", (byte)mode, (byte)repeat, param);
     m_cur_mode = mode;
     m_cur_repeat = repeat;
     m_cur_param = param;
@@ -88,6 +89,7 @@ KenwoodChanger::ModeChanged(enum mode mode, enum repeat repeat, byte param)
 void
 KenwoodChanger::StateChanged(enum state state)
 {
+    InfoMsg("KenwoodChanger::StateChanged(%d)\n", (byte)state);
     m_cur_state = state;
     // notify listener
     m_listener->StateChanged(this, state);
@@ -96,6 +98,7 @@ KenwoodChanger::StateChanged(enum state state)
 void
 KenwoodChanger::DoorChanged(enum door door_pos)
 {
+    InfoMsg("KenwoodChanger::DoorChanged(%d)\n", (byte)door_pos);
     bool rescan = (m_cur_door_pos==DoorOpen && door_pos==DoorClosed);
 
     m_cur_door_pos = door_pos;
@@ -109,6 +112,7 @@ KenwoodChanger::DoorChanged(enum door door_pos)
 void
 KenwoodChanger::ScanDiscs()
 {
+    InfoMsg("KenwoodChanger::ScanDiscs()\n");
     m_listener->ProgressStart(this, KenwoodListener::ScanDiscs, m_capacity);
     if ( m_slots == NULL )
     {
@@ -133,6 +137,7 @@ KenwoodChanger::ScanDiscs()
 void
 KenwoodChanger::LoadUserfiles()
 {
+    InfoMsg("KenwoodChanger::LoadUserfiles()\n");
     m_listener->ProgressStart(this, KenwoodListener::LoadUserfiles, m_capacity);
     for (int i=0; i<8; i++)
     {
@@ -146,7 +151,9 @@ KenwoodChanger::LoadUserfiles()
 void
 KenwoodChanger::IssueRequest(const payload& msg, const bool has_replies)
 {
-    m_device.ClearToSend();
+    if ( m_device.CheckForEvent(100) )
+        DoEvent();
+
     m_device.SendMessage(msg, has_replies);
 
     if ( !has_replies )
@@ -167,12 +174,6 @@ bool
 KenwoodChanger::GetReply(payload& reply)
 {
     return m_device.RecvMessage(reply);
-}
-
-bool
-KenwoodChanger::GetEvent(payload& event)
-{
-    return m_device.RecvMessage(event);
 }
 
 void 

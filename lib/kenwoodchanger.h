@@ -76,7 +76,6 @@ class KenwoodChanger
         void IssueRequest(const payload& msg, const bool has_replies);
         void GetOneReply(payload& reply);
         bool GetReply(payload& reply);
-        bool GetEvent(payload& event);
 
         void InfoChanged(short slot, byte title, short chapter);
         void ModeChanged(enum mode mode, enum repeat repeat, byte param);
