@@ -19,28 +19,6 @@ SerialDevice::~SerialDevice()
     CloseDevice();
 }
 
-void
-SerialDevice::SetDTR() 
-{
-    int set;
-    // get the current set
-    ::ioctl(fd, TIOCMGET, &set);
-    // ensure that DTR is set
-    set |= TIOCM_DTR;
-    ::ioctl(fd, TIOCMSET, &set);
-}
-
-void
-SerialDevice::ClearDTR() 
-{
-    int set;
-    // get the current set
-    ::ioctl(fd, TIOCMGET, &set);
-    // ensure that DTR is clear
-    set &= ~TIOCM_DTR;
-    ::ioctl(fd, TIOCMSET, &set);
-}
-
 int
 SerialDevice::OpenDevice(const char* dev)
 {
@@ -62,9 +40,6 @@ SerialDevice::OpenDevice(const char* dev)
 
     // Set blocking
     BlockingMode(true);
-
-    // indicate that we are ready
-    SetDTR();
 
     return fd;
 }
