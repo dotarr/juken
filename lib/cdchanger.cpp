@@ -296,11 +296,16 @@ CDChanger::DoChangeDisc(const short slot)
     IssueRequest(req, NO_REPLIES); 
     
     // StateEvent
+    DoEvent();
     // InfoEvent
+    DoEvent();
     // DiscEvent
+    DoEvent();
     // StateEvent
+    DoEvent();
     // StateEvent
-    DoAnyEvents();
+    DoEvent();
+    //DoAnyEvents();
 }
 
 void

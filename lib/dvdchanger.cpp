@@ -356,9 +356,12 @@ DVDChanger::DoChangeDisc(const short slot)
     IssueRequest(req, NO_REPLIES); 
 
     // StateEvent
+    DoEvent();
     // InfoEvent
+    DoEvent();
     // StateEvent
-    DoAnyEvents();
+    DoEvent();
+    //DoAnyEvents();
 }
 
 void

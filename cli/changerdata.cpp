@@ -39,6 +39,7 @@ ChangerData::getUserfileByName(const char* name)
 ElementHandler*
 ChangerData::StartHandler(const XML_Char* element, const XML_Char** attributes)
 {
+    DebugMsg("ChangerData::StartHandler(%s)\n", element);
     if ( ::strcmp(element, "Changer") == 0 )
         return this;
     else if ( ::strcmp(element, "Model") == 0 )
@@ -97,6 +98,7 @@ DiscElement::~DiscElement()
 ElementHandler* 
 DiscElement::StartHandler(const XML_Char* element, const XML_Char** attrbutes)
 {
+    DebugMsg("DiscElement::StartHandler(%s)\n", element);
     if ( ::strcmp(element, "ID") == 0 )
         return new StringHandler(&m_id);
     else if ( ::strcmp(element, "Slot") == 0 )

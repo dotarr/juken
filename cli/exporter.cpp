@@ -49,14 +49,18 @@ Exporter::InitState()
 void
 Exporter::Run()
 {
-    LogMsg("writing xml for %s on device %s\n", m_model_name, m_device_name);
+    LogMsg("exporting xml for %s on device %s\n", m_model_name, m_device_name);
+    ::fprintf(stderr, "exporting xml for %s on device %s\n", m_model_name, m_device_name);
+
     ::fprintf(stdout, "<Changer>\n");
     ::fprintf(stdout, "  <Model>%s</Model>\n", m_model_name);
     ::fprintf(stdout, "  <Device>%s</Device>\n", m_device_name);
     ::fprintf(stdout, "\n");
     ::fflush(stdout);
 
-    LogMsg("writing userfiles\n");
+    LogMsg("exporting userfiles\n");
+    ::fprintf(stderr, "  exporting userfiles\n");
+
     ::fprintf(stdout, "  <Userfiles>\n");
     for (int i=0; i<8; i++)
     {
@@ -70,7 +74,7 @@ Exporter::Run()
     short capacity = m_changer->getCapacity();
     if ( m_start < 1 ) m_start = 1;
     if ( m_start > capacity ) m_start = capacity;
-    if ( m_end < 1 ) m_end = 1;
+    if ( m_end < 1 ) m_end = capacity;
     if ( m_end > capacity ) m_end = capacity;
     if ( m_end < m_start ) m_end = m_start;
 
@@ -79,6 +83,8 @@ Exporter::Run()
         if ( m_changer->isSlotOccupied(slot) )
         {
             LogMsg("processing slot %d\n", slot);
+            ::fprintf(stderr, "  processing slot %d\n", slot);
+
             char* disc_id = m_changer->GetDiscId(slot);
             Disc disc = m_changer->DoListContents(slot);
 
@@ -92,7 +98,8 @@ Exporter::Run()
                 case DISC_DVD_V:  element = "DVD";  break;
             }
 
-            LogMsg("writing %s: %s id: %s\n", element, (const char*)disc, disc_id);
+            LogMsg("exporting %s: %s id: %s\n", element, (const char*)disc, disc_id);
+            ::fprintf(stderr, "  exporting %s: %s id: %s\n", element, (const char*)disc, disc_id);
             ::fprintf(stdout, "  <%s>\n", element);
 
             ::fprintf(stdout, "    <ID>%s</ID>\n", disc_id);
@@ -123,7 +130,8 @@ Exporter::Run()
                 ::fprintf(stdout, "    </Userfiles>\n");
             }
 
-            LogMsg("writing tracks\n");
+            LogMsg("exporting tracks\n");
+            ::fprintf(stderr, "    exporting tracks\n");
             if ( disc.tracks.size() > 0 )
             {
                 ::fprintf(stdout, "    <Tracks>\n");
@@ -144,6 +152,8 @@ Exporter::Run()
 
     ::fprintf(stdout, "</Changer>\n");
     ::fflush(stdout);
+
     LogMsg("export complete!\n");
+    ::fprintf(stderr, "export complete!\n");
 }
 
