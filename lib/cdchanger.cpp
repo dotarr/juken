@@ -7,12 +7,16 @@ CDChanger::CDChanger(char* id, KenwoodDevice& dev, KenwoodListener* listener)
 : KenwoodChanger(id, 200, dev, listener)
 {
     InfoMsg("CDChanger::CDChanger(%s, device, listener)\n", id);
-    //
+    
     // process InfoChanged
+    DoEvent();
     // process DoorChanged
+    DoEvent();
     // process StateChanged
+    DoEvent();
     // process DiscChanged
-    DoAnyEvents();
+    DoEvent();
+    //DoAnyEvents();
 
     if ( m_cur_door_pos == DoorClosed )
         ScanDiscs();
