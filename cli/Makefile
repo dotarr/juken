@@ -6,24 +6,24 @@
 CFLAGS= -g -O2
 .SUFFIXES: .cpp
 
+OBJS=   juken.o
+LIBS=   ../lib/juken.a
+
 .cpp.o:
 	cc $(CFLAGS) -c $< 
 
-SUBDIRS = lib cli
-
 all: juken-cli
 
+../lib/juken.a: 
+	make -C ../lib
+
 juken-cli: $(OBJS) $(LIBS)
-	make -C cli
+	cc $(OBJS) $(LIBS) -o ../juken-cli
 
 clean:
-	make -C lib clean
-	make -C cli clean
+	rm -f core *.core tmp junk *.o *.so *.swp *.bak .depend
 
 realclean: clean
-	make -C lib realclean
-	make -C cli realclean
-	rm -f juken-cli
 
 
 
