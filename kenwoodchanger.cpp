@@ -279,6 +279,13 @@ KenwoodChanger::DoPlayPause()
 }
 
 void
+KenwoodChanger::DoNextTrack()
+{
+    DoChangeState(NEXT_CMD | STATE_PARAM);
+    DoChangeState(0xFFFF);
+}
+
+void
 KenwoodChanger::DoStop()
 {
     DoChangeState(STOP_CMD | STATE_PARAM);

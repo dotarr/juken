@@ -264,6 +264,12 @@ DoPlay(KenwoodChanger& changer, int argc, char* argv[])
 }
 
 void
+DoNext(KenwoodChanger& changer, int argc, char* argv[])
+{
+    changer.DoNextTrack();
+}
+
+void
 DoStop(KenwoodChanger& changer, int argc, char* argv[])
 {
     changer.DoStop();
@@ -289,6 +295,7 @@ struct cmd commands[] =
     { "cd",     DoChangeDisc },
     { "play",   DoPlay },
     { "pause",  DoPlay },
+    { "next",   DoNext},
     { "p",      DoPlay },
     { "stop",   DoStop },
     { "s",      DoStop },

@@ -27,6 +27,7 @@ class KenwoodChanger
         void DoListBest(reply_handler func);
         void DoChangeDisc(const short slot);
         void DoPlayPause();
+        void DoNextTrack();
         void DoStop();
 
         void DoDiscQuery(const DataAccess& query, reply_handler func);
