@@ -19,7 +19,7 @@
 #ifndef SIC_ERROR_H
 #define SIC_ERROR_H 1
 
-#include <sic/common.h>
+#include <common.h>
 
 BEGIN_C_DECLS
 
