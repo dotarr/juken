@@ -12,7 +12,7 @@ typedef struct
 
 typedef struct
 {
-    char identifier[MAX_TITLE_LENGTH+1];
+    char identifier[1];
 } data_0x00;
 
 typedef struct
@@ -130,7 +130,7 @@ typedef struct
     byte unknown_3;
     byte unknown_4;
     byte unknown_5;
-    char title[MAX_TITLE_LENGTH];
+    char title[1];
 } data_0xFD;
 
 typedef struct
@@ -141,7 +141,7 @@ typedef struct
     byte request_type;
     byte genre;
     byte formatting;
-    char title[MAX_TITLE_LENGTH];
+    char title[1];
 } data_0xFE_a;
 
 typedef struct
@@ -153,7 +153,7 @@ typedef struct
     byte unknown_4;
     byte unknown_5;
     byte unknown_6;
-    char title[MAX_TITLE_LENGTH];
+    char title[1];
 } data_0xFE_b;
 
 #endif /* __PAYLOAD_H__ */

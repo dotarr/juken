@@ -33,6 +33,9 @@ KenwoodDevice::ReadPayload(payload& msg)
     ReadFully(msg.data, msg.len);
     ReadFully(&cksum, sizeof(cksum));
     DebugPayload("read_payload", msg, cksum);
+    // we null the checksum to make those payloads that
+    // have a string at the end be null terminated
+    msg.data[msg.len] = '\0'; // null out checksum
     return cksum;
 }
 

@@ -99,24 +99,12 @@ disc_print(byte reply_cmd, ushort reply_len, byte* reply_data)
     // cast the reply
     data_0xFE_a* info = (data_0xFE_a*) reply_data;
 
-    // add null terminator to title
-    char title[MAX_TITLE_LENGTH+1];
-    byte data_len = 7;
-    byte title_len = 0;
-    if ( info->title[0] != 0x01 )
-    {
-        title_len = reply_len-data_len;
-        ::strncpy(title, info->title, title_len);
-        title[title_len] = '\0';
-    }
-    else
-    {
-        title[0] = '\0';
-    }
+    if ( info->title[0] == 0x01 )
+        info->title[0] = '\0';
 
     // output the reply
     printf("[%3d] ", info->slot);
-    printf("%-25s ", title);
+    printf("%-25s ", info->title);
     if ( info->genre != UNKNOWN )
         printf("genre: %-22s ", GENRE_NAMES[info->genre]);
     if ( info->userfiles != 0x00 )
@@ -136,25 +124,13 @@ track_print(byte reply_cmd, ushort reply_len, byte* reply_data)
         // cast the reply
         data_0xFE_a* info = (data_0xFE_a*) reply_data;
 
-        // add null terminator to title
-        char title[MAX_TITLE_LENGTH+1];
-        byte data_len = 7;
-        byte title_len = 0;
-        if ( info->title[0] != 0x01 )
-        {
-            title_len = reply_len-data_len;
-            ::strncpy(title, info->title, title_len);
-            title[title_len] = '\0';
-        }
-        else
-        {
-            title[0] = '\0';
-        }
+        if ( info->title[0] == 0x01 )
+            info->title[0] = '\0';
 
         // output the reply
         if ( info->track == 0 )
         {
-            printf("%-25s ", title);
+            printf("%-25s ", info->title);
             if ( info->genre != UNKNOWN )
                 printf("genre: %-22s ", GENRE_NAMES[info->genre]);
             if ( info->userfiles != 0x00 )
@@ -168,7 +144,7 @@ track_print(byte reply_cmd, ushort reply_len, byte* reply_data)
         else
         {
             printf("[%3d] ", info->track);
-            printf("%-25s ", title);
+            printf("%-25s ", info->title);
             if ( info->request_type != 0x01 )
                 printf("   request_type: 0x%02X ", info->request_type);
             printf("\n");
@@ -179,31 +155,19 @@ track_print(byte reply_cmd, ushort reply_len, byte* reply_data)
         // cast the reply
         data_0xFD* info = (data_0xFD*) reply_data;
 
-        // add null terminator to title
-        char title[MAX_PAYLOAD_LEN+1];
-        byte data_len = 8;
-        byte title_len = 0;
-        if ( info->title[0] != 0x01 )
-        {
-            title_len = reply_len-data_len;
-            ::strncpy(title, info->title, title_len);
-            title[title_len] = '\0';
-        }
-        else
-        {
-            title[0] = '\0';
-        }
+        if ( info->title[0] == 0x01 )
+            info->title[0] = '\0';
 
         // output the reply
         if ( info->track == 0 )
         {
-            printf("%-25s ", title);
+            printf("%-25s ", info->title);
             printf("\n");
         }
         else
         {
             printf("[%3d] ", info->track);
-            printf("%-25s ", title);
+            printf("%-25s ", info->title);
             printf("\n");
         }
 /*
@@ -371,7 +335,8 @@ main(int argc, char* argv[])
         fd_set fds;
         while ( !done )
         {
-            printPrompt(changer);
+            if ( changer.isReady() )
+                printPrompt(changer);
 
             // setup fd set
             FD_ZERO(&fds);
@@ -388,7 +353,8 @@ main(int argc, char* argv[])
             {
                 if ( FD_ISSET(juke_fd, &fds) )
                 {
-                    printf("\n");
+                    if ( changer.isReady() )
+                        printf("\n");
                     changer.DoEvent();
                 }
                 if ( FD_ISSET(STDIN_FILENO, &fds) )

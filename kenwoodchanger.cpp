@@ -27,6 +27,7 @@ const short DV5050M_CAPACITY = 400;
 KenwoodChanger::KenwoodChanger(KenwoodDevice& dev, KenwoodListener& listener) 
 : m_device(dev), m_listener(listener)
 {
+    m_is_ready = false;
     DoHandshake(CLIENT_ID);
 
     if      ( ::strcmp(m_id, CD425M_ID)  == 0 ) m_capacity = CD425M_CAPACITY;
@@ -132,6 +133,8 @@ KenwoodChanger::DoStateEvent(const payload& event)
 
     // notify listener
     m_listener.StateChanged(m_cur_state);
+
+    m_is_ready = true;
 }
  
 void
@@ -177,9 +180,8 @@ KenwoodChanger::DoHandshake(const char* id)
     GetOneReply(reply);
 
     // process the data
-    reply.data[reply.len] = '\0';
     m_id = ::strdup((char*) reply.data);
-::fprintf(stderr, "%s\n", m_id);
+    ::fprintf(stderr, "%s\n", m_id);
 }
 
 void
@@ -225,6 +227,8 @@ KenwoodChanger::DoChangeDisc(const short slot)
 
     // issue the request
     SendMessage(req, NO_REPLIES); 
+
+    m_is_ready = false;
 }
 
 void

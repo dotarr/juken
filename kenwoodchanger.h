@@ -39,12 +39,15 @@ class KenwoodChanger
         void SendMessage(const payload& msg, const bool has_replies);
         bool RecvMessage(payload& msg);
 
+        bool isReady() const { return m_is_ready; };
         short getCurrentSlot() const { return m_cur_slot; };
         byte getCurrentTrack() const { return m_cur_track; };
         enum state getCurrentState() const { return m_cur_state; };
         enum mode getCurrentMode() const { return m_cur_mode; };
 
     protected:
+        bool m_is_ready;
+
         char* m_id;
         short m_capacity;
         
