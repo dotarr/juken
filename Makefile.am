@@ -8,11 +8,7 @@ EXTRA_DIST      = bootstrap
 
 SUBDIRS         = common lib cli
 
-MAINTAINERCLEANFILES = \
-                  Makefile.in \
-                  aclocal.m4 \
-                  configure \
-                  $(AUX_DIST)
+MAINTAINERCLEANFILES = Makefile.in aclocal.m4 configure $(AUX_DIST)
 
 ACLOCAL         = aclocal -I $(auxdir)
 
