@@ -32,7 +32,7 @@ SerialDevice::OpenDevice(const char* dev)
         Throw("Unable to open device: No device name provided");
 
     // open the serial port, make sure that its not the controlling tty
-    DebugMsg("opening %s ...");
+    DebugMsg("opening %s ...", dev);
     fd = ::open(dev, O_RDWR | O_NOCTTY | O_NONBLOCK);
     ThrowIfMinus1(fd, "Unable to open %s: ", dev);
     DebugMsg("opened\n");
