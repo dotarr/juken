@@ -12,7 +12,6 @@ Importer::Importer(const char* filename)
     ::fprintf(stderr, "parsing xml file %s\n", filename);
     LogMsg("parsing xml file %s\n", filename);
     m_data.ParseFile(filename);
-    //print_data();
 
     m_device = new KenwoodDevice(m_data.getDevice());
 }
@@ -38,7 +37,7 @@ Importer::InitState()
     LogMsg("connection established to %s\n", id+4);
 
     // make a listener
-    m_listener = new LoggingListener();
+    m_listener = new ConsoleListener(stderr);
 
     // create appropriate changer 
     if ( ::strcmp(id, "I'm CD-425M") == 0 )
@@ -50,73 +49,63 @@ Importer::InitState()
 void
 Importer::Run()
 {
-    const char* names[8];
-    for (int i=0; i<8; i++) names[i] = m_data.getUserfileName(i);
+    ::fprintf(stderr, "\n");
+    LogMsg("\n");
 
-    ::fprintf(stderr, "writing userfile names\n");
-    LogMsg("writing userfile names\n");
-    m_changer->WriteUserfileNames(names);
+    m_changer->WriteUserfileNames(m_data.getUserfileNames());
 
-    list<DiscElement*> discs = m_data.getDiscs();
-    list<DiscElement*>::iterator iter = discs.begin();
-    while ( iter != discs.end() )
+    DiscList& discs = m_data.getDiscs();
+    for (DiscList::iterator iter=discs.begin(); iter!=discs.end(); iter++)
     {
-        short slot = (*iter)->getSlot();
-        byte type = (byte) (*iter)->getType();
-        const char* title = (*iter)->getShortTitle();
-        const char* artist = (*iter)->getArtist();
-        if ( artist == NULL )
-            artist = (*iter)->getDescription();
-        Disc disc(slot, type, title, artist);
-        list<char*> tracks = (*iter)->getTracks();
-        int i = 1;
-        for (list<char*>::iterator track=tracks.begin(); track!=tracks.end(); track++)
-            disc.tracks.push_back(Name(i++, TRACK_NAME, *track));
-        disc.userfiles = (*iter)->getUserfiles();
-        disc.genre = (*iter)->getGenre();
+        Disc& disc = (*iter);
 
-        ::fprintf(stderr, "writing disc: %d\n", slot);
-        ::fprintf(stderr, "       title: %s\n", title);
-        if ( artist != NULL )
-            ::fprintf(stderr, "      artist: %s\n", artist);
-        ::fprintf(stderr, "   userfiles: %02X\n", disc.userfiles);
-        ::fprintf(stderr, "       genre: %s\n", GENRE_NAMES[disc.genre]);
+        ::fprintf(stderr, "\n");
+        LogMsg("\n");
 
-        LogMsg("writing disc: %d\n", slot);
-        LogMsg("       title: %s\n", title);
-        if ( artist != NULL )
-            LogMsg("      artist: %s\n", artist);
-        LogMsg("   userfiles: %02X\n", disc.userfiles);
-        LogMsg("       genre: %s\n", GENRE_NAMES[disc.genre]);
+        ::fprintf(stderr, "writing disc: %d\n", disc.index);
+        LogMsg("writing disc: %d\n", disc.index);
+        ::fprintf(stderr, "       title: %s\n", disc.title);
+        LogMsg("       title: %s\n", disc.title);
+        if ( disc.artist != NULL )
+        {
+            ::fprintf(stderr, "      artist: %s\n", disc.artist);
+            LogMsg("      artist: %s\n", disc.artist);
+        }
+        if ( disc.userfiles != 0 )
+        {
+            ::fprintf(stderr, "   userfiles: ");
+            LogMsg("   userfiles: ");
+            int uf = disc.userfiles;
+            for (int i=0; i<8; i++)
+            {
+                if ( (uf&1) != 0 )
+                {
+                    ::fprintf(stderr, "%s", m_data.getUserfileName(i));
+                    LogMsg("%s", m_data.getUserfileName(i));
+                    if ( uf != 1 )
+                    {
+                        ::fprintf(stderr, ", ");
+                        LogMsg(", ");
+                    }
+                }
+                uf = uf>>1;
+            }
+            ::fprintf(stderr, "\n");
+            LogMsg("\n");
+        }
+        if ( disc.genre > 1 )
+        {
+            ::fprintf(stderr, "       genre: %s\n", GENRE_NAMES[disc.genre]);
+            LogMsg("       genre: %s\n", GENRE_NAMES[disc.genre]);
+        }
 
-        m_changer->WriteDisc(slot, disc);
-
-        iter++;
+        m_changer->WriteDisc(disc.index, disc);
     }
+
+    ::fprintf(stderr, "\n");
+    LogMsg("\n");
 
     ::fprintf(stderr, "import complete!\n");
     LogMsg("import complete!\n");
-}
-
-void
-Importer::print_data()
-{
-    ::fprintf(stderr, "changer %s [%s]\n", m_data.getModel(), m_data.getDevice());
-    typedef char* foo;
-    const char* names[8];
-    for (int i=0; i<8; i++) names[i] = m_data.getUserfileName(i);
-
-    for (int i=0; i<8; i++)
-    {
-        ::fprintf(stderr, "  userfile[%d] %s\n", i, names[i]);
-    }
-
-    list<DiscElement*> discs = m_data.getDiscs();
-    list<DiscElement*>::iterator iter = discs.begin();
-    while ( iter != discs.end() )
-    {
-        (*iter)->print(stderr);
-        iter++;
-    }
 }
 

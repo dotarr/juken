@@ -3,9 +3,6 @@
 
 #include "kenwoodchanger.h"
 
-class InfoEvent;
-class StateEvent;
-
 class DVDChanger : public KenwoodChanger
 {
     public:
@@ -37,18 +34,18 @@ class DVDChanger : public KenwoodChanger
         void DoNext();
         void DoStop();
 
-        void WriteUserfileNames(const char* names[]);
+        void WriteUserfileNames(NameList& names);
         void WriteDisc(short slot, Disc& disc);
 
     private:
         byte m_chain_id;
 
-        bool info_changed(const InfoEvent& info);
-        bool mode_changed(const StateEvent& info);
-        bool state_changed(const StateEvent& info);
-        bool program_changed(const InfoEvent& info);
-        bool repeat_changed(const StateEvent& info);
-        bool param_changed(const StateEvent& info);
+        bool info_changed(short slot, byte title, short chapter);
+        bool mode_changed(enum mode mode);
+        bool state_changed(enum state state);
+        bool program_changed(byte program);
+        bool repeat_changed(enum repeat repeat);
+        bool param_changed(byte param, enum mode mode);
 
         DVDChanger();
         DVDChanger(const DVDChanger& changer);

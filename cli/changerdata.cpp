@@ -5,34 +5,24 @@
 #include "changerdata.h"
 
 ChangerData::ChangerData()
-    : m_model(NULL), m_device(NULL)
+    : m_model(NULL), m_device(NULL), m_userfiles()
 {
-    for (int i=0; i<8; i++) 
-        m_userfiles[i] = NULL;
 }
 
 ChangerData::~ChangerData()
 {
     delete m_model;
     delete m_device;
-    for (int i=0; i<8; i++) 
-        delete m_userfiles[i];
-
-    while ( !m_discs.empty() )
-    {
-        DiscElement* disc = m_discs.back();
-        m_discs.pop_back();
-        delete disc;
-    }
 }
 
 byte 
 ChangerData::getUserfileByName(const char* name)
 {
-    for (int i=0; i<8; i++)
+    for (NameList::iterator iter=m_userfiles.begin(); iter!=m_userfiles.end(); iter++)
     {
-        if ( ::strcmp(name, m_userfiles[i]) == 0 )
-            return 1<<i;
+        Name& userfile_name = (*iter);
+        if ( ::strcmp(name, userfile_name.text) == 0 )
+            return 1<<(userfile_name.index);
     }
     LogMsg("userfile %s not found\n", name);
     return 0;
@@ -49,23 +39,22 @@ ChangerData::StartHandler(const XML_Char* element, const XML_Char** attributes)
     else if ( ::strcmp(element, "Device") == 0 )
         return new StringHandler(&m_device);
     else if ( ::strcmp(element, "Userfiles") == 0 )
-        return new UserfileNameElement(m_userfiles);
+        return new UserfileNameElement(&m_userfiles);
     else 
     {
-        DiscElement* disc = NULL;
+        byte type = 255;
         if ( ::strcmp(element, "CD") == 0 )
-            disc = new CDElement(this);
+            type = DISC_CD_A;
         else if ( ::strcmp(element, "MP3") == 0 )
-            disc = new MP3Element(this);
+            type = DISC_CD_MP3;
         else if ( ::strcmp(element, "VCD") == 0 )
-            disc = new VCDElement(this);
+            type = DISC_CD_V;
         else if ( ::strcmp(element, "DVDA") == 0 )
-            disc = new DVDAElement(this);
+            type = DISC_DVD_A;
         else if ( ::strcmp(element, "DVD") == 0 )
-            disc = new DVDElement(this);
-        if ( disc != NULL )
-            m_discs.push_back(disc);
-        return disc;
+            type = DISC_DVD_V;
+        m_discs.push_back(Disc(type));
+        return new DiscElement(this, &(m_discs.back()));
     }
 }
 
@@ -82,20 +71,19 @@ UserfileNameElement::StartHandler(const XML_Char* element, const XML_Char** attr
     return NULL;
 }
 
-DiscElement::DiscElement(ChangerData* changer)
-    : m_changer(changer), m_id(NULL), m_title(NULL), 
-      m_short_title(NULL), m_description(NULL), m_artist(NULL),
-      m_userfiles(0), m_genre(0), m_tracks()
+void
+UserfileNameElement::EndHandler(const XML_Char* element)
 {
+    for (int i=0; i<8; i++)
+    {
+        Name name(i, USERFILE_NAME, m_names[i]);
+        m_name_list->push_back(name);
+    }
 }
-
-DiscElement::~DiscElement()
+ 
+DiscElement::DiscElement(ChangerData* changer, Disc* disc)
+    : m_changer(changer), m_disc(disc), m_id(NULL)
 {
-    delete m_id;
-    delete m_title;
-    delete m_short_title;
-    delete m_description;
-    delete m_artist;
 }
 
 ElementHandler* 
@@ -103,50 +91,28 @@ DiscElement::StartHandler(const XML_Char* element, const XML_Char** attrbutes)
 {
     DebugMsg("DiscElement::StartHandler(%s)\n", element);
     if ( ::strcmp(element, "ID") == 0 )
-        return new StringHandler(&m_id);
+        return NULL; //new StringHandler(&(m_disc->id));
     else if ( ::strcmp(element, "Slot") == 0 )
-        return new ShortHandler(&m_slot);
+        return new ShortHandler(&(m_disc->index));
     else if ( ::strcmp(element, "Title") == 0 )
-        return new StringHandler(&m_title);
+        return NULL; //new StringHandler(&(m_disc->title));
     else if ( ::strcmp(element, "ShortTitle") == 0 )
-        return new StringHandler(&m_short_title);
+        return new StringHandler(&(m_disc->title));
     else if ( ::strcmp(element, "Description") == 0 )
-        return new StringHandler(&m_description);
+        return new StringHandler(&(m_disc->artist));
     else if ( ::strcmp(element, "Artist") == 0 )
-        return new StringHandler(&m_artist);
-    else if ( ::strcmp(element, "Genre") == 0 )
-        return new GenreElement(&m_genre);
+        return new StringHandler(&(m_disc->artist));
     else if ( ::strcmp(element, "Userfiles") == 0 )
-        return new UserfilesElement(m_changer, &m_userfiles);
+        return new UserfilesElement(m_changer, &(m_disc->userfiles));
+    else if ( ::strcmp(element, "Genre") == 0 )
+        return new GenreElement(&(m_disc->genre));
+    else if ( ::strcmp(element, "Tracks") == 0 )
+        return new TracksElement(&(m_disc->tracks));
     else
     {
         LogMsg("unrecognized tag: %s\n", element);
         return NULL;
     }
-}
-
-void 
-DiscElement::EndHandler(const XML_Char* element)
-{ 
-    //print(); 
-}
-
-ElementHandler* 
-CDElement::StartHandler(const XML_Char* element, const XML_Char** attrbutes)
-{
-    if ( ::strcmp(element, "Tracks") == 0 )
-        return new TracksElement(&m_tracks);
-    else
-        return DiscElement::StartHandler(element, attrbutes);
-}
-
-ElementHandler* 
-DVDAElement::StartHandler(const XML_Char* element, const XML_Char** attrbutes)
-{
-    if ( ::strcmp(element, "Tracks") == 0 )
-        return new TracksElement(&m_tracks);
-    else
-        return DiscElement::StartHandler(element, attrbutes);
 }
 
 ElementHandler*
@@ -183,8 +149,14 @@ GenreElement::EndHandler(const XML_Char* element)
 ElementHandler*
 TracksElement::StartHandler(const XML_Char* element, const XML_Char** attributes)
 {
-    m_tracks->push_back(NULL);
-    return new StringHandler(&m_tracks->back());
+    if ( ::strcmp(element, "Track") == 0 )
+    {
+        m_tracks->push_back(Name(m_index, TRACK_NAME, NULL));
+        m_index++;
+        return new StringHandler(&(m_tracks->back().text));
+    }
+    else
+        return NULL;
 }
 
 

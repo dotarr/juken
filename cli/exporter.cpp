@@ -37,7 +37,7 @@ Exporter::InitState()
     ::fprintf(stderr, "connection established to %s\n", id+4);
 
     // make a listener
-    m_listener = new LoggingListener();
+    m_listener = new ConsoleListener(stderr);
     
     // create appropriate changer 
     if ( ::strcmp(id, "I'm CD-425M") == 0 )
@@ -58,8 +58,8 @@ Exporter::Run()
     ::fprintf(stdout, "\n");
     ::fflush(stdout);
 
-    LogMsg("exporting userfiles\n");
-    ::fprintf(stderr, "  exporting userfiles\n");
+    LogMsg("exporting userfiles ... ");
+    ::fprintf(stderr, "exporting userfiles ... ");
 
     ::fprintf(stdout, "  <Userfiles>\n");
     for (int i=0; i<8; i++)
@@ -70,6 +70,9 @@ Exporter::Run()
     ::fprintf(stdout, "  </Userfiles>\n");
     ::fprintf(stdout, "\n");
     ::fflush(stdout);
+
+    LogMsg("complete\n");
+    ::fprintf(stderr, "complete\n");
 
     short capacity = m_changer->getCapacity();
     if ( m_start < 1 ) m_start = 1;
@@ -82,9 +85,6 @@ Exporter::Run()
     {
         if ( m_changer->isSlotOccupied(slot) )
         {
-            LogMsg("processing slot %d\n", slot);
-            ::fprintf(stderr, "  processing slot %d\n", slot);
-
             char* disc_id = m_changer->GetDiscId(slot);
             Disc disc = m_changer->DoListContents(slot);
 
@@ -98,8 +98,9 @@ Exporter::Run()
                 case DISC_DVD_V:  element = "DVD";  break;
             }
 
-            LogMsg("exporting %s: %s id: %s\n", element, (const char*)disc, disc_id);
-            ::fprintf(stderr, "  exporting %s: %s id: %s\n", element, (const char*)disc, disc_id);
+            LogMsg("exporting %s: %s id: %s ... ", element, (const char*)disc, disc_id);
+            ::fprintf(stderr, "  exporting %s: %s id: %s ... ", element, (const char*)disc, disc_id);
+
             ::fprintf(stdout, "  <%s>\n", element);
 
             ::fprintf(stdout, "    <ID>%s</ID>\n", disc_id);
@@ -116,9 +117,6 @@ Exporter::Run()
 
             if ( disc.userfiles != 0 )
             {
-                LogMsg("exporting userfiles\n");
-                ::fprintf(stderr, "    exporting userfiles\n");
-
                 ::fprintf(stdout, "    <Userfiles>\n");
                 byte uf = disc.userfiles;
                 for (int i=0; i<8; i++)
@@ -135,9 +133,6 @@ Exporter::Run()
 
             if ( disc.tracks.size() > 0 )
             {
-                LogMsg("exporting tracks\n");
-                ::fprintf(stderr, "    exporting tracks\n");
-
                 ::fprintf(stdout, "    <Tracks>\n");
                 NameList& tracks = disc.tracks;
                 for (NameList::iterator iter=tracks.begin(); iter!=tracks.end(); iter++)
@@ -151,6 +146,9 @@ Exporter::Run()
             ::fprintf(stdout, "  </%s>\n", element);
             ::fprintf(stdout, "\n");
             ::fflush(stdout);
+
+            LogMsg("complete\n");
+            ::fprintf(stderr, "complete\n");
         }
     }
 

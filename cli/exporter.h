@@ -3,9 +3,9 @@
 
 #include <kenwooddevice.h>
 #include <kenwoodchanger.h>
-#include <logginglistener.h>
 
 #include "changerdata.h"
+#include "consolelistener.h"
 
 class Exporter
 {
@@ -19,7 +19,7 @@ class Exporter
 
     private:
         KenwoodDevice* m_device;
-        LoggingListener* m_listener;
+        ConsoleListener* m_listener;
         KenwoodChanger* m_changer;
 
         const char* m_device_name;

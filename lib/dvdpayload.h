@@ -6,10 +6,10 @@
 
 //
 //command = 0x03
-class DataAccess : public payload
+class dvd_DataAccess : public payload
 {
     public:
-        DataAccess(enum access access, enum data_type type, 
+        dvd_DataAccess(enum access access, enum data_type type, 
                    byte info_type, byte changer, short slot, 
                    byte title, short chapter)
         {
@@ -27,10 +27,10 @@ class DataAccess : public payload
 };
 
 //command = 0x04
-class DiscInfo : public payload
+class dvd_DiscInfo : public payload
 {
     public:
-        DiscInfo(const payload& info) : payload(info) { }
+        dvd_DiscInfo(const payload& info) : payload(info) { }
         byte page() { return data[0]; }
         byte changer() { return data[1]; }
         short slot() { return *((short*) (&data[2])); }
@@ -45,10 +45,10 @@ class DiscInfo : public payload
 };
 
 //command = 0x06
-class DiscTOC : public payload
+class dvd_DiscTOC : public payload
 {
     public:
-        DiscTOC(const payload& info) : payload(info) { }
+        dvd_DiscTOC(const payload& info) : payload(info) { }
         byte page() { return data[0]; }
         byte changer() { return data[1]; }
         short slot() { return *((short*) (&data[2])); }
@@ -65,39 +65,39 @@ class DiscTOC : public payload
 } ;
 
 //command = 0x07
-class DiscUserfiles : public payload
+class dvd_DiscUserfiles : public payload
 {
     public:
-        DiscUserfiles(const payload& info) : payload(info) { }
+        dvd_DiscUserfiles(const payload& info) : payload(info) { }
         byte changer() { return data[0]; }
         short slot() { return *((short*) (&data[1])); }
         byte userfiles() { return data[3]; }
 };
 
 //command = 0x08
-class DiscGenre : public payload
+class dvd_DiscGenre : public payload
 {
     public:
-        DiscGenre(const payload& info) : payload(info) { }
+        dvd_DiscGenre(const payload& info) : payload(info) { }
         byte changer() { return data[0]; }
         short slot() { return *((short*) (&data[1])); }
         enum genre genre() { return (enum genre) data[3]; }
 };
 
 //command = 0x09
-class ReadyForData : public payload
+class dvd_ReadyForData : public payload
 {
     public:
-        ReadyForData(const payload& info) : payload(info) { }
+        dvd_ReadyForData(const payload& info) : payload(info) { }
         byte changer() { return data[0]; }
         byte type() { return data[1]; }
 };
 
 //command = 0x0A
-class DoAction : public payload
+class dvd_DoAction : public payload
 {
     public:
-        DoAction(const byte changer, const short action)
+        dvd_DoAction(const byte changer, const short action)
         {
             cmd = DO_ACTION;
             len = 3;
@@ -107,10 +107,10 @@ class DoAction : public payload
 };
 
 //command = 0x0B
-class ChangeDisc : public payload
+class dvd_ChangeDisc : public payload
 {
     public:
-        ChangeDisc(const byte changer, const short slot, 
+        dvd_ChangeDisc(const byte changer, const short slot, 
                    const byte title, const short chapter,
                    const byte mode, const byte param, const byte state)
         {
@@ -128,10 +128,10 @@ class ChangeDisc : public payload
 };
 
 //command = 0x0C
-class ChapterFrames : public payload
+class dvd_ChapterFrames : public payload
 {
     public:
-        ChapterFrames(const payload& info) : payload(info) { }
+        dvd_ChapterFrames(const payload& info) : payload(info) { }
         byte page() { return data[0]; }
         byte changer() { return data[1]; }
         short slot() { return *((short*) (&data[2])); }
@@ -140,20 +140,20 @@ class ChapterFrames : public payload
 };
 
 //command = 0x0D
-class DiscListing : public payload
+class dvd_DiscListing : public payload
 {
     public:
-        DiscListing(const payload& info) : payload(info) { }
+        dvd_DiscListing(const payload& info) : payload(info) { }
         byte changer() { return data[0]; }
         byte length() { return data[1]; }
         DiscTitleChapter* tracks() { (DiscTitleChapter*) (&data[2]); }
 } ;
 
 //command = 0x0E
-class DiscVolumeId : public payload
+class dvd_DiscVolumeId : public payload
 {
     public:
-        DiscVolumeId(const payload& info) : payload(info) { }
+        dvd_DiscVolumeId(const payload& info) : payload(info) { }
         byte changer() { return data[0]; }
         short slot() { return *((short*) (&data[1])); }
         byte formatting() { return data[3]; }
@@ -161,10 +161,10 @@ class DiscVolumeId : public payload
 } ;
 
 //command = 0x0F
-class DiscTimeStamp : public payload
+class dvd_DiscTimeStamp : public payload
 {
     public:
-        DiscTimeStamp(const payload& info) : payload(info) { }
+        dvd_DiscTimeStamp(const payload& info) : payload(info) { }
         byte changer() { return data[0]; }
         short slot() { return *((short*) (&data[1])); }
         byte formatting() { return data[3]; }
@@ -172,10 +172,10 @@ class DiscTimeStamp : public payload
 } ;
 
 //command = 0x12
-class InfoEvent : public payload
+class dvd_InfoEvent : public payload
 {
     public:
-        InfoEvent(const payload& info) : payload(info) { }
+        dvd_InfoEvent(const payload& info) : payload(info) { }
         byte changer() const { return data[0]; }
         short slot() const { return *((short*) (&data[1])); }
         byte title() const { return data[3]; }
@@ -188,10 +188,10 @@ class InfoEvent : public payload
 };
 
 //command = 0x13
-class StateEvent : public payload
+class dvd_StateEvent : public payload
 {
     public:
-        StateEvent(const payload& info) : payload(info) { }
+        dvd_StateEvent(const payload& info) : payload(info) { }
         byte changer() const { return data[0]; }
         enum state state() const { return (enum state) data[1]; }
         bool at_end() const { return (data[2]!=0); }
@@ -203,15 +203,15 @@ class StateEvent : public payload
 };
 
 //command = 0xFD or command = 0xFE
-class TextData : public payload
+class dvd_TextData : public payload
 {
     public:
-        TextData(const payload& info) : payload(info)
+        dvd_TextData(const payload& info) : payload(info)
             { 
                 if ( cmd==TEXT_DATA && data[7]==0x01 ) data[7] = 0;
                 if ( cmd!=TEXT_DATA && data[8]==0x01 ) data[8] = 0;
             }
-        TextData(const byte changer, const byte text_type, 
+        dvd_TextData(const byte changer, const byte text_type, 
                  const short index, const byte formatting,
                  const byte userfiles, const byte genre, const char* text)
         {
@@ -238,15 +238,6 @@ class TextData : public payload
         byte userfiles() { return (cmd==TEXT_DATA) ? data[5] : data[6]; }
         byte genre() { return (cmd==TEXT_DATA) ? data[6] : data[7]; }
         char* text() { return (char*) ((cmd==TEXT_DATA) ? &data[7] : &data[8]); }
-};
-
-//command = 0xFE
-class UserfileData : public payload
-{
-    public:
-        UserfileData(const payload& info) : payload(info) { }
-        byte userfile() { return data[2]; }
-        char* title() { return ::strdup((char*) &data[7]); }
 };
 
 #endif /* JUKEN_CDPAYLOAD_H */

@@ -48,6 +48,11 @@ AC_CHECK_FUNCS([select strdup memset usleep])
 AC_REPLACE_FUNCS(strerror)
 AC_REPLACE_FUNCS(cfmakeraw)
 
+CFLAGS="-DDEBUG -g"
+CXXFLAGS="$CFLAGS"
+AC_SUBST(CFLAGS)
+AC_SUBST(CXXFLAGS)
+
 AC_CONFIG_FILES([Makefile cli/Makefile lib/Makefile common/Makefile])
 AC_OUTPUT
 

@@ -20,12 +20,15 @@ class KenwoodListener
         virtual void DoorChanged(KenwoodChanger* changer,
                                  bool door_open) { }
 
-        enum operation { ScanDiscs, LoadUserfiles, ChangeDisc };
+        enum operation { ScanDiscs, LoadUserfiles, ChangingDisc, ReadingDisc,
+                         WritingUserfiles, WritingDisc };
 
         virtual void ProgressStart(KenwoodChanger* changer,
                                  enum operation op, int length) { };
         virtual void Progress(KenwoodChanger* changer,
-                                 enum operation op, int progress) { };
+                                 enum operation op, 
+                                 int progress, 
+                                 const char* str) { };
         virtual void ProgressEnd(KenwoodChanger* changer,
                                  enum operation op) { };
 

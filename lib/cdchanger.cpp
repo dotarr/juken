@@ -28,14 +28,16 @@ void
 CDChanger::DoInfoEvent(const payload& event)
 {
     InfoMsg("CDChanger::DoInfoEvent()\n");
-    InfoEvent info(event);
+    cd_InfoEvent info(event);
 
-    if ( info_changed(info) )
+    if ( info_changed(info.slot(), info.track()) )
     {
         InfoChanged(info.slot(), info.track(), 0);
     }
-    if ( mode_changed(info) || repeat_changed(info) || 
-         program_changed(info) || param_changed(info) )
+    if ( mode_changed(info.mode()) || 
+         repeat_changed(info.repeat()) || 
+         program_changed(info.program(), info.mode()) || 
+         param_changed(info.param(), info.mode()) )
     {
         byte param = (info.mode()==ProgramMode ? info.program() : info.param());
         ModeChanged(info.mode(), info.repeat(), param);
@@ -46,9 +48,9 @@ void
 CDChanger::DoStateEvent(const payload& event)
 {
     InfoMsg("CDChanger::DoStateEvent()\n");
-    StateEvent info(event);
+    cd_StateEvent info(event);
 
-    if ( state_changed(info) )
+    if ( state_changed(info.state()) )
     {
         StateChanged(info.state());
     }
@@ -58,7 +60,7 @@ void
 CDChanger::DoDiscEvent(const payload& event)
 {
     InfoMsg("CDChanger::DoDiscEvent()\n");
-    DiscEvent info(event);
+    cd_DiscEvent info(event);
 
     if ( info.slot() != m_cur_slot )
     {
@@ -70,7 +72,7 @@ void
 CDChanger::DoDoorEvent(const payload& event)
 {
     InfoMsg("CDChanger::DoDoorEvent()\n");
-    DoorEvent info(event);
+    cd_DoorEvent info(event);
 
     if ( info.door_pos() != m_cur_door_pos )
     {
@@ -84,7 +86,7 @@ CDChanger::DoListUserfiles()
     InfoMsg("CDChanger::DoListUserfiles()\n");
     NameList names;
 
-    DataAccess query(RetrieveDataAccess, TextDataType, 0, UserfileNames, UNKNOWN);
+    cd_DataAccess query(RetrieveDataAccess, TextDataType, 0, UserfileNames, UNKNOWN);
 
     // issue the request
     IssueRequest(query, HAS_REPLIES); 
@@ -94,7 +96,7 @@ CDChanger::DoListUserfiles()
     while ( GetReply(reply) )
     {
         // process the data
-        TextData info(reply);
+        cd_TextData info(reply);
         Name data(info.index(), USERFILE_NAME, info.text());
         names.push_back(data);
     }
@@ -106,7 +108,7 @@ void
 CDChanger::DoListUserfiles(void* context, NameCallback* callback)
 {
     InfoMsg("CDChanger::DoListUserfiles(callback)\n");
-    DataAccess query(RetrieveDataAccess, TextDataType, 0, UserfileNames, UNKNOWN);
+    cd_DataAccess query(RetrieveDataAccess, TextDataType, 0, UserfileNames, UNKNOWN);
 
     // issue the request
     IssueRequest(query, HAS_REPLIES); 
@@ -116,7 +118,7 @@ CDChanger::DoListUserfiles(void* context, NameCallback* callback)
     while ( GetReply(reply) )
     {
         // process the data
-        TextData info(reply);
+        cd_TextData info(reply);
         Name data(info.index(), USERFILE_NAME, info.text());
         (*callback)(context, data);
     }
@@ -127,7 +129,7 @@ CDChanger::DoListDiscs(void* context, DiscCallback* callback)
 {
     InfoMsg("CDChanger::DoListDiscs(callback)\n");
     // build the payload
-    DataAccess query(RetrieveDataAccess, TextDataType, AllSlots, DiscNames, UNKNOWN);
+    cd_DataAccess query(RetrieveDataAccess, TextDataType, AllSlots, DiscNames, UNKNOWN);
 
     // issue the request
     IssueRequest(query, HAS_REPLIES); 
@@ -137,7 +139,7 @@ CDChanger::DoListDiscs(void* context, DiscCallback* callback)
     while ( GetReply(reply) )
     {
         // process the data
-        TextData info(reply);
+        cd_TextData info(reply);
         Disc data(info.slot(), DISC_CD_A, info.text(), NULL, info.userfiles(), info.genre());
         (*callback)(context, data);
     }
@@ -147,8 +149,10 @@ Disc
 CDChanger::DoListContents(const short slot)
 {
     InfoMsg("CDChanger::DoListContents(%d)\n", slot);
+    m_listener->ProgressStart(this, KenwoodListener::ReadingDisc, 0);
+    
     // build the payload
-    DataAccess query(RetrieveDataAccess, TextDataType, slot, TrackNames, UNKNOWN);
+    cd_DataAccess query(RetrieveDataAccess, TextDataType, slot, TrackNames, UNKNOWN);
 
     // issue the request
     IssueRequest(query, HAS_REPLIES); 
@@ -159,7 +163,7 @@ CDChanger::DoListContents(const short slot)
     while ( GetReply(reply) )
     {
         // process the data
-        TextData info(reply);
+        cd_TextData info(reply);
         if ( info.index() == 0 )
         {
             data.index = info.slot();
@@ -173,8 +177,11 @@ CDChanger::DoListContents(const short slot)
             Name track(info.index(), TRACK_NAME, info.text());
             data.tracks.push_back(track);
         }
+        m_listener->Progress(this, KenwoodListener::ReadingDisc, 
+                             info.index(), info.text());
     }
 
+    m_listener->ProgressEnd(this, KenwoodListener::ReadingDisc);
     return data;
 }
 
@@ -194,7 +201,7 @@ CDChanger::GetDiscInfo(const short slot)
     if ( slot != m_cur_slot ) DoChangeDisc(slot);
 
     // build the payload
-    DataAccess query(RetrieveDataAccess, InfoDataType, slot, 0, UNKNOWN);
+    cd_DataAccess query(RetrieveDataAccess, InfoDataType, slot, 0, UNKNOWN);
     
     // issue the request
     IssueRequest(query, HAS_REPLIES); 
@@ -206,7 +213,7 @@ CDChanger::GetDiscInfo(const short slot)
     GetOneReply(reply);
 
     // process the data
-    DiscInfo info(reply);
+    cd_DiscInfo info(reply);
 
     return Info(info.slot(), DISC_CD_A, info.length());
 }
@@ -219,7 +226,7 @@ CDChanger::GetDiscId(const short slot)
     if ( slot != m_cur_slot ) DoChangeDisc(slot);
     
     // build the payload
-    DataAccess query(RetrieveDataAccess, TOCDataType, slot, TrackNames, UNKNOWN);
+    cd_DataAccess query(RetrieveDataAccess, TOCDataType, slot, TrackNames, UNKNOWN);
 
     // issue the request
     IssueRequest(query, HAS_REPLIES); 
@@ -231,7 +238,7 @@ CDChanger::GetDiscId(const short slot)
     GetOneReply(reply);
     
     // process the data
-    DiscTOC info(reply);
+    cd_DiscTOC info(reply);
     uint disc_id = info.disc_id();
     id = new char[8+1];
     sprintf(id, "%08x", disc_id);
@@ -247,7 +254,7 @@ CDChanger::GetDiscUserfiles(const short slot)
     if ( slot != m_cur_slot ) DoChangeDisc(slot);
 
     // build the payload
-    DataAccess query(RetrieveDataAccess, TOCDataType, slot, 0, UNKNOWN);
+    cd_DataAccess query(RetrieveDataAccess, TOCDataType, slot, 0, UNKNOWN);
     
     // issue the request
     IssueRequest(query, HAS_REPLIES); 
@@ -257,7 +264,7 @@ CDChanger::GetDiscUserfiles(const short slot)
     GetOneReply(reply);
 
     // process the data
-    DiscUserfiles info(reply);
+    cd_DiscUserfiles info(reply);
 
     return info.userfiles();
 }
@@ -270,7 +277,7 @@ CDChanger::GetDiscGenre(const short slot)
     if ( slot != m_cur_slot ) DoChangeDisc(slot);
 
     // build the payload
-    DataAccess query(RetrieveDataAccess, TOCDataType, slot, 0, UNKNOWN);
+    cd_DataAccess query(RetrieveDataAccess, TOCDataType, slot, 0, UNKNOWN);
     
     // issue the request
     IssueRequest(query, HAS_REPLIES); 
@@ -280,7 +287,7 @@ CDChanger::GetDiscGenre(const short slot)
     GetOneReply(reply);
 
     // process the data
-    DiscGenre info(reply);
+    cd_DiscGenre info(reply);
 
     return info.genre();
 }
@@ -290,7 +297,7 @@ CDChanger::DoChangeDisc(const short slot)
 {
     InfoMsg("CDChanger::DoChangeDisc(%d)\n", slot);
     // build the payload
-    ChangeDisc req(slot, 1, 0);
+    cd_ChangeDisc req(slot, 1, 0);
 
     // issue the request
     IssueRequest(req, NO_REPLIES); 
@@ -313,7 +320,7 @@ CDChanger::DoPlayPause()
 {
     InfoMsg("CDChanger::DoPlayPause()\n");
     // build the payload
-    DoAction req(PLAY_PAUSE_CMD | STATE_PARAM);
+    cd_DoAction req(PLAY_PAUSE_CMD | STATE_PARAM);
 
     // issue the request
     IssueRequest(req, NO_REPLIES); 
@@ -324,13 +331,13 @@ CDChanger::DoPrev()
 {
     InfoMsg("CDChanger::DoPrev()\n");
     // build the payload
-    DoAction req1(PREV_CMD | STATE_PARAM);
+    cd_DoAction req1(PREV_CMD | STATE_PARAM);
 
     // issue the request
     IssueRequest(req1, NO_REPLIES); 
     
     // build the payload
-    DoAction req2(NULL_PARAM);
+    cd_DoAction req2(NULL_PARAM);
 
     // issue the request
     IssueRequest(req2, NO_REPLIES); 
@@ -341,13 +348,13 @@ CDChanger::DoNext()
 {
     InfoMsg("CDChanger::DoNext()\n");
     // build the payload
-    DoAction req1(NEXT_CMD | STATE_PARAM);
+    cd_DoAction req1(NEXT_CMD | STATE_PARAM);
 
     // issue the request
     IssueRequest(req1, NO_REPLIES); 
     
     // build the payload
-    DoAction req2(NULL_PARAM);
+    cd_DoAction req2(NULL_PARAM);
 
     // issue the request
     IssueRequest(req2, NO_REPLIES); 
@@ -358,19 +365,18 @@ CDChanger::DoStop()
 {
     InfoMsg("CDChanger::DoStop()\n");
     // build the payload
-    DoAction req(STOP_CMD | STATE_PARAM);
+    cd_DoAction req(STOP_CMD | STATE_PARAM);
 
     // issue the request
     IssueRequest(req, NO_REPLIES); 
 }
 
 void
-CDChanger::WriteUserfileNames(const char* names[])
+CDChanger::WriteUserfileNames(NameList& names)
 {
-    InfoMsg("CDChanger::WriteUserfileNames(%s, %s, %s, %s, %s, %s, %s, %s)\n",
-            names[0], names[1], names[2], names[3],
-            names[4], names[5], names[6], names[7]);
-    DataAccess query(WriteUserfilesAccess, ReadyDataType, 0, 1, UNKNOWN);
+    InfoMsg("CDChanger::WriteUserfileNames()\n");
+    m_listener->ProgressStart(this, KenwoodListener::WritingUserfiles, 8);
+    cd_DataAccess query(WriteUserfilesAccess, ReadyDataType, 0, 1, UNKNOWN);
 
     // issue the request
     IssueRequest(query, HAS_REPLIES); 
@@ -379,21 +385,23 @@ CDChanger::WriteUserfileNames(const char* names[])
     payload reply;
     GetOneReply(reply);
 
-    for (int i=0; i<8; i++)
+    for (NameList::iterator iter=names.begin(); iter!=names.end(); iter++)
     {
-        TextData data(0, 1<<i, 0, UserfileNames, 0, 0, names[i]);
+        Name& name = (*iter);
+        m_listener->Progress(this, KenwoodListener::WritingUserfiles, 
+                             name.index+1, (const char*)name);
+        cd_TextData data(0, 1<<(name.index), 0, UserfileNames, 0, 0, name.text);
         IssueRequest(data, NO_REPLIES); 
     }
+    m_listener->ProgressEnd(this, KenwoodListener::WritingUserfiles);
 }
 
 void
 CDChanger::WriteDisc(short slot, Disc& disc)
 {
     InfoMsg("CDChanger::WriteDisc(%s)\n", (const char*) disc);
-    // make sure slot is current
-    //if ( slot != m_cur_slot ) DoChangeDisc(slot);
-
-    DataAccess query(WriteTextAccess, ReadyDataType, slot, 1, UNKNOWN);
+    m_listener->ProgressStart(this, KenwoodListener::WritingDisc, disc.tracks.size()+1);
+    cd_DataAccess query(WriteTextAccess, ReadyDataType, slot, 1, UNKNOWN);
 
     // issue the request
     IssueRequest(query, HAS_REPLIES); 
@@ -402,7 +410,9 @@ CDChanger::WriteDisc(short slot, Disc& disc)
     payload reply;
     GetOneReply(reply);
 
-    TextData data(slot, 0, disc.userfiles, DiscNames, 
+    m_listener->Progress(this, KenwoodListener::WritingDisc, 
+                         0, (const char*)disc);
+    cd_TextData data(slot, 0, disc.userfiles, DiscNames, 
                   disc.genre, 0, disc.title);
     IssueRequest(data, NO_REPLIES); 
 
@@ -412,50 +422,50 @@ CDChanger::WriteDisc(short slot, Disc& disc)
     {
         if ( ++count > 20 ) continue;
 
-        const Name& track = (*iter);
-        TextData data(slot, track.index, disc.userfiles, TrackNames, 
+        Name& track = (*iter);
+        m_listener->Progress(this, KenwoodListener::WritingDisc, 
+                             track.index, (const char*)track);
+        cd_TextData data(slot, track.index, disc.userfiles, TrackNames, 
                       disc.genre, 0, track.text);
         IssueRequest(data, NO_REPLIES); 
     }
+    m_listener->ProgressEnd(this, KenwoodListener::WritingDisc);
 }
 
 bool 
-CDChanger::info_changed(const InfoEvent& info)
+CDChanger::info_changed(short slot, byte track)
 {
-    return ( (info.slot()!=m_cur_slot) || 
-             (info.track()!=m_cur_title) ); 
+    return ( (slot!=m_cur_slot) || (track!=m_cur_title) ); 
 }
 
 bool 
-CDChanger::mode_changed(const InfoEvent& info)
+CDChanger::mode_changed(enum mode mode)
 {
-    return (info.mode() != m_cur_mode);
+    return (mode != m_cur_mode);
 }
 
 bool 
-CDChanger::state_changed(const StateEvent& info)
+CDChanger::state_changed(enum state state)
 {
-    return (info.state() != m_cur_state);
+    return (state != m_cur_state);
 }
 
 bool 
-CDChanger::program_changed(const InfoEvent& info)
+CDChanger::program_changed(byte program, enum mode mode)
 {
-    return ( (info.program()!=m_cur_param) &&
-             (info.mode()==ProgramMode) );
+    return ( (program!=m_cur_param) && (mode==ProgramMode) );
 }
 
 bool 
-CDChanger::repeat_changed(const InfoEvent& info)
+CDChanger::repeat_changed(enum repeat repeat)
 {
-    return (info.repeat() != m_cur_repeat);
+    return (repeat != m_cur_repeat);
 }
 
 bool 
-CDChanger::param_changed(const InfoEvent& info)
+CDChanger::param_changed(byte param, enum mode mode)
 {
-    return ( (info.param()!=m_cur_param) &&
-             (info.mode()>=MusicTypeMode) );
+    return ( (param!=m_cur_param) && (mode>=MusicTypeMode) );
 }
 
 

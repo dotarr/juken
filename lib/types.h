@@ -34,6 +34,8 @@ class Name
             }
         ~Name() { delete text; text = NULL; }
 
+        operator const char*() { return text; }
+
         short index;
         byte type;
         char* text;
@@ -51,10 +53,10 @@ class Disc
 {
     public:
         Disc()
-            : index(0), type(255), title(NULL), artist(NULL), 
+            : id(NULL), index(0), type(255), title(NULL), artist(NULL), 
               tracks(), userfiles(0), genre(0) { }
         Disc(const Disc& disc)
-            : index(disc.index), type(disc.type), title(NULL), artist(NULL),
+            : id(NULL), index(disc.index), type(disc.type), title(NULL), artist(NULL),
               tracks(disc.tracks), userfiles(disc.userfiles), genre(disc.genre)
             {
                 if ( disc.title != NULL )
@@ -62,17 +64,11 @@ class Disc
                 if ( disc.artist != NULL )
                   artist = ::strdup(disc.artist);
             }
-        Disc(short i, byte t, const char* tit, const char* art)
-            : index(i), type(t), title(NULL), artist(NULL), 
-              tracks(), userfiles(0), genre(0)
-            {
-                if ( tit != NULL )
-                    title = ::strdup(tit);
-                if ( art != NULL )
-                  artist = ::strdup(art);
-            }
+        Disc(byte t)
+            : id(NULL), index(0), type(t), title(NULL), artist(NULL), 
+              tracks(), userfiles(0), genre(0) { }
         Disc(short i, byte t, const char* tit, const char* art, byte uf, byte g)
-            : index(i), type(t), title(NULL), artist(NULL), 
+            : id(NULL), index(i), type(t), title(NULL), artist(NULL), 
               tracks(), userfiles(uf), genre(g)
             {
                 if ( tit != NULL )
@@ -84,6 +80,7 @@ class Disc
 
         operator const char*() { return title; }
 
+        char* id;
         short index;
         byte type;
         char* title;

@@ -3,9 +3,9 @@
 
 #include <kenwooddevice.h>
 #include <kenwoodchanger.h>
-#include <logginglistener.h>
 
 #include "changerdata.h"
+#include "consolelistener.h"
 
 class Importer
 {
@@ -19,12 +19,10 @@ class Importer
         
     private:
         KenwoodDevice* m_device;
-        LoggingListener* m_listener;
+        ConsoleListener* m_listener;
         KenwoodChanger* m_changer;
 
         ChangerData m_data;
-
-        void print_data();
 };
 
 #endif /* JUKEN_IMPORTER_H */

@@ -6,10 +6,10 @@
 
 //
 //command = 0x03
-class DataAccess : public payload
+class cd_DataAccess : public payload
 {
     public:
-        DataAccess(enum access access, enum data_type type, short slot,
+        cd_DataAccess(enum access access, enum data_type type, short slot,
                    byte info_type, enum genre genre)
         {
             cmd = DATA_ACCESS;
@@ -24,10 +24,10 @@ class DataAccess : public payload
 };
 
 //command = 0x04
-class DiscInfo : public payload
+class cd_DiscInfo : public payload
 {
     public:
-        DiscInfo(const payload& info) : payload(info) { }
+        cd_DiscInfo(const payload& info) : payload(info) { }
         short slot() { return *((short*) (&data[0])); }
         byte first_track() { return data[2]; }
         byte last_track() { return data[3]; }
@@ -36,10 +36,10 @@ class DiscInfo : public payload
 };
 
 //command = 0x06
-class DiscTOC : public payload
+class cd_DiscTOC : public payload
 {
     public:
-        DiscTOC(const payload& info) : payload(info) { }
+        cd_DiscTOC(const payload& info) : payload(info) { }
         short slot() { return *((short*) (&data[0])); }
         byte page_num() { return data[2]; }
         byte formatting() { return data[3]; }
@@ -51,43 +51,43 @@ class DiscTOC : public payload
 } ;
 
 //command = 0x07
-class DiscUserfiles : public payload
+class cd_DiscUserfiles : public payload
 {
     public:
-        DiscUserfiles(const payload& info) : payload(info) { }
+        cd_DiscUserfiles(const payload& info) : payload(info) { }
         short slot() { return *((short*) (&data[0])); }
         byte userfiles() { return data[2]; }
 };
 
 //command = 0x08
-class DiscGenre : public payload
+class cd_DiscGenre : public payload
 {
     public:
-        DiscGenre(const payload& info) : payload(info) { }
+        cd_DiscGenre(const payload& info) : payload(info) { }
         short slot() { return *((short*) (&data[0])); }
         enum genre genre() { return (enum genre) data[2]; }
 };
 
 //command = 0x09
-class ReadyForData : public payload
+class cd_ReadyForData : public payload
 {
     public:
-        ReadyForData(const payload& info) : payload(info) { }
+        cd_ReadyForData(const payload& info) : payload(info) { }
         byte type() { return data[0]; }
 };
 
 //command = 0x0A
-class DoAction : public payload
+class cd_DoAction : public payload
 {
     public:
-        DoAction(const short action) : payload(DO_ACTION, 2, (byte*) &action) { }
+        cd_DoAction(const short action) : payload(DO_ACTION, 2, (byte*) &action) { }
 };
 
 //command = 0x0B
-class ChangeDisc : public payload
+class cd_ChangeDisc : public payload
 {
     public:
-        ChangeDisc(const short slot, const byte track, const byte state)
+        cd_ChangeDisc(const short slot, const byte track, const byte state)
         {
             cmd = CHANGE_DISC;
             len = 4;
@@ -98,10 +98,10 @@ class ChangeDisc : public payload
 };
 
 //command = 0x0C
-class ChangeMode : public payload
+class cd_ChangeMode : public payload
 {
     public:
-        ChangeMode(const byte mode, const byte param)
+        cd_ChangeMode(const byte mode, const byte param)
         {
             cmd = CHANGE_MODE;
             len = 2;
@@ -111,19 +111,19 @@ class ChangeMode : public payload
 };
 
 //command = 0x0D
-class DiscListing : public payload
+class cd_DiscListing : public payload
 {
     public:
-        DiscListing(const payload& info) : payload(info) { }
+        cd_DiscListing(const payload& info) : payload(info) { }
         byte length() { return data[0]; }
         DiscTrack* tracks() { (DiscTrack*) (&data[1]); }
 } ;
 
 //command = 0x12
-class InfoEvent : public payload
+class cd_InfoEvent : public payload
 {
     public:
-        InfoEvent(const payload& info) : payload(info) { }
+        cd_InfoEvent(const payload& info) : payload(info) { }
         short slot() const { return *((short*) (&data[0])); }
         byte track() const { return data[2]; }
         byte program() const { return data[3]; }
@@ -135,39 +135,39 @@ class InfoEvent : public payload
 };
 
 //command = 0x13
-class StateEvent : public payload
+class cd_StateEvent : public payload
 {
     public:
-        StateEvent(const payload& info) : payload(info) { }
+        cd_StateEvent(const payload& info) : payload(info) { }
         enum state state() const { return (enum state) data[0]; }
 };
 
 //command = 0x14
-class DiscEvent : public payload
+class cd_DiscEvent : public payload
 {
     public:
-        DiscEvent(const payload& info) : payload(info) { }
+        cd_DiscEvent(const payload& info) : payload(info) { }
         short slot() { return *((short*) (&data[0])); }
 };
 
 //command = 0x15
-class DoorEvent : public payload
+class cd_DoorEvent : public payload
 {
     public:
-        DoorEvent(const payload& info) : payload(info) { }
+        cd_DoorEvent(const payload& info) : payload(info) { }
         enum door door_pos() { return (enum door) data[0]; }
 };
 
 //command = 0xFD or command = 0xFE
-class TextData : public payload
+class cd_TextData : public payload
 {
     public:
-        TextData(const payload& info) : payload(info)
+        cd_TextData(const payload& info) : payload(info)
             { 
                 if ( cmd==TEXT_DATA && data[7]==0x01 ) data[7] = 0;
                 if ( cmd!=TEXT_DATA && data[8]==0x01 ) data[8] = 0;
             }
-        TextData(const short slot, const byte index, const byte userfiles,
+        cd_TextData(const short slot, const byte index, const byte userfiles,
                  const byte text_type, const byte genre, const byte formatting,
                  const char* text)
         {

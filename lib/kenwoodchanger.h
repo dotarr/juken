@@ -52,7 +52,7 @@ class KenwoodChanger
         virtual void DoNext() = 0;
         virtual void DoStop() = 0;
 
-        virtual void WriteUserfileNames(const char* names[]) = 0;
+        virtual void WriteUserfileNames(NameList& names) = 0;
         virtual void WriteDisc(short slot, Disc& disc) = 0;
 
     protected:

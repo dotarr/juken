@@ -2,10 +2,9 @@
 * write some info pages for the project, cli, and protocol
 * build a home page for the sourceforge site
 
+* determine problems with writing DVDA tracks
 * determine legal charset for changer(s)
 * see if we can lower delay time
-* cleanup some debugging/tracing info
-* pretty up import/export stderr output
 * make xml parsing more robust
 * check xml strings for "bad" characters
 

@@ -3,6 +3,7 @@
 
 #include <kenwooddevice.h>
 #include <kenwoodchanger.h>
+
 #include "consolelistener.h"
 
 class Juken

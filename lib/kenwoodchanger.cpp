@@ -190,7 +190,8 @@ KenwoodChanger::ScanDiscsCallback(void* context, Disc& data)
     KenwoodChanger* _this = (KenwoodChanger*) context;
 
     _this->m_slots[data.index-1] = new Disc(data);
-    _this->m_listener->Progress(_this, KenwoodListener::ScanDiscs, data.index);
+    _this->m_listener->Progress(_this, KenwoodListener::ScanDiscs, 
+                                data.index, (const char*) data);
 }
 
 void 
@@ -202,5 +203,6 @@ KenwoodChanger::LoadUserfilesCallback(void* context, Name& data)
     int i = 0;
     while ( uf != 1 ) { uf = uf>>1; i++; }
     _this->m_userfiles[i] = ::strdup(data.text);
-    _this->m_listener->Progress(_this, KenwoodListener::LoadUserfiles, i+1);
+    _this->m_listener->Progress(_this, KenwoodListener::LoadUserfiles, 
+                                i+1, (const char*) data);
 }
