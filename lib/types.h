@@ -82,6 +82,8 @@ class Disc
             }
         ~Disc() { delete title; title = NULL; delete artist; artist = NULL; }
 
+        operator const char*() { return title; }
+
         short index;
         byte type;
         char* title;
