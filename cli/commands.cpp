@@ -1,6 +1,7 @@
 #include <common.h>
 
 #include "commands.h"
+#include "exportlistener.h"
 
 extern bool done; // exit flag from juken-cli.cpp
 
@@ -46,6 +47,16 @@ DoHelp(KenwoodChanger& changer, int argc, char* argv[])
 void
 DoExport(KenwoodChanger& changer, int argc, char* argv[])
 {
+    ExportListener export_listener(stdout);
+    KenwoodListener* previous_listener = changer.setListener(&export_listener);
+    export_listener.setEventListener(previous_listener);
+
+    changer.DoListTrackTimes();
+usleep(1); // an ugly hack, but I can't figure out how/why/when the player isn't "ready"
+    changer.DoListTracks(changer.getCurrentSlot());
+
+    export_listener.setEventListener(NULL);
+    changer.setListener(previous_listener);
 }
 
 void

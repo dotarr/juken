@@ -19,7 +19,7 @@ const short DV5050M_CAPACITY = 400;
 
 // ----------------------------------------------------------------------------
 
-KenwoodChanger::KenwoodChanger(KenwoodDevice& dev, KenwoodListener& listener) 
+KenwoodChanger::KenwoodChanger(KenwoodDevice& dev, KenwoodListener* listener) 
 : m_device(dev), m_listener(listener)
 {
     m_is_ready = false;
@@ -45,6 +45,14 @@ KenwoodChanger::~KenwoodChanger()
 {
 }
 
+KenwoodListener*
+KenwoodChanger::setListener(KenwoodListener* listener)
+{
+    KenwoodListener* previous = m_listener;
+    m_listener = listener;
+    return previous;
+}
+
 void
 KenwoodChanger::DoEvent()
 {
@@ -63,6 +71,12 @@ KenwoodChanger::DoEvent()
     
     m_device.WriteCntl(ACK);
     
+    ProcessEvent();
+}
+
+void
+KenwoodChanger::ProcessEvent()
+{
     payload event;
     while ( GetEvent(event) )
     {
@@ -124,9 +138,10 @@ KenwoodChanger::DoInfoEvent(const payload& event)
     m_cur_userfile = info->userfile;
 
     // notify listener
-    m_listener.InfoChanged(m_cur_slot, m_cur_track, m_cur_mode, 
-                           m_random_state, m_repeat, 
-                           m_cur_userfile);
+    if ( m_listener != NULL )
+        m_listener->InfoChanged(m_cur_slot, m_cur_track, m_cur_mode, 
+                                m_random_state, m_repeat, 
+                                m_cur_userfile);
 if ( info->unknown==0 && info->mode!=0 )
 {
     fprintf(stderr, "wierd unknown detected\n");
@@ -161,7 +176,8 @@ KenwoodChanger::DoStateEvent(const payload& event)
     }
 
     // notify listener
-    m_listener.StateChanged(m_cur_state);
+    if ( m_listener != NULL )
+        m_listener->StateChanged(m_cur_state);
 
     m_is_ready = true;
 }
@@ -176,7 +192,8 @@ KenwoodChanger::DoDiscEvent(const payload& event)
     m_cur_slot = info->slot;
 
     // notify listener
-    m_listener.DiscChanged(m_cur_slot);
+    if ( m_listener != NULL )
+        m_listener->DiscChanged(m_cur_slot);
 }
  
 void
@@ -189,7 +206,8 @@ KenwoodChanger::DoDoorEvent(const payload& event)
     m_door_closed = (info->door_pos==0);
 
     // notify listener
-    m_listener.DoorChanged(m_door_closed);
+    if ( m_listener != NULL )
+        m_listener->DoorChanged(m_door_closed);
 }
 
 void
@@ -211,7 +229,8 @@ KenwoodChanger::DoHandshake(const char* id)
     m_id = ::strdup((char*) reply.data);
 
     // notify listener
-    m_listener.Handshake(m_id);
+    if ( m_listener != NULL )
+        m_listener->Handshake(m_id);
 }
 
 void
@@ -314,19 +333,23 @@ KenwoodChanger::DoDiscQuery(const DataAccess& query)
         switch ( reply.cmd )
         {
             case DISC_DATA:
-                m_listener.DiscDataReply((DiscData*)reply.data);
+                if ( m_listener != NULL )
+                    m_listener->DiscDataReply((DiscData*)reply.data);
                 break;
 
             case CD_TEXT_DATA:
-                m_listener.CDTextDataReply((CDTextData*)reply.data);
+                if ( m_listener != NULL )
+                    m_listener->CDTextDataReply((CDTextData*)reply.data);
                 break;
 
             case TRACK_TIMES:
-                m_listener.TrackTimesReply((TrackTimes*)reply.data);
+                if ( m_listener != NULL )
+                    m_listener->TrackTimesReply((TrackTimes*)reply.data);
                 break;
 
             case DISC_TRACK_LIST:
-                m_listener.DiscTrackListReply((DiscTrackList*)reply.data);
+                if ( m_listener != NULL )
+                    m_listener->DiscTrackListReply((DiscTrackList*)reply.data);
                 break;
         }
     }
@@ -354,7 +377,7 @@ KenwoodChanger::IssueRequest(const payload& msg, const bool has_replies)
 void
 KenwoodChanger::GetOneReply(payload& reply)
 {
-    if( RecvMessage(reply) )
+    if ( RecvMessage(reply) )
     {
         payload eor;
         RecvMessage(eor);
@@ -379,22 +402,25 @@ KenwoodChanger::SendMessage(const payload& msg, const bool has_replies)
     byte cntl;
 
     // signal player we wish to transmit
-    m_device.WriteCntl(ENQ);
-
-    if ( (cntl=m_device.ReadCntl()) != ACK )
+    bool acked = false;
+    while ( !acked )
     {
+        m_device.WriteCntl(ENQ);
+
+        cntl = m_device.ReadCntl();
         switch ( cntl )
         {
             case STX: ::fprintf(stderr, "->Unexpected STX\n"); break;
             case EOT: ::fprintf(stderr, "->Unexpected EOT\n"); break;
-            case ENQ:
-                // we may need to handle an event from the changer
-                // before proceeding ...
-                ::fprintf(stderr, "->Unexpected ENQ\n");
+            case ENQ: // we need to handle an event from the changer before proceeding ...
+                m_device.WriteCntl(ACK);
+                ProcessEvent();
                 break;
+            case ACK: acked = true; break;
             case NAK: ::fprintf(stderr, "->Unexpected NAK\n"); break;
         }
     }
+
     bool sent = false;
     while ( !sent )
     {
@@ -408,21 +434,25 @@ KenwoodChanger::SendMessage(const payload& msg, const bool has_replies)
             case EOT: ::fprintf(stderr, "->Unexpected EOT\n"); break;
             case ENQ: ::fprintf(stderr, "->Unexpected ENQ\n"); break;
             case ACK: sent = true; break;
-            case NAK: break;
+            case NAK: ::fprintf(stderr, "->Unexpected NAK\n"); break;
         }
     }
 
 
     if ( !has_replies )
     {
-        m_device.WriteCntl(EOT);
-        if ( (cntl=m_device.ReadCntl()) != ACK )
+        acked = false;
+        while ( !acked )
         {
+            m_device.WriteCntl(EOT);
+
+            cntl = m_device.ReadCntl();
             switch ( cntl )
             {
                 case STX: ::fprintf(stderr, "->Unexpected STX\n"); break;
                 case EOT: ::fprintf(stderr, "->Unexpected EOT\n"); break;
                 case ENQ: ::fprintf(stderr, "->Unexpected ENQ\n"); break;
+                case ACK: acked = true; break;
                 case NAK: ::fprintf(stderr, "->Unexpected NAK\n"); break;
             }
         }

@@ -33,8 +33,8 @@ discid(byte num_tracks, TimeInfo* times)
     for (int i=0; i<num_tracks; i++)
         n = n + cddb_sum(secs(times[i]));
 
-    unsigned int t = secs(times[num_tracks]);
-    //unsigned int t = secs(times[num_tracks]) - secs(times[0]);
+    //unsigned int t = secs(times[num_tracks]);
+    unsigned int t = secs(times[num_tracks]) - secs(times[0]);
 
     return ((n % 0xff) << 24 | t << 8 | num_tracks);
 }

@@ -6,7 +6,8 @@
 class ConsoleListener : public KenwoodListener
 {
     public:
-        ConsoleListener(FILE* f) :m_fd(f) { };
+        ConsoleListener(FILE* f) :m_file(f) { };
+        ~ConsoleListener() { };
 
         virtual void Handshake(const char* id);
         virtual void InfoChanged(short slot, byte track, enum mode mode, 
@@ -24,7 +25,7 @@ class ConsoleListener : public KenwoodListener
     protected:
 
     private:
-        FILE* m_fd; // the file too fprintf to
+        FILE* m_file; // the file too fprintf to
 };
 
 #endif /* JUKEN_CONSOLELISTENER_H */

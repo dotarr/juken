@@ -11,10 +11,13 @@
 class KenwoodChanger
 {
     public:
-        KenwoodChanger(KenwoodDevice& dev, KenwoodListener& listener);
+        KenwoodChanger(KenwoodDevice& dev, KenwoodListener* listener);
         virtual ~KenwoodChanger();
 
+        KenwoodListener* setListener(KenwoodListener* listener);
+
         void DoEvent();
+        void ProcessEvent();
         void DoInfoEvent(const payload& event);
         void DoStateEvent(const payload& event);
         void DoDiscEvent(const payload& event);
@@ -66,7 +69,7 @@ class KenwoodChanger
 
     private:
         KenwoodDevice& m_device;
-        KenwoodListener& m_listener;
+        KenwoodListener* m_listener;
 
         KenwoodChanger();
         KenwoodChanger(const KenwoodChanger& changer);

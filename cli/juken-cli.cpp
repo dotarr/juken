@@ -88,7 +88,7 @@ main(int argc, char* argv[])
     {
         KenwoodDevice device(serial_device);
         ConsoleListener listener(stdout);
-        KenwoodChanger changer(device, listener);
+        KenwoodChanger changer(device, &listener);
 
         int juke_fd = device.GetFileDescriptor();
         fd_set fds;

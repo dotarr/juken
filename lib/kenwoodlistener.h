@@ -7,6 +7,8 @@
 class KenwoodListener 
 {
     public:
+        ~KenwoodListener() { };
+
         virtual void Handshake(const char* id) = 0;
         virtual void InfoChanged(short slot, byte track, enum mode mode, 
                                  enum random random, bool repeat, 
@@ -21,6 +23,7 @@ class KenwoodListener
         virtual void DiscTrackListReply(DiscTrackList* info) = 0;
 
     protected:
+        KenwoodListener() { };
 
     private:
 };
