@@ -34,6 +34,8 @@ class DVDChanger : public KenwoodChanger
     private:
         bool m_setup;
 
+        byte m_chain_id;
+
         short m_cur_slot;
         byte m_cur_title;
         short m_cur_chapter;

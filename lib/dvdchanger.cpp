@@ -9,6 +9,8 @@ DVDChanger::DVDChanger(char* id, KenwoodDevice& dev)
 {
     m_setup = false;
 
+    m_chain_id = 1;
+
     m_cur_slot = -1;
     m_cur_title = (byte) -1;
     m_cur_chapter = -1;
@@ -114,8 +116,8 @@ DVDChanger::DoQuery(byte a, byte b, byte c,
                     short slot, byte title, short chapter)
 {
     // build the payload
-    DataAccess query((enum access)a, (enum data_type)b, (dvd_info_type)c, 
-                     1, slot, title, chapter);
+    DataAccess query((enum access)a, (enum data_type)b, c, 
+                     m_chain_id, slot, title, chapter);
 
 printf("query cmd=0x%02X len=%d\n", query.cmd, query.len);
 printdata(query.data, query.len);
@@ -136,7 +138,7 @@ void
 DVDChanger::DoListDiscs()
 {
     // build the payload
-    DataAccess query(RetrieveData, Text, DVDDiscNames, 1, 0, 0, 0);
+    DataAccess query(RetrieveData, Text, DiscNames, m_chain_id, 0, 0, 0);
 
     // issue the request
     IssueRequest(query, HAS_REPLIES); 
@@ -152,7 +154,7 @@ DVDChanger::DoListDiscs()
             if ( m_listeners[i]->TextDataReply(info.index(),
                                                0,
                                                0,
-                                               CDDiscNames,
+                                               DiscNames,
                                                0,
                                                0,
                                                info.text()) )
@@ -165,7 +167,7 @@ void
 DVDChanger::DoListContents(const short slot)
 {
     // build the payload
-    DataAccess query(RetrieveData, Text, DVDChapterNames, 1, slot, 0, 0);
+    DataAccess query(RetrieveData, Text, DiscArtistTrackNames, m_chain_id, slot, 0, 0);
 
     // issue the request
     IssueRequest(query, HAS_REPLIES); 
@@ -181,7 +183,7 @@ DVDChanger::DoListContents(const short slot)
             if ( m_listeners[i]->TextDataReply(info.index(),
                                                0,
                                                0,
-                                               CDDiscNames,
+                                               DiscNames,
                                                0,
                                                0,
                                                info.text()) )
@@ -194,7 +196,7 @@ char*
 DVDChanger::GetDiscId(const short slot)
 {
     // build the payload
-    DataAccess query(RetrieveData, TOC, DVDCDTOC, 1, slot, 0, 0);
+    DataAccess query(RetrieveData, TOC, TOCId, m_chain_id, slot, 0, 0);
 
     // issue the request
     IssueRequest(query, HAS_REPLIES); 
@@ -231,7 +233,7 @@ void
 DVDChanger::DoChangeDisc(const short slot, enum state cur_state)
 {
     // build the payload
-    ChangeDisc req(1, slot, 0, 0, TrackMode, 0x00, 2);
+    ChangeDisc req(m_chain_id, slot, 0, 0, TrackMode, 0x00, 2);
 
     // issue the request
     IssueRequest(req, NO_REPLIES); 
@@ -241,7 +243,7 @@ void
 DVDChanger::DoPlayPause()
 {
     // build the payload
-    DoAction req(1, PLAY_CMD | STATE_PARAM);
+    DoAction req(m_chain_id, PLAY_CMD | STATE_PARAM);
 
     // issue the request
     IssueRequest(req, NO_REPLIES); 
@@ -251,13 +253,13 @@ void
 DVDChanger::DoPrev()
 {
     // build the payload
-    DoAction req1(1, PREV_CMD | STATE_PARAM);
+    DoAction req1(m_chain_id, PREV_CMD | STATE_PARAM);
 
     // issue the request
     IssueRequest(req1, NO_REPLIES); 
     
     // build the payload
-    DoAction req2(1, PLAY_CMD | STATE_PARAM);
+    DoAction req2(m_chain_id, PLAY_CMD | STATE_PARAM);
 
     // issue the request
     IssueRequest(req2, NO_REPLIES); 
@@ -267,13 +269,13 @@ void
 DVDChanger::DoNext()
 {
     // build the payload
-    DoAction req1(1, NEXT_CMD | STATE_PARAM);
+    DoAction req1(m_chain_id, NEXT_CMD | STATE_PARAM);
 
     // issue the request
     IssueRequest(req1, NO_REPLIES); 
     
     // build the payload
-    DoAction req2(1, PLAY_CMD | STATE_PARAM);
+    DoAction req2(m_chain_id, PLAY_CMD | STATE_PARAM);
 
     // issue the request
     IssueRequest(req2, NO_REPLIES); 
@@ -283,7 +285,7 @@ void
 DVDChanger::DoStop()
 {
     // build the payload
-    DoAction req(1, STOP_CMD | STATE_PARAM);
+    DoAction req(m_chain_id, STOP_CMD | STATE_PARAM);
 
     // issue the request
     IssueRequest(req, NO_REPLIES); 
@@ -292,7 +294,7 @@ DVDChanger::DoStop()
 void
 DVDChanger::WriteUserfileNames(const char* names[])
 {
-    DataAccess query(SetUserfiles, Ready, DVDDiscNamesInGenre, 1, 0, 0, 0);
+    DataAccess query(WriteUserfiles, Ready, AllUserfileNames, m_chain_id, 0, 0, 0);
 
     // issue the request
     IssueRequest(query, HAS_REPLIES); 
@@ -305,7 +307,7 @@ usleep(10);
 
     for (int i=0; i<8; i++)
     {
-        TextData data(1, 6, 1<<i, 0, 0, 0, names[i]);
+        TextData data(m_chain_id, 6, 1<<i, 0, 0, 0, names[i]);
         IssueRequest(data, NO_REPLIES); 
     }
 usleep(10);
@@ -314,7 +316,7 @@ usleep(10);
 void
 DVDChanger::WriteTitleArtist(short slot, const char* title, const char* artist)
 {
-    DataAccess query(WriteText, Ready, DVDChapterNames, 1, slot, 0, 0);
+    DataAccess query(WriteText, Ready, DiscArtistNames, m_chain_id, slot, 0, 0);
 //printf("query cmd=0x%02X len=%d\n", query.cmd, query.len);
 //printdata(query.data, query.len);
 
@@ -327,7 +329,7 @@ usleep(10);
     GetOneReply(reply);
 usleep(10);
 
-    TextData data(1, DVDDiscText, slot, 0, 0, 0, title);
+    TextData data(m_chain_id, DiscText, slot, 0, 0, 0, title);
 //printf("data  cmd=0x%02X len=%d\n", data.cmd, data.len);
 //printdata(data.data, data.len);
     IssueRequest(data, NO_REPLIES); 
@@ -336,14 +338,14 @@ usleep(10);
     if ( artist == NULL )
     {
         const char none[] = { 0x01 };
-        TextData data(1, 3, slot, 0, 0, 0, none);
+        TextData data(m_chain_id, ArtistText, slot, 0, 0, 0, none);
 //printf("data  cmd=0x%02X len=%d\n", data.cmd, data.len);
 //printdata(data.data, data.len);
         IssueRequest(data, NO_REPLIES); 
     }
     else
     {
-        TextData data(1, 3, slot, 0, 0, 0, artist);
+        TextData data(m_chain_id, ArtistText, slot, 0, 0, 0, artist);
 //printf("data  cmd=0x%02X len=%d\n", data.cmd, data.len);
 //printdata(data.data, data.len);
         IssueRequest(data, NO_REPLIES); 

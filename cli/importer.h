@@ -32,7 +32,10 @@ class Importer : public KenwoodListener
         KenwoodDevice* m_device;
         KenwoodChanger* m_changer;
 
-        bool m_done;
+        bool m_is_CD;
+
+        void import_CD_changer();
+        void import_DVD_changer();
 
         void print_data();
 };

@@ -10,12 +10,12 @@ class DataAccess : public payload
 {
     public:
         DataAccess(enum access access, enum data_type type, short slot,
-                   enum cd_info_type info_type, enum genre genre)
+                   byte info_type, enum genre genre)
         {
             cmd = DATA_ACCESS;
             len = 7;
             data[0] = (byte) access;
-            data[1] = (byte) type;
+            data[1] = type;
             *((short*) (&data[2])) = slot;
             data[4] = 0;
             data[5] = (byte) info_type;
@@ -72,7 +72,7 @@ class ReadyForData : public payload
 {
     public:
         ReadyForData(const payload& info) : payload(info) { }
-        cd_info_type type() { return (cd_info_type) data[0]; }
+        byte type() { return data[0]; }
 };
 
 //command = 0x0A
@@ -88,7 +88,7 @@ class ChangeDisc : public payload
     public:
         ChangeDisc(const short slot, const byte track, const bool begin)
         {
-            cmd = SELECT_DISC_TRACK;
+            cmd = CHANGE_DISC;
             len = 4;
             *((short*) (&data[0])) = slot;
             data[2] = track;
@@ -102,14 +102,14 @@ class ChangeMode : public payload
     public:
         ChangeMode(const byte mode, const enum genre genre)
         {
-            cmd = SELECT_PLAY_MODE;
+            cmd = CHANGE_MODE;
             len = 2;
             data[0] = mode;
             data[1] = (byte) genre;
         }
         ChangeMode(const byte mode, const byte userfile)
         {
-            cmd = SELECT_PLAY_MODE;
+            cmd = CHANGE_MODE;
             len = 2;
             data[0] = mode;
             data[1] = userfile;
@@ -171,20 +171,11 @@ class TextData : public payload
         TextData(const payload& info) : payload(info) { }
         short slot() { return *((short*) (&data[0])); }
         byte track() { return data[2]; }
-        byte userfiles() { return (cmd==DISC_DATA) ? data[3] : 0; }
-        cd_info_type info_type() { return (cd_info_type) data[4]; }
-        byte genre() { return (cmd==DISC_DATA) ? data[5] : 0; }
+        byte userfiles() { return (cmd==TEXT_DATA) ? data[3] : 0; }
+        byte info_type() { return data[4]; }
+        byte genre() { return (cmd==TEXT_DATA) ? data[5] : 0; }
         byte formatting() { return data[6]; }
-        char* text() { return (char*) ((cmd==DISC_DATA) ? &data[7] : &data[8]); }
-};
-
-//command = 0xFE
-class UserfileData : public payload
-{
-    public:
-        UserfileData(const payload& info) : payload(info) { }
-        byte userfile() { return data[2]; }
-        char* text() { return (char*) &data[7]; }
+        char* text() { return (char*) ((cmd==TEXT_DATA) ? &data[7] : &data[8]); }
 };
 
 #endif /* JUKEN_CDPAYLOAD_H */

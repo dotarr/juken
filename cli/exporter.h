@@ -35,7 +35,10 @@ class Exporter : public KenwoodListener
         KenwoodDevice* m_device;
         KenwoodChanger* m_changer;
 
-        bool m_done;
+        bool m_is_CD;
+
+        void export_CD_changer();
+        void export_DVD_changer();
 };
 
 #endif /* JUKEN_EXPORTER_H */

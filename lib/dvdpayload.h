@@ -10,14 +10,14 @@ class DataAccess : public payload
 {
     public:
         DataAccess(enum access access, enum data_type type, 
-                   enum dvd_info_type info_type, byte changer, short slot, 
+                   byte info_type, byte changer, short slot, 
                    byte title, short chapter)
         {
             cmd = DATA_ACCESS;
             len = 10;
             data[0] = (byte) access;
             data[1] = (byte) type;
-            data[2] = (byte) info_type;
+            data[2] = info_type;
             data[3] = changer;
             *((short*) (&data[4])) = slot;
             data[6] = title;
@@ -89,7 +89,7 @@ class ReadyForData : public payload
     public:
         ReadyForData(const payload& info) : payload(info) { }
         byte changer() { return data[0]; }
-        dvd_info_type type() { return (dvd_info_type) data[1]; }
+        byte type() { return data[1]; }
 };
 
 //command = 0x0A
@@ -113,7 +113,7 @@ class ChangeDisc : public payload
                    const byte title, const short chapter,
                    const byte mode, const enum genre genre, const byte state)
         {
-            cmd = SELECT_DISC_TRACK;
+            cmd = CHANGE_DISC;
             len = 10;
             data[0] = changer;
             *((short*) (&data[1])) = slot;
@@ -128,7 +128,7 @@ class ChangeDisc : public payload
                    const byte title, const short chapter,
                    const byte mode, const byte userfile, const bool begin)
         {
-            cmd = SELECT_DISC_TRACK;
+            cmd = CHANGE_DISC;
             len = 10;
             data[0] = changer;
             *((short*) (&data[1])) = slot;
@@ -226,24 +226,44 @@ class TextData : public payload
                  const byte userfile, const byte genre, const char* text)
         {
             int text_len = ::strlen(text);
-            cmd = DISC_DATA;
-            len = 7 + text_len;
-            data[0] = changer;
-            data[1] = text_type;
-            *((short*) (&data[2])) = index;
-            data[4] = formatting;
-            data[5] = userfile;
-            data[6] = genre;
-            ::memcpy(&data[7], text, text_len);
+            if ( text_len <= 20 )
+            {
+                cmd = TEXT_DATA;
+                len = 7 + text_len;
+                data[0] = changer;
+                data[1] = text_type;
+                *((short*) (&data[2])) = index;
+                data[4] = formatting;
+                data[5] = userfile;
+                data[6] = genre;
+                ::memcpy(&data[7], text, text_len);
+            }
+            else if ( text_len <= 152 )
+            {
+                cmd = LONG_TEXT_DATA;
+                len = 8 + text_len;
+                data[0] = 1;
+                data[1] = changer;
+                data[2] = text_type;
+                *((short*) (&data[3])) = index;
+                data[5] = formatting;
+                data[6] = userfile;
+                data[7] = genre;
+                ::memcpy(&data[8], text, text_len);
+            }
+            else
+            {
+                assert(false);
+            }
         }
-        byte page() { return (cmd==DISC_DATA) ? 0 : data[0]; }
-        byte changer() { return (cmd==DISC_DATA) ? data[0] : data[1]; }
-        dvd_title_type title_type() { return (dvd_title_type) ((cmd==DISC_DATA) ? data[1] : data[2]); }
-        short index() { return *((short*) ((cmd==DISC_DATA) ? &data[2] : &data[3])); }
-        byte formatting() { return (cmd==DISC_DATA) ? data[4] : data[5]; }
-        byte userfile() { return (cmd==DISC_DATA) ? data[5] : data[6]; }
-        byte genre() { return (cmd==DISC_DATA) ? data[6] : data[7]; }
-        char* text() { return (char*) ((cmd==DISC_DATA) ? &data[7] : &data[8]); }
+        byte page() { return (cmd==TEXT_DATA) ? 0 : data[0]; }
+        byte changer() { return (cmd==TEXT_DATA) ? data[0] : data[1]; }
+        byte title_type() { return ((cmd==TEXT_DATA) ? data[1] : data[2]); }
+        short index() { return *((short*) ((cmd==TEXT_DATA) ? &data[2] : &data[3])); }
+        byte formatting() { return (cmd==TEXT_DATA) ? data[4] : data[5]; }
+        byte userfile() { return (cmd==TEXT_DATA) ? data[5] : data[6]; }
+        byte genre() { return (cmd==TEXT_DATA) ? data[6] : data[7]; }
+        char* text() { return (char*) ((cmd==TEXT_DATA) ? &data[7] : &data[8]); }
 };
 
 //command = 0xFE

@@ -5,6 +5,10 @@
 
 #include "constants.h"
 
+#include <list>
+
+//typedef list<> names;
+
 typedef struct 
 {
     byte minute;
@@ -36,22 +40,25 @@ typedef byte VolumeId[32];
 typedef byte TimeStamp[17];
 
 
-enum access { RetrieveData=0x00, SetDiscGenre=0x10, WriteProgram=0x20, 
-              SetUserfiles=0x40, WriteText=0x80 };
-enum data_type { Ready=0x00, Text=0x01, Info=0x02, TOC=0x04, 
-                 Userfiles=0x08, Genre=0x10, Listing=0x20 };
-enum cd_info_type { CDDiscNames=0x00, CDTrackNames=0x01, 
-                    CDArtistName=0x02, CDUserfileNames=0x07 };
-enum dvd_info_type { DVDDiscNames=0x01, DVDArtistNames=0x02, 
-                     DVDDiscNamesInGenre=0x03, DVDDiscNamesInUserfile=0x04, 
-                     DVDUserfileNames=0x05, DVDChapterNames=0x06, 
-                     DVDDiscName=0x07, DVDTitleName=0x08, DVDChapterName=0x09, 
-                     DVDArtistName=0x0A, DVDCDTOC=0x0B, DVDVolumeId=0x0C, 
-                     DVDTimestamp=0x0D, DVDFrames=0x0E };
-enum dvd_title_type { DVDDiscText=0x01, DVDTrackText=0x02, 
-                      DVDArtistText=0x03, DVDGenreListText=0x04, 
-                      DVDUserfileListText=0x05, DVDUserfileText=0x06 };
+enum access 
+{ 
+    RetrieveData=0x00, 
+    WriteDiscGenre=0x10, 
+    WriteProgram=0x20, 
+    WriteUserfiles=0x40, 
+    WriteText=0x80 
+};
 
+enum data_type
+{ 
+    Ready=0x00, 
+    Text=0x01, 
+    Info=0x02, 
+    TOC=0x04, 
+    Userfiles=0x08, 
+    Genre=0x10, 
+    Listing=0x20 
+};
 
 enum slots { NoSlots=-1, AllSlots = 0 };
 

@@ -137,7 +137,7 @@ void
 CDChanger::DoListDiscs()
 {
     // build the payload
-    DataAccess query(RetrieveData, Text, AllSlots, CDDiscNames, UNKNOWN);
+    DataAccess query(RetrieveData, Text, AllSlots, DiscNames, UNKNOWN);
 
     // issue the request
     IssueRequest(query, HAS_REPLIES); 
@@ -166,7 +166,7 @@ void
 CDChanger::DoListContents(const short slot)
 {
     // build the payload
-    DataAccess query(RetrieveData, Text, slot, CDTrackNames, UNKNOWN);
+    DataAccess query(RetrieveData, Text, slot, TrackNames, UNKNOWN);
 
     // issue the request
     IssueRequest(query, HAS_REPLIES); 
@@ -195,7 +195,7 @@ char*
 CDChanger::GetDiscId(const short slot)
 {
     // build the payload
-    DataAccess query(RetrieveData, TOC, slot, CDTrackNames, UNKNOWN);
+    DataAccess query(RetrieveData, TOC, slot, TrackNames, UNKNOWN);
 
     // issue the request
     IssueRequest(query, HAS_REPLIES); 
@@ -220,7 +220,7 @@ void
 CDChanger::DoListBest()
 {
     // build the payload
-    DataAccess query(RetrieveData, Listing, AllSlots, CDDiscNames, UNKNOWN);
+    DataAccess query(RetrieveData, Listing, AllSlots, DiscNames, UNKNOWN);
 
     // issue the request
     IssueRequest(query, HAS_REPLIES); 

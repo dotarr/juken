@@ -104,7 +104,10 @@ Disc::StartHandler(const XML_Char* element, const XML_Char** attrbutes)
     else if ( ::strcmp(element, "Userfiles") == 0 )
         return new UserfilesHandler(m_changer, &m_userfiles);
     else
+    {
+        printf("unrecognized tag: %s\n", element);
         return NULL;
+    }
 }
 
 void 

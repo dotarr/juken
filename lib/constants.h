@@ -4,10 +4,6 @@
 // some maximums that exist in the protocol
 const ushort MAX_PAYLOAD_LEN = 1024; // if this aint big enough we have to redo alot
 
-const short MAX_TITLE_LENGTH = 25;
-
-const short MAX_TRACK_COUNT = 20;
-
 // bytes used in protocol marshalling
 const byte NUL = 0x00; // NULl
 const byte SOH = 0x01; // Start of Header
@@ -27,20 +23,23 @@ const bool NO_REPLIES  = false;
 const byte HANDSHAKE            = 0x00;
 const byte DATA_ACCESS          = 0x03;
 const byte DISC_INFO            = 0x04;
-const byte TRACK_TIMES          = 0x06;
+const byte DISC_TOC             = 0x06;
 const byte DISC_USERFILES       = 0x07;
-const byte DISC_GENRE           = 0x09;
+const byte DISC_GENRE           = 0x08;
+const byte READY_FOR_DATA       = 0x09;
 const byte DO_ACTION            = 0x0A;
-const byte SELECT_DISC_TRACK    = 0x0B;
-const byte SELECT_PLAY_MODE     = 0x0C;
-const byte DISC_TRACK_LIST      = 0x0D;
+const byte CHANGE_DISC          = 0x0B;
+const byte CHANGE_MODE          = 0x0C;
+const byte CHAPTER_FRAMES       = 0x0C;
+const byte DISC_LISTING         = 0x0D;
+const byte DISC_VOLUME_ID       = 0x0E;
+const byte DISC_TIME_STAMP      = 0x0F;
 const byte INFO_EVENT           = 0x12;
 const byte STATE_EVENT          = 0x13;
 const byte DISC_EVENT           = 0x14;
 const byte DOOR_EVENT           = 0x15;
-const byte CD_TEXT_DATA         = 0xFD;
-const byte DISC_DATA            = 0xFE;
-const byte USERFILE_DATA        = 0xFE;
+const byte LONG_TEXT_DATA       = 0xFD;
+const byte TEXT_DATA            = 0xFE;
 
 // strings for player mode
 const char* const MODE_NAMES[] = 

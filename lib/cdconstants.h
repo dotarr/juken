@@ -1,6 +1,12 @@
 #ifndef JUKEN_CD_CONSTANTS_H
 #define JUKEN_CD_CONSTANTS_H
 
+//  DataAccess info_types when access=RetrieveData and type=Text
+const byte DiscNames=0x00;
+const byte TrackNames=0x01;
+const byte ArtistName=0x02;
+const byte UserfileNames=0x07;
+
 // protocol parameter values
 const short NULL_PARAM          = 0xFFFF;
 

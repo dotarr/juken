@@ -7,7 +7,7 @@
 #include "exporter.h"
 
 Exporter::Exporter(const char* device)
-: m_done(false), m_device(NULL), m_changer(NULL)
+: m_device(NULL), m_changer(NULL), m_is_CD(false)
 {
     m_device = new KenwoodDevice(device);
 }
@@ -30,49 +30,49 @@ Exporter::InitState()
 
     // create appropriate changer 
     if ( ::strcmp(id, "I'm CD-425M") == 0 )
+    {
         m_changer = new CDChanger(id, *m_device);
+        m_is_CD = true;
+    }
     else
+    {
         m_changer = new DVDChanger(id, *m_device);
+        m_is_CD = false;
+    }
 
     // add this as a listener that prints events and data to stdout
     m_changer->pushListener(this);
-
-    // process InfoChanged
-//    m_changer->DoEvent();
-    // process DoorChanged
-//    m_changer->DoEvent();
-    // process StateChanged
-//    m_changer->DoEvent();
-    // process DiscChanged
-//    m_changer->DoEvent();
 }
 
 void
 Exporter::Run()
 {
-    int juke_fd = m_device->GetFileDescriptor();
-    fd_set fds;
-    while ( !m_done )
-    {
-        // setup fd set
-        FD_ZERO(&fds);
-        FD_SET(juke_fd, &fds);
-        
-        // select for something to do
-        int num_fds = ::select(juke_fd+1, &fds, NULL, NULL, NULL);
-        if ( num_fds == -1 )
-            m_done = true;
+   if ( m_is_CD )
+       export_CD_changer();
+   else
+       export_DVD_changer();
+}
 
-        // if we have something to do ...
-        if ( num_fds > 0 )
-        {
-            if ( FD_ISSET(juke_fd, &fds) )
-            {
-                // do an event
-                m_changer->DoEvent();
-            }
-        }
-    }
+void
+Exporter::export_CD_changer()
+{
+    // process InfoChanged
+    m_changer->DoEvent();
+    // process DoorChanged
+    m_changer->DoEvent();
+    // process StateChanged
+    m_changer->DoEvent();
+    // process DiscChanged
+    m_changer->DoEvent();
+}
+
+void
+Exporter::export_DVD_changer()
+{
+    // process InfoChanged
+    m_changer->DoEvent();
+    // process DoorChanged
+    m_changer->DoEvent();
 }
 
 // ------------------------------ Listener Interface ---------------------------------
