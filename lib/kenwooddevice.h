@@ -15,7 +15,7 @@ class KenwoodDevice : public SerialDevice
 
         char* DoHandshake(const char* id);
 
-        bool ClearToSend();
+        bool CheckForEvent(int usecs);
         void SendMessage(const payload& msg, const bool has_replies);
         void EndMessage();
         bool RecvMessage(payload& msg);

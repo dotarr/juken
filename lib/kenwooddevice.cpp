@@ -1,7 +1,6 @@
 #include <sys/time.h>
 
 #include "kenwooddevice.h"
-#include "util.h"
 
 // ----------------------------------------------------------------------------
 
@@ -31,31 +30,48 @@ KenwoodDevice::DoHandshake(const char* id)
     Handshake req(id);
 
     // issue the request
-    if ( ClearToSend() )
+    SendMessage(req, HAS_REPLIES); 
+
+    // get the reply
+    payload reply;
+    if ( RecvMessage(reply) )
     {
-        SendMessage(req, HAS_REPLIES); 
-
-        // get the reply
-        payload reply;
-        if ( RecvMessage(reply) )
-        {
-            payload eor;
-            RecvMessage(eor);
-        }
-
-        Handshake info(reply);
-        return ::strdup(info.identifier());
+        payload eor;
+        RecvMessage(eor);
     }
-    else
-        return NULL;
+
+    Handshake info(reply);
+    return ::strdup(info.identifier());
 }
 
 bool
-KenwoodDevice::ClearToSend()
+KenwoodDevice::CheckForEvent(int usecs)
 {
-usleep(100);
-    
-    bool acked = false;
+#if 1
+    usleep(usecs);
+#else
+    struct timeval time = { 0, usecs };
+    int fd = GetFileDescriptor();
+    fd_set fds;
+
+    FD_ZERO(&fds);
+    FD_SET(fd, &fds);
+
+    int count = ::select(fd+1, &fds, NULL, NULL, &time);
+
+    if ( count != 0 )
+    {
+        printf("select returned %d\n", count);
+        LogMsg("!!!! we got something !!!!\n");
+    }
+#endif
+
+    return false;
+}
+
+void
+KenwoodDevice::SendMessage(const payload& msg, const bool has_replies)
+{
     WriteCntl(ENQ);
 
     byte cntl = ReadCntl();
@@ -64,16 +80,10 @@ usleep(100);
         case STX: ::fprintf(stderr, "->Unexpected STX\n"); break;
         case EOT: ::fprintf(stderr, "->Unexpected EOT\n"); break;
         case ENQ: ::fprintf(stderr, "->Unexpected ENQ\n"); break;
-        case ACK: acked = true; break;
+        case ACK: break;
         case NAK: ::fprintf(stderr, "->Unexpected NAK\n"); break;
     }
 
-    return acked;
-}
-
-void
-KenwoodDevice::SendMessage(const payload& msg, const bool has_replies)
-{
     bool sent = false;
     while ( !sent )
     {
@@ -159,7 +169,7 @@ void
 KenwoodDevice::WritePayload(const payload& msg)
 {
     byte cksum = ComputeChecksum(msg);
-    DebugPayload("write_payload", msg, cksum);
+    DebugPayload("write_payload", msg.cmd, msg.len, msg.data);
     WriteFully(&msg.cmd, sizeof(msg.cmd));
     WriteFully(&msg.len, sizeof(msg.len));
     WriteFully(msg.data, msg.len);
@@ -174,7 +184,7 @@ KenwoodDevice::ReadPayload(payload& msg)
     ReadFully(&msg.len, sizeof(msg.len));
     ReadFully(msg.data, msg.len);
     ReadFully(&cksum, sizeof(cksum));
-    DebugPayload("read_payload", msg, cksum);
+    DebugPayload("read_payload", msg.cmd, msg.len, msg.data);
     // we null the checksum to make those payloads that
     // have a string at the end be null terminated
     msg.data[msg.len] = '\0'; // null out checksum
@@ -197,14 +207,14 @@ KenwoodDevice::WriteCntl(byte c)
     // writes a control byte (with possible tracing)
     switch ( c )
     {
-        case NUL: TraceFlow("<- NUL\n"); break;
-        case SOH: TraceFlow("<- SOH\n"); break;
-        case STX: TraceFlow("<- STX\n"); break;
-        case ETX: TraceFlow("<- ETX\n"); break;
-        case EOT: TraceFlow("<- EOT\n"); break;
-        case ENQ: TraceFlow("<- ENQ\n"); break;
-        case ACK: TraceFlow("<- ACK\n"); break;
-        case NAK: TraceFlow("<- NAK\n"); break;
+        case NUL: TraceMsg("<- NUL\n"); break;
+        case SOH: TraceMsg("<- SOH\n"); break;
+        case STX: TraceMsg("<- STX\n"); break;
+        case ETX: TraceMsg("<- ETX\n"); break;
+        case EOT: TraceMsg("<- EOT\n"); break;
+        case ENQ: TraceMsg("<- ENQ\n"); break;
+        case ACK: TraceMsg("<- ACK\n"); break;
+        case NAK: TraceMsg("<- NAK\n"); break;
     }
     WriteFully(&c, 1);
 }
@@ -217,14 +227,14 @@ KenwoodDevice::ReadCntl()
     ReadFully(&c, 1);
     switch ( c )
     {
-        case NUL: TraceFlow("-> NUL\n"); break;
-        case SOH: TraceFlow("-> SOH\n"); break;
-        case STX: TraceFlow("-> STX\n"); break;
-        case ETX: TraceFlow("-> ETX\n"); break;
-        case EOT: TraceFlow("-> EOT\n"); break;
-        case ENQ: TraceFlow("-> ENQ\n"); break;
-        case ACK: TraceFlow("-> ACK\n"); break;
-        case NAK: TraceFlow("-> NAK\n"); break;
+        case NUL: TraceMsg("-> NUL\n"); break;
+        case SOH: TraceMsg("-> SOH\n"); break;
+        case STX: TraceMsg("-> STX\n"); break;
+        case ETX: TraceMsg("-> ETX\n"); break;
+        case EOT: TraceMsg("-> EOT\n"); break;
+        case ENQ: TraceMsg("-> ENQ\n"); break;
+        case ACK: TraceMsg("-> ACK\n"); break;
+        case NAK: TraceMsg("-> NAK\n"); break;
     }
     return c;
 }
