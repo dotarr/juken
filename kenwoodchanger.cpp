@@ -179,7 +179,7 @@ KenwoodChanger::DoHandshake(const char* id)
     // process the data
     reply.data[reply.len] = '\0';
     m_id = ::strdup((char*) reply.data);
-    //::fprintf(stderr, "%s\n", m_id);
+::fprintf(stderr, "%s\n", m_id);
 }
 
 void
@@ -229,7 +229,7 @@ KenwoodChanger::DoDiscQuery(const data_0x03& query, reply_handler func)
     SendMessage(req, HAS_REPLIES); 
 
     // get the replies
-    struct payload reply;
+    payload reply;
     while ( GetReply(reply) )
         // process the data
         func(reply.len, reply.data);

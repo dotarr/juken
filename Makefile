@@ -4,25 +4,26 @@
 #
 
 CFLAGS= -g -O2
+.SUFFIXES: .cpp
+
+OBJS=   test.o \
+	consolelistener.o \
+	util.o \
+	serialdevice.o \
+	kenwooddevice.o \
+	kenwoodchanger.o 
 
 .cpp.o:
 	cc $(CFLAGS) -c $< 
 
-all: depend test 
+all: juken
 
-depend:
-	makedepend -f - -- $(CFLAGS) -- *.h *.cpp >.depend
+juken: $(OBJS)
+	cc $(OBJS) -o juken 
 
-# testapp
-test: test.o consolelistener.o util.o serialdevice.o kenwooddevice.o kenwoodchanger.o
-
-# housekeeping
 clean:
-	rm -f core tmp junk *.o *.swp *.bak .depend
+	rm -f core tmp junk *.o *.so *.swp *.bak .depend
 
 realclean: clean
-	rm -f test
+	rm -f juken 
 
-ifeq (.depend,$(wildcard .depend))
-include .depend
-endif

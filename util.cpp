@@ -111,7 +111,7 @@ printdata(const byte data[], int count)
 }
 
 void
-DebugPayload(const char* label, const struct payload& msg, const byte cksum)
+DebugPayload(const char* label, const payload& msg, const byte cksum)
 {
 #ifdef DUMP_PAYLOAD
     fprintf(stdout, "%s cmd=%d len=%d\n", label, msg.cmd, msg.len);

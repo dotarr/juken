@@ -2,6 +2,7 @@
 #define __SERIALDEVICE_H__
 
 #include "types.h"
+#include <termios.h>
 
 // A class for communications over a serial port. Only basic
 // configuration of the port is provided at this time.
@@ -26,10 +27,15 @@ class SerialDevice
     protected:
         int fd;
 
+        void SaveAttributes();
+        void RestoreAttributes();
+
         void SetupDefault();
         void BlockingMode(bool block);
 
     private:
+        struct termios m_saved_attr;
+
         SerialDevice(const SerialDevice&);
 };
 

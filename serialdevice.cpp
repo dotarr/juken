@@ -61,6 +61,9 @@ SerialDevice::OpenDevice(const char* dev)
     // flush any garbage remaining on the port from previous operations.
     ThrowIfMinus1(::tcflush(fd, TCIOFLUSH), "Failed to flush: ");
 
+    // save the ports current attributes
+    SaveAttributes();
+
     // Setup the port
     SetupDefault();
 
@@ -79,15 +82,11 @@ SerialDevice::CloseDevice()
     // return if not open
     if ( fd <= 0 ) return;
 
-    // get the terminal attributes
-    struct termios trm;
-    ThrowIfMinus1(::tcgetattr(fd, &trm), "Failed to get attributes: ");
+    // flush any garbage remaining on the port from previous operations.
+    ThrowIfMinus1(::tcflush(fd, TCIOFLUSH), "Failed to flush: ");
 
-    // set terminal not to hangup on close
-    trm.c_cflag &= ~HUPCL;
-    ::tcsetattr(fd, TCSAFLUSH, &trm);
-    //::tcsetattr(fd, TCSADRAIN, &trm);
-    //::tcsetattr(fd, TCSANOW, &trm);
+    // restore the ports original attributes
+    RestoreAttributes();
 
     // reset the fd member
     fd = -1;
@@ -127,37 +126,35 @@ SerialDevice::ReadFully(void* buf, const size_t count)
 }
 
 void
+SerialDevice::SaveAttributes()
+{
+    // get the current attributes
+    ThrowIfMinus1(::tcgetattr(fd, &m_saved_attr), 
+                    "Failed to save attributes: ");
+
+}
+
+void
+SerialDevice::RestoreAttributes()
+{
+    ThrowIfMinus1(::tcsetattr(fd, TCSAFLUSH, &m_saved_attr), 
+                    "Failed to restore attributes: ");
+}
+
+void
 SerialDevice::SetupDefault()
 {
-    // flush any unwritten, unread data
-    ::tcflush(fd, TCIOFLUSH);
-
     struct termios tset;
+    ThrowIfMinus1(::tcgetattr(fd, &tset), "Failed to get attributes: ");
+
+    // default raw settings 
+    ::cfmakeraw(&tset);
 
     // 8 bits, no parity, one stop bit, 9600 baud
     tset.c_cflag = CREAD|CS8|B9600|CRTSCTS|HUPCL;
-
-    // ignore break, do not ignore parity
-    tset.c_iflag = IGNBRK;
-    tset.c_lflag &= ~ICANON;
-
-    // no delay on carriage return, backspace, tab, etc.
-    tset.c_oflag &= ~(NLDLY|CRDLY|TABDLY|BSDLY|VTDLY|FFDLY);
-    tset.c_oflag |= NL0|CR0|TAB0|BS0|VT0|FF0;
-
-    tset.c_cc[VEOF]   = _POSIX_VDISABLE;
-    tset.c_cc[VEOL]   = _POSIX_VDISABLE;
-    tset.c_cc[VERASE] = _POSIX_VDISABLE;
-    tset.c_cc[VINTR]  = _POSIX_VDISABLE;
-    tset.c_cc[VKILL]  = _POSIX_VDISABLE;
-    tset.c_cc[VQUIT]  = _POSIX_VDISABLE;
-    tset.c_cc[VSUSP]  = _POSIX_VDISABLE;
-    tset.c_cc[VSTART] = _POSIX_VDISABLE;
-    tset.c_cc[VSTOP]  = _POSIX_VDISABLE;
    
     // set the attributes
-    ThrowIfMinus1(::tcsetattr(fd, TCSANOW, &tset), 
-                  "Failed to set attributes: ");
+    ThrowIfMinus1(::tcsetattr(fd, TCSAFLUSH, &tset), "Failed to set attributes: ");
 }
 
 void

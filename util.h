@@ -2,10 +2,11 @@
 #define __UTIL_H__
 
 #include "types.h"
+#include "payload.h"
 
 void DebugMsg(const char* fmt, ...);
 void DebugConn(const char* fmt, ...);
-void DebugPayload(const char* label, const struct payload& msg, const byte cksum);
+void DebugPayload(const char* label, const payload& msg, const byte cksum);
 void TraceFlow(const char* fmt, ...);
 
 void ThrowIf(bool cond, const char* fmt, ...);

@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <getopt.h>
 #include <signal.h>
 #include <unistd.h>
 #include <string.h>
@@ -9,7 +8,11 @@
 #include "kenwoodchanger.h"
 #include "consolelistener.h"
 
+#if 0
 char* serial_device = "/dev/ttyS0";
+#endif
+char* serial_device = "/dev/tty00";
+
 bool done = false;
 
 void
@@ -23,14 +26,19 @@ void
 parse_args(int argc, char* argv[])
 {
     char* short_opts = "vhd:";
+#if 0
     struct option long_opts[] = {
         { "version", no_argument, NULL, 'v' },
         { "help", no_argument, NULL, 'h' },
         { NULL, no_argument, NULL, 0 }
     };
+#endif
 
     int c = EOF;
+#if 0
     while( (c=::getopt_long(argc, argv, short_opts, long_opts, NULL)) != EOF )
+#endif
+    while( (c=::getopt(argc, argv, short_opts)) != EOF )
     {
         switch( c )
         {
@@ -279,7 +287,7 @@ main(int argc, char* argv[])
     catch(char* e)
     {
         // output the error
-        ::fprintf(stderr, "%s\n", e);
+        ::fprintf(stderr, "exception caught: %s\n", e);
 
         // exit with failure
         return EXIT_FAILURE;
