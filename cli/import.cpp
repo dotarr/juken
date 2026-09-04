@@ -1,5 +1,8 @@
 #include <signal.h>
 #include <common.h>
+#ifdef HAVE_GETOPT_LONG
+#include <getopt.h>
+#endif
 #include "changerdata.h"
 #include "importer.h"
 
