@@ -1,6 +1,6 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
 
-INCLUDES        = -I$(top_builddir)/lib -I$(top_builddir)/common
+AM_CPPFLAGS     = -I$(top_builddir)/lib -I$(top_builddir)/common
 
 bin_PROGRAMS        = juken exporter importer
 juken_SOURCES   = cli.cpp juken.cpp consolelistener.cpp

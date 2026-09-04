@@ -26,7 +26,7 @@ class XMLParser : public ElementHandler
         void ParseFile(const char* filename);
 
     protected:
-        stack<ElementHandler*> m_handlers;
+        std::stack<ElementHandler*> m_handlers;
 
     private:
 
